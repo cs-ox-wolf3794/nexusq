@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: write # to dispatch the deploy workflow after committing data
 
 jobs:
   refresh:
@@ -20,10 +21,23 @@ jobs:
         env:
           EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
       - name: Commit updated snapshots
+        id: commit
         run: |
           git config user.name "nexusq-data-bot"
           git config user.email "actions@users.noreply.github.com"
           git add public/data
-          git diff --cached --quiet && echo "No data changes" && exit 0
-          git commit -m "data: refresh snapshots $(date -u +%F)"
-          git push
+          if git diff --cached --quiet; then
+            echo "No data changes"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "data: refresh snapshots $(date -u +%F)"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      # Pushes made with GITHUB_TOKEN do not trigger `on: push` workflows
+      # (recursion prevention), so the deploy must be dispatched explicitly.
+      - name: Trigger site deploy
+        if: steps.commit.outputs.changed == 'true'
+        run: gh workflow run deploy.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
