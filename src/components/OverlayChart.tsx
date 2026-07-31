@@ -4,7 +4,6 @@ import { EChart } from "./EChart";
 import { readTokens } from "./useTheme";
 import type { Series } from "../lib/data";
 import type { Points, Transform } from "../lib/transform";
-import { TRANSFORM_LABELS } from "../lib/transform";
 
 export interface OverlaySeries {
   series: Series;
@@ -21,11 +20,11 @@ export interface Projection {
   sourceLabel: string; // "model P50" | "IMF WEO" | "EIA STEO"
 }
 
-const AXIS_LABEL: Record<Transform, string> = {
-  index: "index (start = 100)",
-  zscore: "standard deviations",
-  yoy: "% change y/y",
-  raw: "",
+const CAPTION_TEXT: Record<Transform, string> = {
+  index: "indexed to 100 at window start",
+  zscore: "z-scores over the visible window",
+  yoy: "year-over-year % change",
+  raw: "raw values",
 };
 
 const fmtNum = (v: unknown) =>
@@ -43,9 +42,6 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
       "--gridline", "--baseline", "--border",
       ...items.map((i) => i.color),
     ]);
-    const unitLabel = transform === "raw"
-      ? (items[0]?.series.unit ?? "")
-      : AXIS_LABEL[transform];
     const today = new Date().toISOString().slice(0, 10);
 
     const series: SeriesOption[] = items.map((it) => ({
@@ -102,11 +98,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
     return {
       backgroundColor: "transparent",
       animation: false,
-      grid: {
-        left: 56, right: 16, bottom: 66,
-        // wrapped legends on narrow screens need extra headroom above the plot
-        top: items.length > 1 ? (window.innerWidth < 520 && items.length > 2 ? 72 : 44) : 20,
-      },
+      grid: { left: 56, right: 16, top: items.length > 1 ? 48 : 20, bottom: 66 },
       // Slider only — an "inside" zoom hijacks page scrolling (mousewheel and touch-pan).
       dataZoom: [
         {
@@ -154,8 +146,6 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
       },
       yAxis: {
         type: "value",
-        name: unitLabel,
-        nameTextStyle: { color: tokens["--text-muted"], fontSize: 11, align: "left" },
         scale: true,
         axisLabel: { color: tokens["--text-muted"], fontSize: 11 },
         splitLine: { lineStyle: { color: tokens["--gridline"], width: 1 } },
@@ -169,7 +159,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
       <EChart option={option} height={380} />
       <p className="sub" style={{ marginTop: 4 }}>
         {items.length > 1
-          ? `Overlaid on a single axis as ${TRANSFORM_LABELS[transform].toLowerCase()} — mixed units are never dual-axed.`
+          ? `Overlaid on a single axis, ${CAPTION_TEXT[transform]} — mixed units are never dual-axed.`
           : items.length === 1
             ? `${items[0].series.name}, ${items[0].series.unit} (${items[0].series.source})`
             : "Select at least one series."}

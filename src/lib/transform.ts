@@ -3,10 +3,10 @@ import type { Series } from "./data";
 export type Transform = "index" | "zscore" | "yoy" | "raw";
 
 export const TRANSFORM_LABELS: Record<Transform, string> = {
-  index: "Indexed = 100",
+  index: "Indexed",
   zscore: "Z-score",
-  yoy: "% change y/y",
-  raw: "Raw values",
+  yoy: "YoY %",
+  raw: "Raw",
 };
 
 export type Points = [string, number][];
