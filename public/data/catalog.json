@@ -1,0 +1,221 @@
+{
+  "generated": "2026-07-31T07:34:06.626Z",
+  "series": [
+    {
+      "id": "BRENT",
+      "name": "Brent crude",
+      "unit": "USD/bbl",
+      "category": "energy",
+      "source": "FRED",
+      "lastUpdated": "2026-07-27",
+      "count": 3442
+    },
+    {
+      "id": "WTI",
+      "name": "WTI crude",
+      "unit": "USD/bbl",
+      "category": "energy",
+      "source": "FRED",
+      "lastUpdated": "2026-07-27",
+      "count": 3398
+    },
+    {
+      "id": "HENRYHUB",
+      "name": "Henry Hub natural gas",
+      "unit": "USD/MMBtu",
+      "category": "energy",
+      "source": "FRED",
+      "lastUpdated": "2026-07-27",
+      "count": 3419
+    },
+    {
+      "id": "EUGAS",
+      "name": "European natural gas (TTF)",
+      "unit": "USD/MMBtu",
+      "category": "energy",
+      "source": "FRED",
+      "lastUpdated": "2026-06-01",
+      "count": 318
+    },
+    {
+      "id": "COAL",
+      "name": "Coal (Newcastle)",
+      "unit": "USD/t",
+      "category": "energy",
+      "source": "FRED",
+      "lastUpdated": "2026-06-01",
+      "count": 318
+    },
+    {
+      "id": "COPPER",
+      "name": "Copper",
+      "unit": "USD/t",
+      "category": "commodity",
+      "source": "FRED",
+      "lastUpdated": "2026-06-01",
+      "count": 318
+    },
+    {
+      "id": "WHEAT",
+      "name": "Wheat",
+      "unit": "USD/t",
+      "category": "commodity",
+      "source": "FRED",
+      "lastUpdated": "2026-06-01",
+      "count": 318
+    },
+    {
+      "id": "SP500",
+      "name": "S&P 500",
+      "unit": "index",
+      "category": "equity",
+      "source": "FRED",
+      "lastUpdated": "2026-07-29",
+      "count": 2512
+    },
+    {
+      "id": "NASDAQ",
+      "name": "Nasdaq Composite",
+      "unit": "index",
+      "category": "equity",
+      "source": "FRED",
+      "lastUpdated": "2026-07-30",
+      "count": 3415
+    },
+    {
+      "id": "VIX",
+      "name": "VIX",
+      "unit": "index",
+      "category": "macro",
+      "source": "FRED",
+      "lastUpdated": "2026-07-29",
+      "count": 3445
+    },
+    {
+      "id": "UST10Y",
+      "name": "US 10Y Treasury yield",
+      "unit": "%",
+      "category": "macro",
+      "source": "FRED",
+      "lastUpdated": "2026-07-29",
+      "count": 3394
+    },
+    {
+      "id": "BREAKEVEN10Y",
+      "name": "10Y inflation breakeven",
+      "unit": "%",
+      "category": "macro",
+      "source": "FRED",
+      "lastUpdated": "2026-07-30",
+      "count": 3395
+    },
+    {
+      "id": "CPI",
+      "name": "US CPI (all items)",
+      "unit": "index",
+      "category": "macro",
+      "source": "FRED",
+      "lastUpdated": "2026-06-01",
+      "count": 317
+    },
+    {
+      "id": "INDPRO",
+      "name": "US industrial production",
+      "unit": "index",
+      "category": "macro",
+      "source": "FRED",
+      "lastUpdated": "2026-06-01",
+      "count": 318
+    },
+    {
+      "id": "DXY",
+      "name": "US dollar index (broad)",
+      "unit": "index",
+      "category": "fx",
+      "source": "FRED",
+      "lastUpdated": "2026-07-24",
+      "count": 3377
+    },
+    {
+      "id": "EURUSD",
+      "name": "USD per EUR",
+      "unit": "USD",
+      "category": "fx",
+      "source": "FRED",
+      "lastUpdated": "2026-07-24",
+      "count": 3390
+    },
+    {
+      "id": "XLE",
+      "name": "Energy equities (XLE)",
+      "unit": "USD",
+      "category": "equity",
+      "source": "Yahoo Finance",
+      "lastUpdated": "2026-07-30",
+      "count": 2513
+    },
+    {
+      "id": "ICLN",
+      "name": "Global clean energy (ICLN)",
+      "unit": "USD",
+      "category": "renewables",
+      "source": "Yahoo Finance",
+      "lastUpdated": "2026-07-30",
+      "count": 2513
+    },
+    {
+      "id": "TAN",
+      "name": "Solar (TAN)",
+      "unit": "USD",
+      "category": "renewables",
+      "source": "Yahoo Finance",
+      "lastUpdated": "2026-07-30",
+      "count": 2513
+    },
+    {
+      "id": "GOLD",
+      "name": "Gold (GLD)",
+      "unit": "USD",
+      "category": "commodity",
+      "source": "Yahoo Finance",
+      "lastUpdated": "2026-07-30",
+      "count": 2513
+    },
+    {
+      "id": "GDP_USA",
+      "name": "US GDP growth",
+      "unit": "% y/y",
+      "category": "macro",
+      "source": "World Bank",
+      "lastUpdated": "2025-12-31",
+      "count": 26
+    },
+    {
+      "id": "GDP_CHN",
+      "name": "China GDP growth",
+      "unit": "% y/y",
+      "category": "macro",
+      "source": "World Bank",
+      "lastUpdated": "2025-12-31",
+      "count": 26
+    },
+    {
+      "id": "GDP_IND",
+      "name": "India GDP growth",
+      "unit": "% y/y",
+      "category": "macro",
+      "source": "World Bank",
+      "lastUpdated": "2025-12-31",
+      "count": 26
+    },
+    {
+      "id": "GDP_DEU",
+      "name": "Germany GDP growth",
+      "unit": "% y/y",
+      "category": "macro",
+      "source": "World Bank",
+      "lastUpdated": "2025-12-31",
+      "count": 26
+    }
+  ]
+}

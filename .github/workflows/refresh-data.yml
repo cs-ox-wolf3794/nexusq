@@ -1,0 +1,27 @@
+name: Refresh data snapshots
+
+on:
+  schedule:
+    - cron: "20 6 * * 1-5" # weekdays 06:20 UTC, after US close data settles
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/refresh-data.mjs
+      - name: Commit updated snapshots
+        run: |
+          git config user.name "nexusq-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/data
+          git diff --cached --quiet && echo "No data changes" && exit 0
+          git commit -m "data: refresh snapshots $(date -u +%F)"
+          git push
