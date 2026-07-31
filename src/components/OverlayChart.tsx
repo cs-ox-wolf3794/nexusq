@@ -102,7 +102,26 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
     return {
       backgroundColor: "transparent",
       animation: false,
-      grid: { left: 56, right: 16, top: items.length > 1 ? 44 : 20, bottom: 40 },
+      grid: {
+        left: 56, right: 16, bottom: 66,
+        // wrapped legends on narrow screens need extra headroom above the plot
+        top: items.length > 1 ? (window.innerWidth < 520 && items.length > 2 ? 72 : 44) : 20,
+      },
+      // Slider only — an "inside" zoom hijacks page scrolling (mousewheel and touch-pan).
+      dataZoom: [
+        {
+          type: "slider", height: 16, bottom: 8,
+          borderColor: tokens["--gridline"],
+          backgroundColor: "transparent",
+          fillerColor: tokens["--border"],
+          dataBackground: { lineStyle: { color: tokens["--baseline"] }, areaStyle: { color: tokens["--gridline"], opacity: 0.6 } },
+          selectedDataBackground: { lineStyle: { color: tokens["--text-muted"] }, areaStyle: { color: tokens["--gridline"] } },
+          handleStyle: { color: tokens["--surface-1"], borderColor: tokens["--baseline"] },
+          moveHandleSize: 0,
+          textStyle: { color: tokens["--text-muted"], fontSize: 10 },
+          brushSelect: false,
+        },
+      ],
       legend: items.length > 1 ? {
         top: 0, left: 0, icon: "roundRect", itemWidth: 12, itemHeight: 4,
         data: items.map((i) => i.series.name), // helpers & projections stay out of the legend

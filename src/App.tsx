@@ -7,6 +7,7 @@ import type { Signal } from "./lib/signals";
 import { computeSignals } from "./lib/signals";
 import { useTheme } from "./components/useTheme";
 import { SeriesPicker } from "./components/SeriesPicker";
+import { KpiStrip } from "./components/KpiStrip";
 import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { SignalPanel } from "./components/SignalPanel";
@@ -174,6 +175,8 @@ export default function App() {
       )}
 
       {loadError && <div className="card"><p className="sub">Failed to load data catalog: {loadError}</p></div>}
+
+      <KpiStrip seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} />
 
       <section className="card">
         <h2>Cross-asset overlay</h2>
