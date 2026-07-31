@@ -49,6 +49,44 @@ export async function loadCatalog(): Promise<CatalogFile> {
   return res.json();
 }
 
+export interface ImpactCompany {
+  id: string;
+  name: string;
+  sector: string;
+  unit: string;
+  source: string;
+  lastUpdated: string;
+  points: [string, number][];
+}
+
+export interface ImpactCountry {
+  iso: string;
+  name: string;
+  role: "exporter" | "importer" | "balanced";
+  gdp: [string, number][]; // annual growth, %
+  fuelExports: { value: number; year: string } | null;  // % of merchandise exports
+  energyImports: { value: number; year: string } | null; // net % of energy use
+}
+
+export interface ImpactFile {
+  generated: string;
+  companies: ImpactCompany[];
+  countries: ImpactCountry[];
+  oilAnnual: [string, number][]; // [year, avg price] — long-history oil for GDP betas
+  oilAnnualSource: string;
+  worldGdp: [string, number][]; // global-cycle control
+}
+
+export async function loadImpact(): Promise<ImpactFile | null> {
+  try {
+    const res = await fetch(`${base}data/impact.json`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function loadForecasts(): Promise<ForecastFile | null> {
   try {
     const res = await fetch(`${base}data/forecasts.json`);

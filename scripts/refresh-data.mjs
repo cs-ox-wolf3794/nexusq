@@ -48,11 +48,50 @@ const WORLDBANK = [
   { id: "GDP_DEU", iso: "DEU", name: "Germany GDP growth", category: "macro" },
 ];
 
+// ---- impact universe (Energy Beta board + sovereign exposure) ---------------
+// Energy-sensitive equities across the transmission channels from the Nexus docs:
+// producers benefit from energy strength, consumers (airlines, chemicals, steel)
+// are squeezed by it, transition names trade on rates + energy policy.
+const COMPANIES = [
+  { id: "XOM", sym: "XOM", name: "ExxonMobil", sector: "Oil major" },
+  { id: "CVX", sym: "CVX", name: "Chevron", sector: "Oil major" },
+  { id: "SHEL", sym: "SHEL", name: "Shell", sector: "Oil major" },
+  { id: "TTE", sym: "TTE", name: "TotalEnergies", sector: "Oil major" },
+  { id: "BP", sym: "BP", name: "BP", sector: "Oil major" },
+  { id: "SLB", sym: "SLB", name: "SLB (Schlumberger)", sector: "Oil services" },
+  { id: "HAL", sym: "HAL", name: "Halliburton", sector: "Oil services" },
+  { id: "MT", sym: "MT", name: "ArcelorMittal", sector: "Steel" },
+  { id: "LYB", sym: "LYB", name: "LyondellBasell", sector: "Chemicals" },
+  { id: "DOW", sym: "DOW", name: "Dow", sector: "Chemicals" },
+  { id: "DAL", sym: "DAL", name: "Delta Air Lines", sector: "Airline" },
+  { id: "UAL", sym: "UAL", name: "United Airlines", sector: "Airline" },
+  { id: "TSLA", sym: "TSLA", name: "Tesla", sector: "EV / battery" },
+  { id: "FSLR", sym: "FSLR", name: "First Solar", sector: "Solar" },
+  { id: "NEE", sym: "NEE", name: "NextEra Energy", sector: "Utility / renewables" },
+];
+
+// Major energy exporters and importers for the sovereign GDP-sensitivity view.
+const COUNTRIES = [
+  { iso: "SAU", name: "Saudi Arabia", role: "exporter" },
+  { iso: "RUS", name: "Russia", role: "exporter" },
+  { iso: "NOR", name: "Norway", role: "exporter" },
+  { iso: "CAN", name: "Canada", role: "exporter" },
+  { iso: "ARE", name: "United Arab Emirates", role: "exporter" },
+  { iso: "NGA", name: "Nigeria", role: "exporter" },
+  { iso: "CHN", name: "China", role: "importer" },
+  { iso: "IND", name: "India", role: "importer" },
+  { iso: "JPN", name: "Japan", role: "importer" },
+  { iso: "DEU", name: "Germany", role: "importer" },
+  { iso: "KOR", name: "South Korea", role: "importer" },
+  { iso: "TUR", name: "Türkiye", role: "importer" },
+  { iso: "USA", name: "United States", role: "balanced" },
+];
+
 // ---- fetchers --------------------------------------------------------------
 async function get(url, asJson) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(url, { headers: { "User-Agent": UA } });
+      const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return asJson ? res.json() : res.text();
     } catch (err) {
@@ -140,8 +179,17 @@ for (const job of jobs) {
   }
 }
 
+// Guard: a mostly-failed run (e.g. one source down) must NOT regenerate the
+// derived files — a degraded catalog/forecasts would replace good committed data.
+if (catalog.length < jobs.length * 0.8) {
+  console.error(`\nABORT: only ${catalog.length}/${jobs.length} series succeeded — leaving catalog.json/forecasts.json untouched.`);
+  console.error(`Failures:\n  ${failures.join("\n  ")}`);
+  process.exit(1);
+}
+
 await writeFile(path.join(OUT_DIR, "catalog.json"), JSON.stringify({ generated: new Date().toISOString(), series: catalog }, null, 2));
 console.log(`\n${catalog.length}/${jobs.length} series written to public/data/`);
+if (failures.length) console.error(`Partial failures:\n  ${failures.join("\n  ")}`);
 
 // ---- forecasts ---------------------------------------------------------------
 // Layer 2 (model): damped-drift + EWMA-volatility fan, P10/P25/P50/P75/P90.
@@ -261,7 +309,98 @@ if (process.env.EIA_API_KEY) {
 
 await writeFile(path.join(OUT_DIR, "forecasts.json"), JSON.stringify({ generated: new Date().toISOString(), series: forecasts }));
 console.log(`ok   forecasts.json (${Object.keys(forecasts).length} series)`);
-if (failures.length) {
-  console.error(`Failures:\n  ${failures.join("\n  ")}`);
-  process.exitCode = catalog.length >= jobs.length / 2 ? 0 : 1; // tolerate partial failure
+
+// ---- impact.json (Energy Beta board + sovereign exposure) --------------------
+async function fetchWorldBankIndicator(iso, indicator) {
+  const j = await get(
+    `https://api.worldbank.org/v2/country/${iso}/indicator/${indicator}?format=json&per_page=100`,
+    true
+  );
+  return (j[1] ?? [])
+    .filter((row) => row.value != null && row.date >= "2000")
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+const impact = { generated: new Date().toISOString(), companies: [], countries: [] };
+
+for (const c of COMPANIES) {
+  try {
+    const points = await fetchYahoo(c);
+    if (points.length < 200) throw new Error(`only ${points.length} points`);
+    impact.companies.push({
+      id: c.id, name: c.name, sector: c.sector, unit: "USD",
+      source: "Yahoo Finance", lastUpdated: points[points.length - 1][0], points,
+    });
+    console.log(`ok   impact ${c.id.padEnd(6)} ${String(points.length).padStart(5)} pts`);
+  } catch (err) {
+    console.error(`FAIL impact ${c.id}: ${err.message}`);
+  }
+}
+
+for (const c of COUNTRIES) {
+  try {
+    const gdpRows = await fetchWorldBankIndicator(c.iso, "NY.GDP.MKTP.KD.ZG");
+    const gdp = gdpRows.map((r) => [`${r.date}-12-31`, Math.round(r.value * 100) / 100]);
+    // intensity metrics: latest non-null observation (coverage varies by country)
+    const fuelRows = await fetchWorldBankIndicator(c.iso, "TX.VAL.FUEL.ZS.UN");
+    const impRows = await fetchWorldBankIndicator(c.iso, "EG.IMP.CONS.ZS");
+    const lastOf = (rows) => rows.length
+      ? { value: Math.round(rows[rows.length - 1].value * 10) / 10, year: rows[rows.length - 1].date }
+      : null;
+    impact.countries.push({
+      iso: c.iso, name: c.name, role: c.role, gdp,
+      fuelExports: lastOf(fuelRows),   // % of merchandise exports
+      energyImports: lastOf(impRows),  // net % of energy use (negative = net exporter)
+    });
+    console.log(`ok   impact ${c.iso}   GDP ${gdp.length} yrs, fuel-x ${lastOf(fuelRows)?.value ?? "—"}%, imp ${lastOf(impRows)?.value ?? "—"}%`);
+  } catch (err) {
+    console.error(`FAIL impact ${c.iso}: ${err.message}`);
+  }
+}
+
+// Same guard as the main catalog: never overwrite a good impact.json with a stub.
+if (impact.companies.length >= COMPANIES.length * 0.8 && impact.countries.length >= COUNTRIES.length * 0.8) {
+  // Long-history annual oil averages for the sovereign GDP regression (needs 2000+,
+// which the trimmed daily snapshots can't provide). Prefer full-history FRED Brent;
+// fall back to Yahoo WTI futures (CL=F, monthly since 2000).
+try {
+  const csv = await get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU", false);
+  const sums = new Map();
+  for (const line of csv.trim().split("\n").slice(1)) {
+    const [date, raw] = line.split(",");
+    const v = parseFloat(raw);
+    if (!Number.isFinite(v) || date < "2000") continue;
+    const y = date.slice(0, 4);
+    const e = sums.get(y) ?? { s: 0, c: 0 };
+    e.s += v; e.c++;
+    sums.set(y, e);
+  }
+  impact.oilAnnual = [...sums].filter(([, e]) => e.c >= 120)
+    .map(([y, e]) => [y, Math.round((e.s / e.c) * 100) / 100]).sort();
+  impact.oilAnnualSource = "Brent (FRED), annual averages";
+} catch {
+  const j = await get("https://query1.finance.yahoo.com/v8/finance/chart/CL=F?range=max&interval=1mo", true);
+  const r = j.chart.result[0];
+  const sums = new Map();
+  for (let i = 0; i < r.timestamp.length; i++) {
+    const v = r.indicators.quote[0].close[i];
+    if (v == null) continue;
+    const y = new Date(r.timestamp[i] * 1000).toISOString().slice(0, 4);
+    const e = sums.get(y) ?? { s: 0, c: 0 };
+    e.s += v; e.c++;
+    sums.set(y, e);
+  }
+  impact.oilAnnual = [...sums].filter(([, e]) => e.c >= 6)
+    .map(([y, e]) => [y, Math.round((e.s / e.c) * 100) / 100]).sort();
+  impact.oilAnnualSource = "WTI futures (CL=F), Yahoo Finance, annual averages";
+}
+// World GDP growth: the global-cycle control for the sovereign oil-beta regression.
+const wldRows = await fetchWorldBankIndicator("WLD", "NY.GDP.MKTP.KD.ZG");
+impact.worldGdp = wldRows.map((r) => [`${r.date}-12-31`, Math.round(r.value * 100) / 100]);
+
+await writeFile(path.join(OUT_DIR, "impact.json"), JSON.stringify(impact));
+  console.log(`ok   impact.json (${impact.companies.length} companies, ${impact.countries.length} countries)`);
+} else {
+  console.error(`ABORT impact.json: only ${impact.companies.length}/${COMPANIES.length} companies, ${impact.countries.length}/${COUNTRIES.length} countries — leaving existing file untouched.`);
+  process.exitCode = 1;
 }

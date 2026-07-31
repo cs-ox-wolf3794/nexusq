@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CatalogEntry, ForecastFile, Series } from "./lib/data";
-import { loadCatalog, loadForecasts, loadSeries } from "./lib/data";
+import type { CatalogEntry, ForecastFile, ImpactFile, Series } from "./lib/data";
+import { loadCatalog, loadForecasts, loadImpact, loadSeries } from "./lib/data";
 import type { Transform } from "./lib/transform";
 import { TRANSFORM_LABELS, applyTransform, clampRange } from "./lib/transform";
 import type { Signal } from "./lib/signals";
@@ -8,6 +8,8 @@ import { computeSignals } from "./lib/signals";
 import { useTheme } from "./components/useTheme";
 import { SeriesPicker } from "./components/SeriesPicker";
 import { KpiStrip } from "./components/KpiStrip";
+import { EquityImpact } from "./components/EquityImpact";
+import { GdpImpact } from "./components/GdpImpact";
 import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { SignalPanel } from "./components/SignalPanel";
@@ -56,6 +58,7 @@ export default function App() {
   const [seriesMap, setSeriesMap] = useState<Map<string, Series>>(new Map());
   const [signals, setSignals] = useState<Signal[] | null>(null);
   const [forecasts, setForecasts] = useState<ForecastFile | null>(null);
+  const [impact, setImpact] = useState<ImpactFile | null>(null);
   const [projectionOn, setProjectionOn] = useState(true);
   // Color follows the entity: a series keeps its slot while selected.
   const slotMap = useRef(new Map<string, string>(DEFAULT_SELECTION.map((id, i) => [id, SLOT_VARS[i]])));
@@ -68,6 +71,7 @@ export default function App() {
       })
       .catch((e) => setLoadError(String(e)));
     loadForecasts().then(setForecasts);
+    loadImpact().then(setImpact);
   }, []);
 
   // Load everything once for the signal engine (payload is small snapshot JSON).
@@ -247,6 +251,32 @@ export default function App() {
           {signals === null ? <p className="sub">Computing…</p> : <SignalPanel signals={signals} />}
         </section>
       </div>
+
+      <section className="card">
+        <h2>Equity impact — Energy Beta board</h2>
+        <p className="sub">
+          How sensitive each energy-exposed stock is to the selected driver, and what a hypothetical
+          shock implies. β = Cov/Var on daily log-returns (rolling 90 days).
+        </p>
+        {impact ? (
+          <EquityImpact companies={impact.companies} seriesMap={seriesMap} />
+        ) : (
+          <p className="sub">Loading impact universe…</p>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Sovereign impact — GDP sensitivity to oil</h2>
+        <p className="sub">
+          Major energy exporters vs importers: how annual GDP growth has historically moved with Brent,
+          and the first-order impact of a sustained price shock.
+        </p>
+        {impact ? (
+          <GdpImpact impact={impact} />
+        ) : (
+          <p className="sub">Loading impact universe…</p>
+        )}
+      </section>
 
       <footer className="footer">
         NexusQ MVP (Nexus Signal preview) · data: FRED, Yahoo Finance, World Bank — snapshot refreshed by

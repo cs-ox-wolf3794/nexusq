@@ -46,22 +46,59 @@ commit it).
 
 ## State as of 2026-07-31 (end of session 1)
 
-Live and pushed (`b01ef20`): full Signal dashboard (KPI strip, overlay + projections +
-range slider, correlation matrix, signal cards, light/dark, responsive), forecast
-pipeline (model fans + IMF WEO; EIA STEO wired but keyless), daily refresh + deploy
-workflows, custom-domain config. DNS `nexus.gygante.com` → `cs-ox-wolf3794.github.io`
-verified propagating.
+**The platform is live, self-updating, and verified at https://nexus.gygante.com.**
+Full Signal dashboard (KPI strip, overlay + projections + range slider, correlation
+matrix, signal cards, light/dark, responsive). `EIA_API_KEY` repo secret is configured:
+Brent/WTI/Henry Hub show **EIA STEO forecasts** (18 monthly points to Dec 2027, dashed
+line + circle markers, verified rendering in production); other series use model fans;
+GDP uses IMF WEO.
+
+**Automation gotcha (found + fixed):** pushes made by a workflow with `GITHUB_TOKEN`
+do NOT trigger `on: push` workflows — the refresh cron committed data but the site never
+redeployed. Fix in `refresh-data.yml`: explicit `gh workflow run deploy.yml` dispatch
+after a data commit (needs `permissions: actions: write`). The chain
+refresh → commit → dispatch deploy is verified working end-to-end.
+
+## Session 2 (2026-07-31, evening): intelligence layer
+
+Ingested three internal docs (extracts in scratchpad; originals on user's machine/SharePoint):
+Mariano's mask-based PBO paper (toxicity scores localize search fragility), his Quant
+Developments deck (percentile-condition state models on energy futures + ConvLSTM tanker-flow
+model, all PBO/DSR/WFO-validated), and Nexus.docx (Energy Beta/α/shock metric definitions +
+Artem's "only slow-priced correlations are products" constraint). Synthesis + workflow map:
+`docs/DOMAIN.md` §5.
+
+Built: **Equity impact (Energy Beta board)** — ~15 energy-exposed stocks (impact.json),
+rolling 90d β/α/R² vs Brent/WTI/HenryHub (`src/lib/beta.ts`), β-trend sparklines, shock
+slider (first-order β×shock). **Sovereign impact** — GDP β to oil for 6 exporters + 6
+importers + US, **Frisch–Waugh controlled for world GDP growth** (naive version printed
+positive β for every country — COVID common shock + oil procyclicality; never regress
+GDP on oil without the cycle control). Long-history annual oil averages in
+impact.oilAnnual (FRED Brent preferred, Yahoo CL=F fallback); partial r and n always
+displayed. World Bank fuel-export / energy-import intensity as mechanism columns.
+
+Pipeline hardening from tonight's FRED outage: all fetches carry AbortSignal 30s
+timeouts, and a mostly-failed run (< 80% series) ABORTS without touching
+catalog.json/forecasts.json/impact.json — a degraded run must never overwrite good
+committed data. (Also: `node script | tail` masks exit codes — don't.)
 
 **Open items (next session):**
-1. Confirm GitHub Pages is serving at https://nexus.gygante.com (Settings → Pages →
-   source "GitHub Actions", custom domain set, HTTPS enforced) and the two workflows ran green.
-2. User to register the free EIA key and add repo secret `EIA_API_KEY` (guide written —
-   unlocks STEO forecasts now, weekly inventories / Inventory Divergence signal later).
-3. Medium-impact UI batch (agreed, not started): loading skeletons, micro-transitions,
+0. Workflow queue from the doc synthesis: Market State Score (percentile conditions —
+   vol/trend/DXY free, CFTC COT free); Inventory Divergence (EIA key live); validation
+   badges per signal (→ eventually PBO/DSR from outcome history); EUA↔steel pilot needs
+   ICE carbon data; Flow Intelligence/NDI + Sentiment Pulse need Rystad AIS / news NLP.
+1. Medium-impact UI batch (agreed, not started): loading skeletons, micro-transitions,
    gradient masthead polish, footer lockup, PWA manifest + icons (installable).
-4. Smaller UI: hide correlation-matrix cell labels < 480px; hide masthead tagline < 600px.
-5. "Open the platform →" button on the gygante.com landing page (separate repo
+2. Smaller UI: hide correlation-matrix cell labels < 480px; hide masthead tagline < 600px.
+3. "Open the platform →" button on the gygante.com landing page (separate repo
    `cs-ox-wolf3794/gygante.com`).
-6. Later: forecast calibration scoreboard from `forecasts.json` git history; rolling-beta
+4. EIA weekly inventories (same key, `/v2/petroleum/stoc` routes) → Inventory Divergence
+   signal from the strategy's signal family.
+5. Later: forecast calibration scoreboard from `forecasts.json` git history; rolling-beta
    upgrade of Energy Beta; `echarts/core` tree-shaking (bundle ≈ 437 KB gzip); first tests
-   (pure functions in `src/lib/`).
+   (pure functions in `src/lib/`); consider publishing DOMAIN.md §3–4 as an in-app
+   Methodology page.
+
+Working habit: the user runs git themselves (`gh` CLI not installed) — hand them runnable
+command blocks, and remember the data bot commits to `main`, so `git pull --rebase` before
+any local commit.

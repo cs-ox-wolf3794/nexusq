@@ -34,6 +34,11 @@ A responsive static web app (browser / tablet / mobile) with:
   forward-filled onto a common daily grid.
 - **Live signals** — dislocation z-scores, 50/200-day momentum regimes, and
   correlation-regime shifts on curated energy↔cross-asset pairs (the "beta" family).
+- **Equity impact (Energy Beta board)** — rolling 90-day β / α / R² of ~15 energy-exposed
+  stocks (majors, services, steel, chemicals, airlines, transition names) against
+  Brent / WTI / Henry Hub, with a first-order shock translator.
+- **Sovereign impact** — GDP sensitivity of major energy exporters vs importers to oil
+  (annual OLS betas with r and n disclosed), grounded in World Bank fuel-trade intensity.
 - Light/dark theme, colorblind-validated palette.
 
 ### Architecture
