@@ -10,6 +10,7 @@ export interface Signal {
   value: string;
   severity: Severity;
   score: number; // for sorting, higher = stronger
+  seriesIds: string[]; // catalog series behind the signal — the "view in overlay" CTA
 }
 
 export const SEVERITY_META: Record<Severity, { label: string; icon: string; cssVar: string }> = {
@@ -72,6 +73,7 @@ export function computeSignals(all: Map<string, Series>): Signal[] {
         value: `z = ${z.z >= 0 ? "+" : ""}${z.z.toFixed(1)}σ`,
         severity: sevFromAbs(Math.abs(z.z), 1.5, 2, 2.5),
         score: Math.abs(z.z),
+        seriesIds: [s.id],
       });
     }
     const m = momentum(s);
@@ -83,6 +85,7 @@ export function computeSignals(all: Map<string, Series>): Signal[] {
         value: `${m.spreadPct >= 0 ? "+" : ""}${m.spreadPct.toFixed(1)}%`,
         severity: sevFromAbs(Math.abs(m.spreadPct), 2, 6, 12),
         score: Math.abs(m.spreadPct) / 4,
+        seriesIds: [s.id],
       });
     }
   }
@@ -119,6 +122,7 @@ export function computeSignals(all: Map<string, Series>): Signal[] {
         value: `Δρ = ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`,
         severity: sevFromAbs(Math.abs(delta), 0.15, 0.3, 0.45),
         score: Math.abs(delta) * 6,
+        seriesIds: [aId, bId],
       });
     }
   }

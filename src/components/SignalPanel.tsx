@@ -1,7 +1,10 @@
 import type { Signal } from "../lib/signals";
 import { SEVERITY_META } from "../lib/signals";
 
-export function SignalPanel({ signals }: { signals: Signal[] }) {
+export function SignalPanel({ signals, onView }: {
+  signals: Signal[];
+  onView: (seriesIds: string[]) => void;
+}) {
   if (!signals.length) return <p className="sub">No active signals at current thresholds.</p>;
   return (
     <div className="sig-list">
@@ -13,12 +16,21 @@ export function SignalPanel({ signals }: { signals: Signal[] }) {
             <span className="sig-type">{s.kind}</span>
             <span className="sig-detail">{s.detail}</span>
             <span className="num sig-value">{s.value}</span>
-            <span
-              className="sev-pill"
-              style={{ background: `color-mix(in srgb, var(${meta.cssVar}) 16%, transparent)` }}
-            >
-              <span className="dot" style={{ background: `var(${meta.cssVar})` }} />
-              <span aria-hidden="true">{meta.icon}</span> {meta.label}
+            <span className="sig-actions">
+              <span
+                className="sev-pill"
+                style={{ background: `color-mix(in srgb, var(${meta.cssVar}) 16%, transparent)` }}
+              >
+                <span className="dot" style={{ background: `var(${meta.cssVar})` }} />
+                <span aria-hidden="true">{meta.icon}</span> {meta.label}
+              </span>
+              <button
+                className="cta-link"
+                onClick={() => onView(s.seriesIds)}
+                title={`Load ${s.seriesIds.join(" + ")} in the cross-asset overlay`}
+              >
+                View in overlay ↗
+              </button>
             </span>
           </div>
         );

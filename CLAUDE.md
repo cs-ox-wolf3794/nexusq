@@ -77,6 +77,13 @@ GDP on oil without the cycle control). Long-history annual oil averages in
 impact.oilAnnual (FRED Brent preferred, Yahoo CL=F fallback); partial r and n always
 displayed. World Bank fuel-export / energy-import intensity as mechanism columns.
 
+UI navigation layer: sticky section jump-bar (`SectionNav`, anchor ids kpis/overlay/
+correlations/signals/equity-impact/sovereign-impact, `.anchor-target` scroll-margin),
+cross-widget CTAs (`.cta-link`; signals carry `seriesIds` and "View in overlay" loads
+them via `viewInOverlay`), and a per-widget `Freshness` badge (icon+label+date, cadence
+aware: daily/monthly/annual) — every card header shows its own data vintage. Reuse
+`Freshness` for any new widget.
+
 Pipeline hardening from tonight's FRED outage: all fetches carry AbortSignal 30s
 timeouts, and a mostly-failed run (< 80% series) ABORTS without touching
 catalog.json/forecasts.json/impact.json — a degraded run must never overwrite good

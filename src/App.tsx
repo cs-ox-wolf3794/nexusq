@@ -10,6 +10,8 @@ import { SeriesPicker } from "./components/SeriesPicker";
 import { KpiStrip } from "./components/KpiStrip";
 import { EquityImpact } from "./components/EquityImpact";
 import { GdpImpact } from "./components/GdpImpact";
+import { Freshness } from "./components/Freshness";
+import { SectionNav } from "./components/SectionNav";
 import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { SignalPanel } from "./components/SignalPanel";
@@ -87,6 +89,16 @@ export default function App() {
     });
     return () => { cancelled = true; };
   }, [catalog]);
+
+  // CTA target: load a signal's series into the overlay and navigate there.
+  const viewInOverlay = (ids: string[]) => {
+    const valid = ids.filter((id) => seriesMap.has(id)).slice(0, SLOT_VARS.length);
+    if (!valid.length) return;
+    slotMap.current.clear();
+    valid.forEach((id, i) => slotMap.current.set(id, SLOT_VARS[i]));
+    setSelected(valid);
+    document.getElementById("overlay")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const toggleSeries = (id: string) => {
     setSelected((prev) => {
@@ -178,12 +190,29 @@ export default function App() {
         </p>
       )}
 
+      <SectionNav />
+
       {loadError && <div className="card"><p className="sub">Failed to load data catalog: {loadError}</p></div>}
 
-      <KpiStrip seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} />
+      <div id="kpis" className="anchor-target">
+        <div className="strip-head">
+          <span className="control-label">Market pulse — click a tile to overlay it</span>
+          <Freshness
+            date={[...seriesMap.values()].reduce((m, s) => (s.lastUpdated > m ? s.lastUpdated : m), "") || null}
+          />
+        </div>
+        <KpiStrip seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} />
+      </div>
 
-      <section className="card">
-        <h2>Cross-asset overlay</h2>
+      <section id="overlay" className="card anchor-target">
+        <div className="card-head">
+          <h2>Cross-asset overlay</h2>
+          <Freshness
+            date={selectedSeries.length ? selectedSeries.reduce((m, s) => (s.lastUpdated < m ? s.lastUpdated : m), "9999") : null}
+            prefix="selection through"
+            title={selectedSeries.map((s) => `${s.name}: ${s.lastUpdated}`).join("\n")}
+          />
+        </div>
         <p className="sub">Compare energy fundamentals, commodities, equities and macro on one comparable axis.</p>
         <div className="controls">
           <div className="control-group">
@@ -239,24 +268,46 @@ export default function App() {
       </section>
 
       <div className="grid-2">
-        <section className="card">
-          <h2>Correlation structure</h2>
-          <p className="sub">Pearson ρ of log-returns across the selected window, forward-filled to a common grid.</p>
+        <section id="correlations" className="card anchor-target">
+          <div className="card-head">
+            <h2>Correlation structure</h2>
+            <Freshness
+              date={selectedSeries.length ? selectedSeries.reduce((m, s) => (s.lastUpdated < m ? s.lastUpdated : m), "9999") : null}
+              prefix="selection through"
+            />
+          </div>
+          <p className="sub">
+            Pearson ρ of log-returns across the selected window, forward-filled to a common grid.{" "}
+            <a className="cta-link" href="#signals">Regime shifts appear as signals ↗</a>
+          </p>
           <CorrelationMatrix list={selectedSeries} from={from} themeMode={mode} />
         </section>
 
-        <section className="card">
-          <h2>Live signals</h2>
+        <section id="signals" className="card anchor-target">
+          <div className="card-head">
+            <h2>Live signals</h2>
+            <Freshness
+              date={catalog.length ? catalog.reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), "") : null}
+              prefix="computed through"
+              title="Signals recompute from the full catalog on every load; date shown is the newest observation used."
+            />
+          </div>
           <p className="sub">Dislocations, momentum regimes and correlation-regime shifts across the full catalog.</p>
-          {signals === null ? <p className="sub">Computing…</p> : <SignalPanel signals={signals} />}
+          {signals === null ? <p className="sub">Computing…</p> : <SignalPanel signals={signals} onView={viewInOverlay} />}
         </section>
       </div>
 
-      <section className="card">
-        <h2>Equity impact — Energy Beta board</h2>
+      <section id="equity-impact" className="card anchor-target">
+        <div className="card-head">
+          <h2>Equity impact — Energy Beta board</h2>
+          <Freshness
+            date={impact?.companies.length ? impact.companies.reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), "") : null}
+          />
+        </div>
         <p className="sub">
           How sensitive each energy-exposed stock is to the selected driver, and what a hypothetical
-          shock implies. β = Cov/Var on daily log-returns (rolling 90 days).
+          shock implies. β = Cov/Var on daily log-returns (rolling 90 days).{" "}
+          <a className="cta-link" href="#sovereign-impact">Country-level view ↗</a>
         </p>
         {impact ? (
           <EquityImpact companies={impact.companies} seriesMap={seriesMap} />
@@ -265,11 +316,23 @@ export default function App() {
         )}
       </section>
 
-      <section className="card">
-        <h2>Sovereign impact — GDP sensitivity to oil</h2>
+      <section id="sovereign-impact" className="card anchor-target">
+        <div className="card-head">
+          <h2>Sovereign impact — GDP sensitivity to oil</h2>
+          <Freshness
+            date={impact?.countries.length
+              ? impact.countries.reduce((m, c) => {
+                  const last = c.gdp[c.gdp.length - 1]?.[0] ?? "";
+                  return last > m ? last : m;
+                }, "")
+              : null}
+            cadence="annual"
+          />
+        </div>
         <p className="sub">
           Major energy exporters vs importers: how annual GDP growth has historically moved with Brent,
-          and the first-order impact of a sustained price shock.
+          and the first-order impact of a sustained price shock.{" "}
+          <a className="cta-link" href="#overlay">GDP paths with IMF projections on the overlay ↗</a>
         </p>
         {impact ? (
           <GdpImpact impact={impact} />
