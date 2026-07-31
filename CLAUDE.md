@@ -106,6 +106,12 @@ committed data. (Also: `node script | tail` masks exit codes — don't.)
    (pure functions in `src/lib/`); consider publishing DOMAIN.md §3–4 as an in-app
    Methodology page.
 
+**Decision (2026-07-31): no password gate.** The MVP stays open on purpose — it's the
+proof-of-methodology / marketing artifact, and client-side gating on a public repo is
+security theater anyway. Revisit when proprietary content lands: the real path is
+Cloudflare Pages (private repo) + Cloudflare Access (free ≤ 50 users, email OTP), same
+domain, ~1h migration.
+
 Working habit: the user runs git themselves (`gh` CLI not installed) — hand them runnable
 command blocks, and remember the data bot commits to `main`, so `git pull --rebase` before
 any local commit.
