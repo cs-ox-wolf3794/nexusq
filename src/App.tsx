@@ -27,6 +27,16 @@ const RANGES: { label: string; years: number | null }[] = [
 const DEFAULT_SELECTION = ["BRENT", "XLE", "ICLN", "EURUSD"];
 const SLOT_VARS = ["--series-1", "--series-2", "--series-3", "--series-4", "--series-5", "--series-6"];
 
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+function fmtDateTime(iso: string): string {
+  return `${new Date(iso).toLocaleString("en-GB", {
+    day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC",
+  })} UTC`;
+}
+
 function rangeStart(years: number | null): string {
   if (years == null) return "1900-01-01";
   const d = new Date();
@@ -37,6 +47,7 @@ function rangeStart(years: number | null): string {
 export default function App() {
   const { mode, toggle } = useTheme();
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
+  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>(DEFAULT_SELECTION);
   const [transform, setTransform] = useState<Transform>("index");
@@ -49,7 +60,12 @@ export default function App() {
   const slotMap = useRef(new Map<string, string>(DEFAULT_SELECTION.map((id, i) => [id, SLOT_VARS[i]])));
 
   useEffect(() => {
-    loadCatalog().then(setCatalog).catch((e) => setLoadError(String(e)));
+    loadCatalog()
+      .then((file) => {
+        setCatalog(file.series);
+        setRefreshedAt(file.generated);
+      })
+      .catch((e) => setLoadError(String(e)));
     loadForecasts().then(setForecasts);
   }, []);
 
@@ -149,6 +165,13 @@ export default function App() {
           </button>
         ))}
       </nav>
+
+      {refreshedAt && catalog.length > 0 && (
+        <p className="data-stamp">
+          Data through <strong>{fmtDate(catalog.reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), ""))}</strong>
+          {" "}· snapshots refreshed {fmtDateTime(refreshedAt)} · auto-updates every weekday
+        </p>
+      )}
 
       {loadError && <div className="card"><p className="sub">Failed to load data catalog: {loadError}</p></div>}
 

@@ -38,10 +38,15 @@ export interface ForecastFile {
 const base = import.meta.env.BASE_URL;
 const seriesCache = new Map<string, Promise<Series>>();
 
-export async function loadCatalog(): Promise<CatalogEntry[]> {
+export interface CatalogFile {
+  generated: string; // ISO timestamp of the pipeline run
+  series: CatalogEntry[];
+}
+
+export async function loadCatalog(): Promise<CatalogFile> {
   const res = await fetch(`${base}data/catalog.json`);
   if (!res.ok) throw new Error(`catalog: HTTP ${res.status}`);
-  return (await res.json()).series;
+  return res.json();
 }
 
 export async function loadForecasts(): Promise<ForecastFile | null> {
