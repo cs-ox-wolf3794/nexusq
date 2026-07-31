@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CatalogEntry, Series } from "./lib/data";
-import { loadCatalog, loadSeries } from "./lib/data";
+import type { CatalogEntry, ForecastFile, Series } from "./lib/data";
+import { loadCatalog, loadForecasts, loadSeries } from "./lib/data";
 import type { Transform } from "./lib/transform";
 import { TRANSFORM_LABELS, applyTransform, clampRange } from "./lib/transform";
 import type { Signal } from "./lib/signals";
 import { computeSignals } from "./lib/signals";
 import { useTheme } from "./components/useTheme";
 import { SeriesPicker } from "./components/SeriesPicker";
-import { OverlayChart, type OverlaySeries } from "./components/OverlayChart";
+import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { SignalPanel } from "./components/SignalPanel";
 
@@ -43,11 +43,14 @@ export default function App() {
   const [rangeYears, setRangeYears] = useState<number | null>(3);
   const [seriesMap, setSeriesMap] = useState<Map<string, Series>>(new Map());
   const [signals, setSignals] = useState<Signal[] | null>(null);
+  const [forecasts, setForecasts] = useState<ForecastFile | null>(null);
+  const [projectionOn, setProjectionOn] = useState(true);
   // Color follows the entity: a series keeps its slot while selected.
   const slotMap = useRef(new Map<string, string>(DEFAULT_SELECTION.map((id, i) => [id, SLOT_VARS[i]])));
 
   useEffect(() => {
     loadCatalog().then(setCatalog).catch((e) => setLoadError(String(e)));
+    loadForecasts().then(setForecasts);
   }, []);
 
   // Load everything once for the signal engine (payload is small snapshot JSON).
@@ -90,6 +93,35 @@ export default function App() {
     })),
     [selectedSeries.map((s) => s.id).join(","), seriesMap, from, effectiveTransform],
   );
+
+  // Projections only make sense on comparable level scales (raw / indexed).
+  const projectionAllowed = effectiveTransform === "raw" || effectiveTransform === "index";
+  const projections: Projection[] = useMemo(() => {
+    if (!projectionOn || !projectionAllowed || !forecasts) return [];
+    const out: Projection[] = [];
+    for (const s of selectedSeries) {
+      const fc = forecasts.series[s.id];
+      if (!fc) continue;
+      const base = clampRange(s.points, from)[0]?.[1];
+      if (effectiveTransform === "index" && !(base > 0)) continue;
+      const scale = (v: number) => (effectiveTransform === "index" ? (v / base) * 100 : v);
+      const color = slotMap.current.get(s.id) ?? SLOT_VARS[0];
+      if (fc.kind === "model") {
+        out.push({
+          name: s.name, color, sourceLabel: "model P50",
+          fan: fc.points.map((p) => [p[0], scale(p[1]), scale(p[2]), scale(p[3]), scale(p[4]), scale(p[5])]),
+        });
+      } else {
+        // anchor the dashed external line to the last actual observation
+        const last = s.points[s.points.length - 1];
+        out.push({
+          name: s.name, color, sourceLabel: fc.source.split(" (")[0],
+          external: [[last[0], scale(last[1])], ...fc.points.map((p) => [p[0], scale(p[1])] as [string, number])],
+        });
+      }
+    }
+    return out;
+  }, [projectionOn, projectionAllowed, forecasts, selectedSeries.map((s) => s.id).join(","), seriesMap, from, effectiveTransform]);
 
   return (
     <div className="app">
@@ -141,6 +173,22 @@ export default function App() {
             </div>
           </div>
           <div className="control-group">
+            <span className="control-label">Projection</span>
+            <div className="seg">
+              {[true, false].map((on) => (
+                <button
+                  key={String(on)}
+                  className={projectionOn === on && projectionAllowed ? "active" : ""}
+                  disabled={!projectionAllowed}
+                  title={!projectionAllowed ? "Projections show on raw or indexed scales only" : undefined}
+                  onClick={() => setProjectionOn(on)}
+                >
+                  {on ? "On" : "Off"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="control-group">
             <span className="control-label">Window</span>
             <div className="seg">
               {RANGES.map((r) => (
@@ -157,7 +205,7 @@ export default function App() {
           colors={slotMap.current}
           onToggle={toggleSeries}
         />
-        <OverlayChart items={overlayItems} transform={effectiveTransform} themeMode={mode} />
+        <OverlayChart items={overlayItems} projections={projections} transform={effectiveTransform} themeMode={mode} />
       </section>
 
       <div className="grid-2">

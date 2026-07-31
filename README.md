@@ -79,6 +79,20 @@ node scripts/refresh-data.mjs
 | FRED (fredgraph CSV, keyless) | Brent, WTI, Henry Hub, EU gas, coal, copper, wheat, S&P 500, Nasdaq, VIX, UST 10Y, breakevens, CPI, INDPRO, dollar index, EURUSD | daily/monthly |
 | Yahoo Finance chart API | XLE, ICLN, TAN, GLD | 10y daily closes |
 | World Bank API | GDP growth (US, China, India, Germany) | annual |
-| EIA v2 API | weekly inventories (planned — needs free `EIA_API_KEY`) | for Inventory Divergence signals |
+| IMF WEO API | GDP-growth projections to +3y (keyless) | forecast layer |
+| EIA v2 API (optional) | STEO Brent/WTI/Henry Hub forecasts + weekly inventories | set free `EIA_API_KEY` |
+
+### Forecast layer
+
+`refresh-data.mjs` also writes `public/data/forecasts.json`:
+
+- **Model fans** — per-series P10/P25/P50/P75/P90 projections (~90 days for daily series,
+  ~6 months for monthly) from deliberately transparent statistics: half-weight ("damped")
+  drift + EWMA volatility. The uncertainty band is the product, not the point estimate.
+- **External forecasts** — IMF WEO GDP projections; EIA STEO oil & gas forecasts when a
+  key is configured.
+- Because the cron commits `forecasts.json` daily, **git history is the outcome database**:
+  every published forecast is permanently recorded against what subsequently happened —
+  the raw material for a calibration scoreboard.
 
 *Not investment advice. © 2026 Gygante Quantitative Systems.*

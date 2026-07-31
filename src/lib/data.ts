@@ -23,6 +23,18 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   fx: "FX",
 };
 
+/** [date, p10, p25, p50, p75, p90] */
+export type FanPoint = [string, number, number, number, number, number];
+
+export type Forecast =
+  | { kind: "model"; method: string; points: FanPoint[] }
+  | { kind: "external"; source: string; points: [string, number][] };
+
+export interface ForecastFile {
+  generated: string;
+  series: Record<string, Forecast>;
+}
+
 const base = import.meta.env.BASE_URL;
 const seriesCache = new Map<string, Promise<Series>>();
 
@@ -30,6 +42,16 @@ export async function loadCatalog(): Promise<CatalogEntry[]> {
   const res = await fetch(`${base}data/catalog.json`);
   if (!res.ok) throw new Error(`catalog: HTTP ${res.status}`);
   return (await res.json()).series;
+}
+
+export async function loadForecasts(): Promise<ForecastFile | null> {
+  try {
+    const res = await fetch(`${base}data/forecasts.json`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 export function loadSeries(id: string): Promise<Series> {

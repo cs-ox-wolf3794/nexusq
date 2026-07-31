@@ -17,6 +17,8 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/refresh-data.mjs
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
       - name: Commit updated snapshots
         run: |
           git config user.name "nexusq-data-bot"
