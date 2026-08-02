@@ -1,5 +1,5 @@
 /**
- * In-app Methodology page — the public, sanitized specification of every number
+ * In-app Methodology page ; the public, sanitized specification of every number
  * the platform displays. Source of truth: docs/DOMAIN.md §1–3 (internal), kept in
  * sync manually; the change log below must be updated with any formula change.
  */
@@ -9,7 +9,7 @@ export function Methodology() {
       <section className="card">
         <h2>Methodology</h2>
         <p className="sub">
-          Every number NexusQ displays is defined on this page and reproducible from public data —
+          Every number NexusQ displays is defined on this page and reproducible from public data ;
           the full source code, data snapshots and their complete history are open at{" "}
           <a className="cta-link" href="https://github.com/cs-ox-wolf3794/nexusq" target="_blank" rel="noreferrer">
             github.com/cs-ox-wolf3794/nexusq
@@ -17,10 +17,10 @@ export function Methodology() {
         </p>
         <h3>Principles</h3>
         <ul className="method-list">
-          <li><strong>One axis, always.</strong> Mixed units are never dual-axed — comparisons go through explicit transforms. Dual axes allow arbitrary visual storytelling; we don't use them.</li>
+          <li><strong>One axis, always.</strong> Mixed units are never dual-axed ; comparisons go through explicit transforms. Dual axes allow arbitrary visual storytelling; we don't use them.</li>
           <li><strong>Correlations on log-returns, never levels.</strong> Level correlations between trending series are spuriously high.</li>
           <li><strong>The band is the forecast.</strong> Point forecasts of commodity prices at 90 days are near-random; conditional volatility is genuinely forecastable. Wide bands after volatile periods are the model being right.</li>
-          <li><strong>Every estimate ships its fit quality.</strong> β without R², or a correlation without n, is bait — we always show both.</li>
+          <li><strong>Every estimate ships its fit quality.</strong> β without R², or a correlation without n, is bait ; we always show both.</li>
           <li><strong>Data honesty.</strong> Per-widget freshness badges, "data through" vs "refreshed" kept separate, missing data rendered as missing, and shock translators labeled first-order.</li>
         </ul>
       </section>
@@ -33,7 +33,7 @@ export function Methodology() {
               <tr><th>On-screen number</th><th>Formula</th><th>Window / frequency</th><th>Key caveat</th></tr>
             </thead>
             <tbody>
-              <tr><td className="beta-name">Indexed overlay</td><td>vₜ / v₀ × 100</td><td>first visible obs = base</td><td>base changes with the window — deliberately</td></tr>
+              <tr><td className="beta-name">Indexed overlay</td><td>vₜ / v₀ × 100</td><td>first visible obs = base</td><td>base changes with the window ; deliberately</td></tr>
               <tr><td className="beta-name">Z-score overlay</td><td>(vₜ − μ) / σ</td><td>visible window</td><td>window-relative, not all-history</td></tr>
               <tr><td className="beta-name">% y/y overlay</td><td>vₜ / v₍t−1y₎ − 1</td><td>nearest obs ≥ 340d back</td><td>needs ≥ ~1y of history</td></tr>
               <tr><td className="beta-name">Correlation ρ</td><td>Pearson on log-returns</td><td>selected window, daily grid, ffill ≤ 40d</td><td>≥ 20 paired returns or blank</td></tr>
@@ -43,7 +43,7 @@ export function Methodology() {
               <tr><td className="beta-name">Forecast fan</td><td>S₀·exp(μt + z·σ√t)</td><td>~91d daily / ~6m monthly</td><td>jumps land outside the band by construction</td></tr>
               <tr><td className="beta-name">Equity β / α / R²</td><td>OLS on paired daily log-returns</td><td>rolling 90 obs, weekly steps</td><td>90d = current regime, not "the" beta</td></tr>
               <tr><td className="beta-name">Sovereign β GDP</td><td>Frisch–Waugh, world-cycle controlled</td><td>annual, 2001+, n≈24</td><td>association, not structural elasticity</td></tr>
-              <tr><td className="beta-name">Shock translators</td><td>β × shock</td><td>—</td><td>first-order only: no lags, no second-order effects</td></tr>
+              <tr><td className="beta-name">Shock translators</td><td>β × shock</td><td>;</td><td>first-order only: no lags, no second-order effects</td></tr>
               <tr><td className="beta-name">Freshness badge</td><td>age of newest / limiting obs</td><td>daily 5/14d · monthly 40/75d · annual = vintage</td><td>overlay uses the stalest selected series</td></tr>
             </tbody>
           </table>
@@ -69,7 +69,7 @@ export function Methodology() {
           </table>
         </div>
         <p className="sub">
-          Interpretation note: the <em>sign</em> of the oil↔equity correlation encodes the shock type —
+          Interpretation note: the <em>sign</em> of the oil↔equity correlation encodes the shock type ;
           demand shocks push oil and equities together (positive ρ), supply shocks push them apart
           (negative ρ). The same +10% Brent move is bullish energy equities in one regime and
           stagflationary in the other, which is why the platform tracks Δρ rather than assuming a
@@ -80,9 +80,9 @@ export function Methodology() {
       <section className="card">
         <h3>Forecasts</h3>
         <ul className="method-list">
-          <li><strong>Model fans (P10–P90):</strong> estimation window 3y daily / 120 obs monthly; log-returns (first differences for series that can be ≤ 0); EWMA volatility (λ = 0.97 daily, 0.90 monthly); drift = ½ × (½·long-run mean + ½·last-quarter mean) — deliberately damped so the fan never promises trend continuation; quantiles S₀·exp(μt + z·σ√t), z ∈ {"{−1.28, −0.67, 0, +0.67, +1.28}"}, anchored at the last actual observation.</li>
+          <li><strong>Model fans (P10–P90):</strong> estimation window 3y daily / 120 obs monthly; log-returns (first differences for series that can be ≤ 0); EWMA volatility (λ = 0.97 daily, 0.90 monthly); drift = ½ × (½·long-run mean + ½·last-quarter mean) ; deliberately damped so the fan never promises trend continuation; quantiles S₀·exp(μt + z·σ√t), z ∈ {"{−1.28, −0.67, 0, +0.67, +1.28}"}, anchored at the last actual observation.</li>
           <li><strong>External forecasts replace model fans where an institutional reference exists:</strong> EIA Short-Term Energy Outlook for Brent / WTI / Henry Hub (monthly, ~18 months out); IMF World Economic Outlook for GDP (annual, +3 years).</li>
-          <li><strong>The track record is public and tamper-evident:</strong> every day the pipeline commits the full forecast set and active signals to the repository. Git history — timestamped by GitHub, not by us — is the ledger. A calibration scoreboard (did realized prices land inside the P10–P90 band ~80% of the time?) will be computed from it once sufficient history accumulates.</li>
+          <li><strong>The track record is public and tamper-evident:</strong> every day the pipeline commits the full forecast set and active signals to the repository. Git history ; timestamped by GitHub, not by us ; is the ledger. A calibration scoreboard (did realized prices land inside the P10–P90 band ~80% of the time?) will be computed from it once sufficient history accumulates.</li>
         </ul>
       </section>
 
@@ -91,7 +91,7 @@ export function Methodology() {
         <p className="sub">
           β = Cov(r_stock, r_driver) / Var(r_driver) on 90 days of paired daily log-returns
           (dates both series observe, gaps ≤ 7 days), re-estimated weekly for the trend sparkline.
-          α = annualized residual drift (×252). R² is always displayed — a low R² means the energy
+          α = annualized residual drift (×252). R² is always displayed ; a low R² means the energy
           driver explains little of that stock, and the β should be discounted accordingly.
           Implied shock moves are first-order (β × shock): no earnings pass-through lags, no
           second-order effects.
@@ -104,11 +104,11 @@ export function Methodology() {
           Annual real-GDP growth (World Bank) regressed on same-year average oil % change,{" "}
           <strong>controlling for world GDP growth</strong> via Frisch–Waugh: both sides are
           residualized on the global cycle, then the residuals are regressed. The control is not
-          optional — oil is procyclical (global booms lift oil <em>and</em> every GDP; 2020 crashed
+          optional ; oil is procyclical (global booms lift oil <em>and</em> every GDP; 2020 crashed
           both), so the naive regression shows positive betas for every economy including importers.
           Partialling out the cycle recovers the economic structure: exporters positive, importers
           negative. Reported as percentage points of GDP growth per +10% oil, with the partial
-          correlation and sample size (n≈24 — annual data, small samples, disclosed). This remains an
+          correlation and sample size (n≈24 ; annual data, small samples, disclosed). This remains an
           association conditioned on one control, not a structural supply-shock elasticity.
         </p>
       </section>
@@ -128,8 +128,8 @@ export function Methodology() {
           </table>
         </div>
         <p className="sub">
-          Every refresh runs automated QC on every series — staleness vs its publication cadence,
-          gap detection, 5σ spike detection, plausible-range checks, and history-shrink detection —
+          Every refresh runs automated QC on every series ; staleness vs its publication cadence,
+          gap detection, 5σ spike detection, plausible-range checks, and history-shrink detection ;
           published as <code>quality.json</code> and surfaced in the header ("QC: n/n series clean")
           and on flagged series chips. A refresh where most sources fail aborts without overwriting
           good data. Snapshots update weekdays ~06:20 UTC; sources publish with 1–3 day lags, which
@@ -151,7 +151,7 @@ export function Methodology() {
           </table>
         </div>
         <p className="sub">
-          A methodology that changes silently cannot be trusted — every revision is recorded here
+          A methodology that changes silently cannot be trusted ; every revision is recorded here
           and in the public git history. Model output, not investment advice.
         </p>
       </section>
