@@ -107,6 +107,7 @@ export default function App() {
   const [backtest, setBacktest] = useState<BacktestFile | null>(null);
   const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false); // mobile-only disclosure
   const [page, setPage] = useState<"dashboard" | "methodology">(() =>
     window.location.hash.includes("page=methodology") ? "methodology" : "dashboard",
   );
@@ -354,18 +355,27 @@ export default function App() {
         <>
       <SectionNav />
 
-      <div className="preset-row">
-        <span className="control-label">Start from a question</span>
-        {PRESETS.map((p) => (
-          <button
-            key={p.key}
-            className={`chip${presetActive(p) ? " on" : ""}`}
-            onClick={() => applyPreset(p)}
-            title={`Loads ${p.ids.join(" + ")} (${p.w ?? "all"}y)`}
-          >
-            {p.label}
-          </button>
-        ))}
+      <div className="preset-block">
+        <button
+          className="preset-toggle"
+          onClick={() => setPresetsOpen((o) => !o)}
+          aria-expanded={presetsOpen}
+        >
+          Start from a question {presetsOpen ? "▴" : "▾"}
+        </button>
+        <div className={`preset-row${presetsOpen ? " open" : ""}`}>
+          <span className="control-label">Start from a question</span>
+          {PRESETS.map((p) => (
+            <button
+              key={p.key}
+              className={`chip${presetActive(p) ? " on" : ""}`}
+              onClick={() => { applyPreset(p); setPresetsOpen(false); }}
+              title={`Loads ${p.ids.join(" + ")} (${p.w ?? "all"}y)`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loadError && <div className="card"><p className="sub">Failed to load data catalog: {loadError}</p></div>}

@@ -1,15 +1,28 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
 import { readTokens } from "./useTheme";
 import type { Series } from "../lib/data";
 import { alignSeries, returnCorrelation } from "../lib/transform";
 
+/** Width as state so the option rebuilds on resize/rotation (a render-time
+ *  window.innerWidth read goes stale — learned the hard way on the overlay). */
+function useCompact(breakpoint: number): boolean {
+  const [compact, setCompact] = useState(window.innerWidth < breakpoint);
+  useEffect(() => {
+    const onResize = () => setCompact(window.innerWidth < breakpoint);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [breakpoint]);
+  return compact;
+}
+
 export function CorrelationMatrix({ list, from, themeMode }: {
   list: Series[];
   from: string;
   themeMode: string;
 }) {
+  const compact = useCompact(480);
   const { names, cells } = useMemo(() => {
     const names = list.map((s) => s.name);
     const grid = alignSeries(list, from);
@@ -71,7 +84,8 @@ export function CorrelationMatrix({ list, from, themeMode }: {
         type: "heatmap",
         data: cells,
         label: {
-          show: true, fontSize: 10.5,
+          // below 480px the numbers overlap the cells — color + tap tooltip carry the value
+          show: !compact, fontSize: 10.5,
           color: t["--text-primary"],
           formatter: (p) => (p.value as [number, number, number])[2].toFixed(2),
         },
@@ -79,7 +93,7 @@ export function CorrelationMatrix({ list, from, themeMode }: {
         emphasis: { itemStyle: { borderColor: t["--baseline"] } },
       }],
     };
-  }, [names, cells, themeMode]);
+  }, [names, cells, themeMode, compact]);
 
   if (list.length < 2) return <p className="sub">Select at least two series to correlate.</p>;
   return <EChart option={option} height={Math.max(260, 66 * list.length + 130)} />;

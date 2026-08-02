@@ -37,8 +37,8 @@ export function GdpImpact({ impact }: { impact: ImpactFile }) {
         </div>
       </div>
 
-      <div className="table-wrap">
-        <table className="beta-table">
+      <div className="table-wrap stack-wrap">
+        <table className="beta-table stack-sm">
           <thead>
             <tr>
               <th>Economy</th>
@@ -64,8 +64,8 @@ export function GdpImpact({ impact }: { impact: ImpactFile }) {
                 <tr key={country.iso}>
                   <td className="beta-name">{country.name}</td>
                   <td className="gdp-profile">{profile}</td>
-                  <td className="num"><strong>{gb.betaPer10Pct >= 0 ? "+" : ""}{gb.betaPer10Pct.toFixed(2)}</strong><span className="gdp-unit">pp/+10%</span></td>
-                  <td>
+                  <td className="num" data-label="β GDP"><strong>{gb.betaPer10Pct >= 0 ? "+" : ""}{gb.betaPer10Pct.toFixed(2)}</strong><span className="gdp-unit">pp/+10%</span></td>
+                  <td data-label="Sensitivity">
                     <div className="beta-bar-track">
                       <div
                         className={`beta-bar ${gb.betaPer10Pct >= 0 ? "pos" : "neg"}`}
@@ -73,8 +73,8 @@ export function GdpImpact({ impact }: { impact: ImpactFile }) {
                       />
                     </div>
                   </td>
-                  <td className="num">{gb.r.toFixed(2)} ({gb.n})</td>
-                  <td className={`num implied ${implied >= 0 ? "up" : "down"}`}>
+                  <td className="num" data-label="r (n)">{gb.r.toFixed(2)} ({gb.n})</td>
+                  <td className={`num implied ${implied >= 0 ? "up" : "down"}`} data-label={`ΔGDP @ ${shockPct >= 0 ? "+" : ""}${shockPct}%`}>
                     {implied >= 0 ? "▲ +" : "▼ "}{implied.toFixed(2)} pp
                   </td>
                 </tr>

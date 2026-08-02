@@ -11,12 +11,12 @@ function StatRow({ label, s, baseline }: { label: string; s: BacktestStats | nul
   return (
     <tr>
       <td className="beta-name">{label}</td>
-      <td className="num"><strong>{pct(s.hitRate)}</strong> <span className="val-ci">[{pct(s.hitCI[0])}–{pct(s.hitCI[1])}]</span></td>
-      <td className="num">{pct(base)}</td>
-      <td className={`num ${Math.abs(edge) < 0.03 ? "" : edge > 0 ? "implied up" : "implied down"}`}>
+      <td className="num" data-label="Hit rate"><strong>{pct(s.hitRate)}</strong> <span className="val-ci">[{pct(s.hitCI[0])}–{pct(s.hitCI[1])}]</span></td>
+      <td className="num" data-label="Baseline">{pct(base)}</td>
+      <td className={`num ${Math.abs(edge) < 0.03 ? "" : edge > 0 ? "implied up" : "implied down"}`} data-label="Edge">
         {edge >= 0 ? "+" : ""}{(edge * 100).toFixed(1)}pp
       </td>
-      <td className="num">{s.n}</td>
+      <td className="num" data-label="Episodes (n)">{s.n}</td>
     </tr>
   );
 }
@@ -44,8 +44,8 @@ export function ValidationPanel({ bt }: { bt: BacktestFile }) {
 
   return (
     <div>
-      <div className="table-wrap">
-        <table className="beta-table">
+      <div className="table-wrap stack-wrap">
+        <table className="beta-table stack-sm">
           <thead>
             <tr><th>Family / cut</th><th className="num">Hit rate [95% CI]</th><th className="num">Baseline</th><th className="num">Edge</th><th className="num">n</th></tr>
           </thead>

@@ -126,6 +126,19 @@ ratios unstable", not "new normal" (interpretation refined in UI copy, no formul
 Any future threshold tuning = snooping → Methodology change log with pre-change results
 preserved. Strategy backtests still later-only (full CSCV/PBO + DSR + WFO stack).
 
+## Session 5 (2026-08-02): UI backlog + P0 mobile batch — DONE, uncommitted
+
+Created **docs/UI-BACKLOG.md** (P0/P1/P2 + Done log — keep it updated as UI work lands).
+Built P0: (1) mobile nav consolidation — roadmap product buttons hidden <700px, presets
+behind "Start from a question ▾" disclosure (auto-close on pick), tighter section-nav;
+(2) `.stack-wrap`/`.stack-sm` + `data-label` stacked-card table pattern <600px applied to
+Energy Beta / Sovereign / Validation tables (REUSE for any new data table; Methodology
+reference tables stay scrollable); (3) correlation matrix hides cell labels <480px via
+resize-aware `useCompact` hook (width as state — render-time innerWidth reads go stale).
+Verified 375px + desktop, no horizontal scroll anywhere, build+types clean.
+Next UI work: P1 batch in UI-BACKLOG.md (skeletons, transitions, masthead tagline
+hide <600px, footer, then P2: PWA, glossary tooltips, mini-tour).
+
 **Open items (next session):**
 -1. TRUST Phase 2 (~Oct, needs ~60d history): calibration scoreboard from
    history/*.json (spot anchors vs digest quantiles); 95% CIs on betas; public
