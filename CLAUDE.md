@@ -77,6 +77,12 @@ GDP on oil without the cycle control). Long-history annual oil averages in
 impact.oilAnnual (FRED Brent preferred, Yahoo CL=F fallback); partial r and n always
 displayed. World Bank fuel-export / energy-import intensity as mechanism columns.
 
+Guidance layer: question presets (`PRESETS` in App.tsx — curated overlay states behind
+question chips) + shareable view links (state ↔ URL hash: initializers on fresh load,
+`hashchange` listener in-app, replaceState on change; "Copy view link" with clipboard →
+execCommand → prompt fallbacks). Units audit done (USD/EUR, USD/share, USD/tonne, VIX
+pts) — fixed in pipeline config AND patched into committed JSONs.
+
 UI navigation layer: sticky section jump-bar (`SectionNav`, anchor ids kpis/overlay/
 correlations/signals/equity-impact/sovereign-impact, `.anchor-target` scroll-margin),
 cross-widget CTAs (`.cta-link`; signals carry `seriesIds` and "View in overlay" loads

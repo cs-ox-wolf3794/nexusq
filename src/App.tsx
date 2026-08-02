@@ -32,6 +32,43 @@ const RANGES: { label: string; years: number | null }[] = [
 const DEFAULT_SELECTION = ["BRENT", "XLE", "ICLN", "EURUSD"];
 const SLOT_VARS = ["--series-1", "--series-2", "--series-3", "--series-4", "--series-5", "--series-6"];
 
+// Curated entry points: each preset configures the whole overlay to answer one question.
+interface Preset {
+  key: string;
+  label: string;
+  ids: string[];
+  t: Transform;
+  w: number | null;
+  p: boolean;
+}
+const PRESETS: Preset[] = [
+  { key: "clean-energy", label: "Is clean energy an energy trade?", ids: ["ICLN", "HENRYHUB", "UST10Y"], t: "zscore", w: 3, p: false },
+  { key: "oil-fx", label: "How does oil hit FX?", ids: ["BRENT", "EURUSD", "DXY"], t: "index", w: 3, p: false },
+  { key: "inflation", label: "Do commodities lead inflation?", ids: ["BRENT", "WHEAT", "CPI"], t: "yoy", w: 10, p: false },
+  { key: "energy-beta", label: "Energy equities vs the market", ids: ["BRENT", "XLE", "SP500"], t: "index", w: 3, p: true },
+  { key: "gas-divergence", label: "Global gas divergence", ids: ["HENRYHUB", "EUGAS", "COAL"], t: "index", w: 5, p: true },
+];
+
+/** Shareable view state lives in the URL hash: #s=BRENT,XLE&t=index&w=3&p=1 */
+function parseHash(): {
+  ids: string[] | null;
+  transform: Transform | null;
+  years: number | null | undefined; // undefined = absent, null = "all"
+  projection: boolean | null;
+} {
+  const m = new URLSearchParams(window.location.hash.slice(1));
+  const ids = m.get("s")?.split(",").filter(Boolean).slice(0, SLOT_VARS.length);
+  const t = m.get("t");
+  const w = m.get("w");
+  const p = m.get("p");
+  return {
+    ids: ids?.length ? ids : null,
+    transform: t === "index" || t === "zscore" || t === "yoy" || t === "raw" ? t : null,
+    years: w == null ? undefined : w === "all" ? null : [1, 3, 5, 10].includes(Number(w)) ? Number(w) : undefined,
+    projection: p === "1" ? true : p === "0" ? false : null,
+  };
+}
+
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
@@ -54,16 +91,86 @@ export default function App() {
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
   const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string[]>(DEFAULT_SELECTION);
-  const [transform, setTransform] = useState<Transform>("index");
-  const [rangeYears, setRangeYears] = useState<number | null>(3);
+  const [selected, setSelected] = useState<string[]>(() => parseHash().ids ?? DEFAULT_SELECTION);
+  const [transform, setTransform] = useState<Transform>(() => parseHash().transform ?? "index");
+  const [rangeYears, setRangeYears] = useState<number | null>(() => {
+    const y = parseHash().years;
+    return y === undefined ? 3 : y;
+  });
   const [seriesMap, setSeriesMap] = useState<Map<string, Series>>(new Map());
   const [signals, setSignals] = useState<Signal[] | null>(null);
   const [forecasts, setForecasts] = useState<ForecastFile | null>(null);
   const [impact, setImpact] = useState<ImpactFile | null>(null);
-  const [projectionOn, setProjectionOn] = useState(true);
+  const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
+  const [linkCopied, setLinkCopied] = useState(false);
   // Color follows the entity: a series keeps its slot while selected.
-  const slotMap = useRef(new Map<string, string>(DEFAULT_SELECTION.map((id, i) => [id, SLOT_VARS[i]])));
+  const slotMap = useRef(
+    new Map<string, string>((parseHash().ids ?? DEFAULT_SELECTION).map((id, i) => [id, SLOT_VARS[i]])),
+  );
+
+  // The URL hash mirrors the view state — every view is a shareable link.
+  useEffect(() => {
+    const h = `#s=${selected.join(",")}&t=${transform}&w=${rangeYears ?? "all"}&p=${projectionOn ? 1 : 0}`;
+    window.history.replaceState(null, "", h);
+  }, [selected, transform, rangeYears, projectionOn]);
+
+  // Apply shared links opened while the app is already running (hash navigation
+  // doesn't remount React). Our own replaceState writes never fire hashchange.
+  useEffect(() => {
+    const onHash = () => {
+      const h = parseHash();
+      if (h.ids) {
+        slotMap.current.clear();
+        h.ids.forEach((id, i) => slotMap.current.set(id, SLOT_VARS[i]));
+        setSelected(h.ids);
+      }
+      if (h.transform) setTransform(h.transform);
+      if (h.years !== undefined) setRangeYears(h.years);
+      if (h.projection != null) setProjectionOn(h.projection);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  const copyViewLink = async () => {
+    const url = window.location.href;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(url);
+      ok = true;
+    } catch {
+      // clipboard API can be blocked (permissions, unfocused frame) — legacy fallback
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      ok = document.execCommand("copy");
+      ta.remove();
+    }
+    if (!ok) {
+      window.prompt("Copy this link:", url);
+      return;
+    }
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 1600);
+  };
+
+  const applyPreset = (p: Preset) => {
+    slotMap.current.clear();
+    p.ids.forEach((id, i) => slotMap.current.set(id, SLOT_VARS[i]));
+    setSelected(p.ids);
+    setTransform(p.t);
+    setRangeYears(p.w);
+    setProjectionOn(p.p);
+    document.getElementById("overlay")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const presetActive = (p: Preset) =>
+    p.ids.length === selected.length &&
+    p.ids.every((id) => selected.includes(id)) &&
+    transform === p.t && rangeYears === p.w && projectionOn === p.p;
 
   useEffect(() => {
     loadCatalog()
@@ -86,6 +193,17 @@ export default function App() {
       for (const r of results) if (r.status === "fulfilled") map.set(r.value.id, r.value);
       setSeriesMap(map);
       setSignals(computeSignals(map));
+      // prune ids from a shared link that don't exist (renamed series, typos)
+      setSelected((prev) => {
+        const valid = prev.filter((id) => map.has(id));
+        if (valid.length === prev.length) return prev;
+        for (const id of prev) if (!map.has(id)) slotMap.current.delete(id);
+        if (!valid.length) {
+          DEFAULT_SELECTION.forEach((id, i) => slotMap.current.set(id, SLOT_VARS[i]));
+          return DEFAULT_SELECTION;
+        }
+        return valid;
+      });
     });
     return () => { cancelled = true; };
   }, [catalog]);
@@ -192,6 +310,20 @@ export default function App() {
 
       <SectionNav />
 
+      <div className="preset-row">
+        <span className="control-label">Start from a question</span>
+        {PRESETS.map((p) => (
+          <button
+            key={p.key}
+            className={`chip${presetActive(p) ? " on" : ""}`}
+            onClick={() => applyPreset(p)}
+            title={`Loads ${p.ids.join(" + ")} (${p.w ?? "all"}y)`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
       {loadError && <div className="card"><p className="sub">Failed to load data catalog: {loadError}</p></div>}
 
       <div id="kpis" className="anchor-target">
@@ -207,11 +339,16 @@ export default function App() {
       <section id="overlay" className="card anchor-target">
         <div className="card-head">
           <h2>Cross-asset overlay</h2>
-          <Freshness
-            date={selectedSeries.length ? selectedSeries.reduce((m, s) => (s.lastUpdated < m ? s.lastUpdated : m), "9999") : null}
-            prefix="selection through"
-            title={selectedSeries.map((s) => `${s.name}: ${s.lastUpdated}`).join("\n")}
-          />
+          <span className="head-actions">
+            <button className="cta-link" onClick={copyViewLink} title="Copy a link that reproduces exactly this view">
+              {linkCopied ? "Copied ✓" : "⧉ Copy view link"}
+            </button>
+            <Freshness
+              date={selectedSeries.length ? selectedSeries.reduce((m, s) => (s.lastUpdated < m ? s.lastUpdated : m), "9999") : null}
+              prefix="selection through"
+              title={selectedSeries.map((s) => `${s.name}: ${s.lastUpdated}`).join("\n")}
+            />
+          </span>
         </div>
         <p className="sub">Compare energy fundamentals, commodities, equities and macro on one comparable axis.</p>
         <div className="controls">

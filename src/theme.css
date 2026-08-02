@@ -130,8 +130,18 @@ body {
 }
 .section-nav a:hover { background: var(--chip-wash); color: var(--text-primary); }
 
+/* ---- question presets ---- */
+.preset-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -2px 0 14px; }
+.preset-row .control-label { flex: 0 0 auto; }
+@media (max-width: 700px) {
+  .preset-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .preset-row::-webkit-scrollbar { display: none; }
+  .preset-row .chip { flex: 0 0 auto; }
+}
+
 /* ---- card headers, freshness, CTAs ---- */
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.head-actions { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .strip-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
 .fresh {
   display: inline-flex; align-items: center; gap: 5px;
