@@ -98,6 +98,43 @@ export interface QualityFile {
   summary: { ok: number; flagged: number; failed: string[] };
 }
 
+export interface BacktestStats {
+  n: number;
+  hitRate: number;
+  hitCI: [number, number];
+  meanMove: number;
+  moveCI: [number, number];
+  baselineHit: number;
+}
+
+export interface BacktestFamily {
+  episodes: number;
+  horizons: Record<string, BacktestStats | null>;
+  bySeverity: Record<string, BacktestStats | null>;
+  byPeriod: { pre2020: BacktestStats | null; post2020: BacktestStats | null };
+}
+
+export interface BacktestFile {
+  generated: string;
+  method: {
+    frame: string;
+    options: { start: string; visibilityLagDays: number; cooldownDays: number; horizons: number[]; corrEvalObs: number };
+    hypotheses: Record<string, string>;
+  };
+  corrPersistenceBaseline: number;
+  families: Record<string, BacktestFamily>;
+}
+
+export async function loadBacktest(): Promise<BacktestFile | null> {
+  try {
+    const res = await fetch(`${base}data/backtest.json`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function loadQuality(): Promise<QualityFile | null> {
   try {
     const res = await fetch(`${base}data/quality.json`);

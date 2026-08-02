@@ -109,19 +109,24 @@ nav+footer links, hash `&page=methodology`, includes change log — UPDATE IT wi
 formula change). devDeps added: tsx, vitest. oilAnnual auto-upgraded to FRED Brent
 (FRED recovered; fallback logic verified both ways).
 
+## Session 4 (2026-08-02, late): signal backtesting — DONE, uncommitted
+
+Built per the spec: `src/lib/backtest.ts` (pure, 3 tests) + `scripts/backtest-signals.ts`
+(npx tsx, ~20s) → backtest.json → Validation section (id=validation, in SectionNav,
+cross-linked from Signals card) + Methodology backtest section + change-log rows.
+computeSignals gained `asOf` param + numeric `metric`/`aux` (non-breaking).
+
+**FINDINGS (recorded 2026-08-02, thresholds NOT tuned — do not "fix" these numbers):**
+1120 episodes since 2015. Aggregate hit rates ≈ baseline for ALL families (honest nulls,
+published). Real structure: dislocation severity-monotone (watch 47.5% n=692 / elevated
+48.1% n=27 / extreme 72.7% n=11, mean move +13.2%); dislocation 60-obs mean move +2.0%
+CI>0 (asymmetric payoff, not hit-rate); momentum clean null (badges describe state, don't
+forecast); corr-regime shifts TRANSITORY (revert to old ρ 57.5%) → alerts mean "hedge
+ratios unstable", not "new normal" (interpretation refined in UI copy, no formula change).
+Any future threshold tuning = snooping → Methodology change log with pre-change results
+preserved. Strategy backtests still later-only (full CSCV/PBO + DSR + WFO stack).
+
 **Open items (next session):**
--2. SIGNAL BACKTESTING (agreed 2026-08-02, do first) — event-study frame, NOT strategy
-   backtest: scripts/backtest-signals.ts replays the signal engine over history →
-   backtest.json → per-family validation cards in UI. Non-negotiables: impose live
-   publication lag (evaluate from signal-visible date, not data date); collapse to
-   EPISODES (first threshold crossing + cooldown), block bootstrap for CIs; macro
-   series carry revision-bias asterisk (prices don't revise); report severity
-   monotonicity (extreme > elevated > watch or thresholds are decoration); per-category
-   + pre/post-2020 splits; family-level aggregates are the headline (≈200 hypotheses →
-   multiple-testing discipline). Thresholds were a priori — any tuning after seeing
-   results = snooping, goes through the Methodology change log with pre-change results
-   preserved. Frame: backtest = hypothesis, live ledger (history/) = accumulating proof.
-   Strategy backtests only later, with full CSCV/PBO + DSR + walk-forward stack.
 -1. TRUST Phase 2 (~Oct, needs ~60d history): calibration scoreboard from
    history/*.json (spot anchors vs digest quantiles); 95% CIs on betas; public
    data-lineage page. Phase 3: PBO/DSR-style validation badges per signal family;

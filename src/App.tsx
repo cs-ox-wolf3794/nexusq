@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CatalogEntry, ForecastFile, ImpactFile, QualityFile, Series } from "./lib/data";
-import { loadCatalog, loadForecasts, loadImpact, loadQuality, loadSeries } from "./lib/data";
+import type { BacktestFile, CatalogEntry, ForecastFile, ImpactFile, QualityFile, Series } from "./lib/data";
+import { loadBacktest, loadCatalog, loadForecasts, loadImpact, loadQuality, loadSeries } from "./lib/data";
 import type { Transform } from "./lib/transform";
 import { TRANSFORM_LABELS, applyTransform, clampRange } from "./lib/transform";
 import type { Signal } from "./lib/signals";
@@ -13,6 +13,7 @@ import { GdpImpact } from "./components/GdpImpact";
 import { Freshness } from "./components/Freshness";
 import { SectionNav } from "./components/SectionNav";
 import { Methodology } from "./components/Methodology";
+import { ValidationPanel } from "./components/ValidationPanel";
 import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { SignalPanel } from "./components/SignalPanel";
@@ -103,6 +104,7 @@ export default function App() {
   const [forecasts, setForecasts] = useState<ForecastFile | null>(null);
   const [impact, setImpact] = useState<ImpactFile | null>(null);
   const [quality, setQuality] = useState<QualityFile | null>(null);
+  const [backtest, setBacktest] = useState<BacktestFile | null>(null);
   const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
   const [linkCopied, setLinkCopied] = useState(false);
   const [page, setPage] = useState<"dashboard" | "methodology">(() =>
@@ -190,6 +192,7 @@ export default function App() {
     loadForecasts().then(setForecasts);
     loadImpact().then(setImpact);
     loadQuality().then(setQuality);
+    loadBacktest().then(setBacktest);
   }, []);
 
   // Load everything once for the signal engine (payload is small snapshot JSON).
@@ -471,10 +474,26 @@ export default function App() {
               title="Signals recompute from the full catalog on every load; date shown is the newest observation used."
             />
           </div>
-          <p className="sub">Dislocations, momentum regimes and correlation-regime shifts across the full catalog.</p>
+          <p className="sub">
+            Dislocations, momentum regimes and correlation-regime shifts across the full catalog.{" "}
+            <a className="cta-link" href="#validation">How reliable are these? See the backtest ↗</a>
+          </p>
           {signals === null ? <p className="sub">Computing…</p> : <SignalPanel signals={signals} onView={viewInOverlay} />}
         </section>
       </div>
+
+      <section id="validation" className="card anchor-target">
+        <div className="card-head">
+          <h2>Signal validation — event-study backtest</h2>
+          {backtest && <Freshness date={backtest.generated} prefix="computed" cadence="monthly" />}
+        </div>
+        <p className="sub">
+          Did what each signal describes actually happen afterwards? The production engine replayed
+          over history, with publication lag imposed and firings collapsed to episodes — nulls
+          published alongside positives.
+        </p>
+        {backtest ? <ValidationPanel bt={backtest} /> : <p className="sub">Backtest results not available.</p>}
+      </section>
 
       <section id="equity-impact" className="card anchor-target">
         <div className="card-head">

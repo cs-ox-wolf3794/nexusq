@@ -114,6 +114,17 @@ export function Methodology() {
       </section>
 
       <section className="card">
+        <h3>Signal validation (event-study backtest)</h3>
+        <ul className="method-list">
+          <li><strong>Frame:</strong> the production signal engine is replayed as-of each trading day since 2015 and asked whether what each signal describes actually happened afterwards. This is an event study, <em>not</em> a strategy backtest — no positions, sizing or transaction costs are simulated.</li>
+          <li><strong>Honesty constraints:</strong> outcomes are measured from the first observation after a publication lag (live signals fire on data that is already 1–3 days old); consecutive firings collapse into single episodes (cooldown 15 days); baselines are each series' own unconditional same-sign move probability, so trend drift cannot masquerade as signal skill; confidence intervals come from a moving-block bootstrap over episodes; daily series only (monthly series mix horizons and carry revision risk).</li>
+          <li><strong>Hypotheses tested:</strong> dislocations → mean reversion; momentum crossings → continuation; correlation-regime shifts → persistence of the new regime.</li>
+          <li><strong>Findings are published as measured — including the nulls</strong> (see the Validation section of the dashboard). Thresholds were set a priori and are not tuned on backtest results; any future change will appear in the change log below with pre-change results preserved in the public git history.</li>
+          <li><strong>Two-track validation:</strong> the backtest is the hypothesis; the daily signal ledger (committed to the public repository since 2026-08-02) re-verifies it out-of-sample as history accumulates, with no possibility of retrofitting.</li>
+        </ul>
+      </section>
+
+      <section className="card">
         <h3>Data sources & quality control</h3>
         <div className="table-wrap">
           <table className="beta-table">
@@ -147,6 +158,7 @@ export function Methodology() {
               <tr><td className="beta-name">2026-07-31</td><td>Equity Energy Beta board and sovereign GDP betas added.</td><td>Impact layer.</td></tr>
               <tr><td className="beta-name">2026-07-31</td><td>Sovereign β respecified: naive OLS → Frisch–Waugh with world-cycle control; oil driver extended to full-history annual averages.</td><td>Naive version was spuriously positive for all economies (common shocks + oil procyclicality).</td></tr>
               <tr><td className="beta-name">2026-08-02</td><td>Automated per-series QC (quality.json); daily public snapshots of signals and forecast digests (history/); analytics library under CI tests.</td><td>Trust roadmap Phase 1.</td></tr>
+              <tr><td className="beta-name">2026-08-02</td><td>Event-study backtest of all signal families published (backtest.json + Validation section), including null results. No thresholds changed.</td><td>Signal validation: backtest = hypothesis, live ledger = accumulating proof.</td></tr>
             </tbody>
           </table>
         </div>

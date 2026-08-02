@@ -3,6 +3,7 @@ const SECTIONS = [
   { id: "overlay", label: "Overlay" },
   { id: "correlations", label: "Correlations" },
   { id: "signals", label: "Signals" },
+  { id: "validation", label: "Validation" },
   { id: "equity-impact", label: "Equity impact" },
   { id: "sovereign-impact", label: "Sovereign impact" },
 ];

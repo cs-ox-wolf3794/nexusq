@@ -11,6 +11,8 @@ export interface Signal {
   severity: Severity;
   score: number; // for sorting, higher = stronger
   seriesIds: string[]; // catalog series behind the signal — the "view in overlay" CTA
+  metric: number; // the raw statistic (z / spread % / Δρ) — used by the backtest engine
+  aux?: { cShort: number; cLong: number }; // correlation-regime context for persistence evaluation
 }
 
 export const SEVERITY_META: Record<Severity, { label: string; icon: string; cssVar: string }> = {
@@ -58,8 +60,12 @@ function fmt(v: number, digits = 2): string {
 /**
  * The MVP signal set: dislocation z-scores, momentum regime, and rolling
  * correlation-regime shifts between energy and cross-asset pairs.
+ *
+ * `asOf` (default: today) anchors the correlation windows — required for
+ * faithful historical replay in the backtest engine. Series passed in must
+ * already be truncated to observations ≤ asOf.
  */
-export function computeSignals(all: Map<string, Series>): Signal[] {
+export function computeSignals(all: Map<string, Series>, asOf?: string): Signal[] {
   const signals: Signal[] = [];
 
   for (const s of all.values()) {
@@ -74,6 +80,7 @@ export function computeSignals(all: Map<string, Series>): Signal[] {
         severity: sevFromAbs(Math.abs(z.z), 1.5, 2, 2.5),
         score: Math.abs(z.z),
         seriesIds: [s.id],
+        metric: z.z,
       });
     }
     const m = momentum(s);
@@ -86,6 +93,7 @@ export function computeSignals(all: Map<string, Series>): Signal[] {
         severity: sevFromAbs(Math.abs(m.spreadPct), 2, 6, 12),
         score: Math.abs(m.spreadPct) / 4,
         seriesIds: [s.id],
+        metric: m.spreadPct,
       });
     }
   }
@@ -99,9 +107,9 @@ export function computeSignals(all: Map<string, Series>): Signal[] {
     ["HENRYHUB", "ICLN", "Gas–renewables link"],
     ["BRENT", "GOLD", "Oil–gold link"],
   ];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = asOf ?? new Date().toISOString().slice(0, 10);
   const shift = (d: number) => {
-    const t = new Date();
+    const t = new Date(`${today}T00:00:00Z`);
     t.setUTCDate(t.getUTCDate() - d);
     return t.toISOString().slice(0, 10);
   };
@@ -123,6 +131,8 @@ export function computeSignals(all: Map<string, Series>): Signal[] {
         severity: sevFromAbs(Math.abs(delta), 0.15, 0.3, 0.45),
         score: Math.abs(delta) * 6,
         seriesIds: [aId, bId],
+        metric: delta,
+        aux: { cShort, cLong },
       });
     }
   }

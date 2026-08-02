@@ -113,6 +113,13 @@ body {
 .product-nav .soon { font-size: 10px; color: var(--text-muted); margin-left: 5px; border: 1px solid var(--gridline); border-radius: 6px; padding: 1px 5px; vertical-align: 1px; }
 .product-nav .nav-method { margin-left: auto; cursor: pointer; }
 
+/* ---- validation panel ---- */
+.val-ci { font-size: 10.5px; color: var(--text-muted); font-weight: 400; }
+.val-na { color: var(--text-muted); font-size: 12px; }
+.val-verdicts { margin-top: 10px; }
+.val-verdicts .sub { margin-bottom: 8px; }
+.val-caveats { border-top: 1px solid var(--gridline); padding-top: 8px; margin-top: 10px; }
+
 /* ---- methodology page ---- */
 .methodology .card h3 { margin: 4px 0 8px; font-size: 14px; }
 .methodology .card h3:not(:first-child) { margin-top: 16px; }
