@@ -17,9 +17,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
       - run: node scripts/refresh-data.mjs
         env:
           EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+      # Daily trust snapshot: signals + forecast digest + spot anchors → history/
+      # (the tamper-evident track record the calibration scoreboard reads)
+      - run: npx tsx scripts/snapshot-signals.ts
       - name: Commit updated snapshots
         id: commit
         run: |

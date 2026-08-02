@@ -95,16 +95,26 @@ timeouts, and a mostly-failed run (< 80% series) ABORTS without touching
 catalog.json/forecasts.json/impact.json — a degraded run must never overwrite good
 committed data. (Also: `node script | tail` masks exit codes — don't.)
 
+## Session 3 (2026-08-02): trust roadmap Phase 1 — DONE, uncommitted
+
+Built: **QC layer** (quality.json every refresh: staleness w/ cadence-aware limits +
+per-series overrides {DXY,EURUSD}=16d, gaps, 5σ spikes, sanity ranges, history-shrink;
+header QC chip + ⚠ on flagged picker chips — thresholds tuned so only ABNORMAL flags).
+**Daily trust snapshots** (scripts/snapshot-signals.ts via tsx, wired into
+refresh-data.yml after npm ci: history/YYYY-MM-DD.json = signals + forecast digest at
+7/30/90d horizons + spot anchors; history/index.json; first record 2026-08-02).
+**CI** (ci.yml: tsc+vitest+build; 21 tests in src/lib/__tests__ incl. synthetic
+Frisch–Waugh economy; badges in README). **Methodology page** (Methodology.tsx,
+nav+footer links, hash `&page=methodology`, includes change log — UPDATE IT with any
+formula change). devDeps added: tsx, vitest. oilAnnual auto-upgraded to FRED Brent
+(FRED recovered; fallback logic verified both ways).
+
 **Open items (next session):**
--1. TRUST ROADMAP (agreed 2026-07-31, do first): Phase 1 = pipeline QC checks →
-   quality.json (staleness/gaps/5σ spikes/sanity ranges/count drift) surfaced in UI;
-   start committing daily signals.json snapshots IMMEDIATELY (track-record clock);
-   in-app Methodology page from DOMAIN §1–3 (sanitized — no §4–5/Rystad refs);
-   CI tests for src/lib with known-answer fixtures + README badge.
-   Phase 2 (~Oct, needs ~60d history): calibration scoreboard from git history of
-   forecasts.json/signals.json; 95% CIs on betas; public data-lineage page.
-   Phase 3: PBO/DSR-style validation badges per signal family; cross-source Brent
-   check (FRED vs Yahoo BZ=F); source-outage banners; Mariano methodology review.
+-1. TRUST Phase 2 (~Oct, needs ~60d history): calibration scoreboard from
+   history/*.json (spot anchors vs digest quantiles); 95% CIs on betas; public
+   data-lineage page. Phase 3: PBO/DSR-style validation badges per signal family;
+   cross-source Brent check (FRED vs Yahoo BZ=F); source-outage banners; Mariano
+   methodology review.
 0. Workflow queue from the doc synthesis: Market State Score (percentile conditions —
    vol/trend/DXY free, CFTC COT free); Inventory Divergence (EIA key live); validation
    badges per signal (→ eventually PBO/DSR from outcome history); EUA↔steel pilot needs

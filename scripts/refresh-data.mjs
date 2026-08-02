@@ -4,7 +4,7 @@
  * and writes snapshot JSON to public/data/. Run locally or via GitHub Actions cron:
  *   node scripts/refresh-data.mjs
  */
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, readFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 
 const OUT_DIR = path.resolve(process.cwd(), "public/data");
@@ -158,8 +158,14 @@ const jobs = [
   })),
 ];
 
+const prevCounts = new Map(); // id -> point count before this refresh (for drift check)
+
 for (const job of jobs) {
   try {
+    try {
+      const prev = JSON.parse(await readFile(path.join(OUT_DIR, `${job.id}.json`), "utf8"));
+      prevCounts.set(job.id, prev.points.length);
+    } catch { /* first run for this series */ }
     const points = await job.fetcher();
     if (points.length < 10) throw new Error(`only ${points.length} points`);
     const series = {
@@ -190,6 +196,80 @@ if (catalog.length < jobs.length * 0.8) {
 await writeFile(path.join(OUT_DIR, "catalog.json"), JSON.stringify({ generated: new Date().toISOString(), series: catalog }, null, 2));
 console.log(`\n${catalog.length}/${jobs.length} series written to public/data/`);
 if (failures.length) console.error(`Partial failures:\n  ${failures.join("\n  ")}`);
+
+// ---- data quality checks → quality.json ------------------------------------
+// Automated per-series QC on every refresh. Flags surface in the UI: trust is
+// built by reporting problems, not hiding them.
+const SANITY = { // plausible latest-value ranges for key series (source-corruption tripwire)
+  BRENT: [10, 400], WTI: [10, 400], HENRYHUB: [0.5, 60], EUGAS: [1, 200],
+  COAL: [20, 600], COPPER: [2000, 40000], WHEAT: [50, 1500], VIX: [5, 100],
+  UST10Y: [-1, 20], BREAKEVEN10Y: [-1, 10], EURUSD: [0.5, 2.5], SP500: [1000, 30000],
+};
+
+// Normal publication lags (days) that must NOT flag: IMF monthly series arrive ~2
+// months behind; FRED's H.10 FX release batches ~10 days behind. A flag should mean
+// "abnormal", or users learn to ignore the flags.
+const STALE_OVERRIDES = { DXY: 16, EURUSD: 16 };
+
+function qcSeries(id, points, prevCount) {
+  const flags = [];
+  const n = points.length;
+  const gaps = [];
+  for (let i = Math.max(1, n - 260); i < n; i++) {
+    gaps.push((Date.parse(points[i][0]) - Date.parse(points[i - 1][0])) / 86400000);
+  }
+  const sorted = [...gaps].sort((a, b) => a - b);
+  const cadenceDays = sorted[Math.floor(sorted.length / 2)] ?? 1;
+  const cadence = cadenceDays < 4 ? "daily" : cadenceDays < 10 ? "weekly" : cadenceDays < 45 ? "monthly" : "annual";
+
+  const staleDays = Math.round((Date.now() - Date.parse(points[n - 1][0])) / 86400000);
+  const staleLimit = STALE_OVERRIDES[id] ?? { daily: 7, weekly: 21, monthly: 75, annual: 500 }[cadence];
+  if (staleDays > staleLimit) flags.push({ code: "stale", detail: `last obs ${staleDays}d old (limit ${staleLimit}d for ${cadence})` });
+
+  const maxGap = Math.max(...gaps);
+  if (maxGap > Math.max(14, cadenceDays * 4)) flags.push({ code: "gap", detail: `${Math.round(maxGap)}d hole in recent history` });
+
+  // spike check on the last few observations vs the series' own volatility
+  const rs = [];
+  const win = points.slice(-500);
+  const useLog = win.every(([, v]) => v > 0);
+  for (let i = 1; i < win.length; i++) {
+    rs.push(useLog ? Math.log(win[i][1] / win[i - 1][1]) : win[i][1] - win[i - 1][1]);
+  }
+  const sd = Math.sqrt(rs.reduce((a, b) => a + b * b, 0) / rs.length) || 1;
+  for (let i = rs.length - 5; i < rs.length; i++) {
+    if (i >= 0 && Math.abs(rs[i]) > 5 * sd) {
+      flags.push({ code: "spike", detail: `move of ${(rs[i] / sd).toFixed(1)}σ on ${win[i + 1][0]} — verify against source` });
+      break;
+    }
+  }
+
+  const range = SANITY[id];
+  const last = points[n - 1][1];
+  if (range && (last < range[0] || last > range[1])) {
+    flags.push({ code: "range", detail: `latest ${last} outside plausible [${range[0]}, ${range[1]}]` });
+  }
+
+  if (prevCount != null && n < prevCount - 5) {
+    flags.push({ code: "shrunk", detail: `history shrank ${prevCount} → ${n} points` });
+  }
+
+  return { cadence, staleDays, flags };
+}
+
+const quality = { generated: new Date().toISOString(), series: {}, summary: { ok: 0, flagged: 0, failed: [] } };
+for (const entry of catalog) {
+  const q = qcSeries(entry.id, written.get(entry.id), prevCounts.get(entry.id));
+  quality.series[entry.id] = q;
+  q.flags.length ? quality.summary.flagged++ : quality.summary.ok++;
+}
+for (const f of failures) {
+  const id = f.split(":")[0];
+  quality.summary.failed.push(id);
+  quality.series[id] = { cadence: null, staleDays: null, flags: [{ code: "refresh-failed", detail: f }] };
+}
+await writeFile(path.join(OUT_DIR, "quality.json"), JSON.stringify(quality));
+console.log(`ok   quality.json — ${quality.summary.ok} ok, ${quality.summary.flagged} flagged, ${quality.summary.failed.length} failed`);
 
 // ---- forecasts ---------------------------------------------------------------
 // Layer 2 (model): damped-drift + EWMA-volatility fan, P10/P25/P50/P75/P90.

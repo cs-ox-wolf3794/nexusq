@@ -87,6 +87,27 @@ export async function loadImpact(): Promise<ImpactFile | null> {
   }
 }
 
+export interface QualityFlag {
+  code: string;
+  detail: string;
+}
+
+export interface QualityFile {
+  generated: string;
+  series: Record<string, { cadence: string | null; staleDays: number | null; flags: QualityFlag[] }>;
+  summary: { ok: number; flagged: number; failed: string[] };
+}
+
+export async function loadQuality(): Promise<QualityFile | null> {
+  try {
+    const res = await fetch(`${base}data/quality.json`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function loadForecasts(): Promise<ForecastFile | null> {
   try {
     const res = await fetch(`${base}data/forecasts.json`);

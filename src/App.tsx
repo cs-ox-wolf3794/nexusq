@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CatalogEntry, ForecastFile, ImpactFile, Series } from "./lib/data";
-import { loadCatalog, loadForecasts, loadImpact, loadSeries } from "./lib/data";
+import type { CatalogEntry, ForecastFile, ImpactFile, QualityFile, Series } from "./lib/data";
+import { loadCatalog, loadForecasts, loadImpact, loadQuality, loadSeries } from "./lib/data";
 import type { Transform } from "./lib/transform";
 import { TRANSFORM_LABELS, applyTransform, clampRange } from "./lib/transform";
 import type { Signal } from "./lib/signals";
@@ -12,6 +12,7 @@ import { EquityImpact } from "./components/EquityImpact";
 import { GdpImpact } from "./components/GdpImpact";
 import { Freshness } from "./components/Freshness";
 import { SectionNav } from "./components/SectionNav";
+import { Methodology } from "./components/Methodology";
 import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { SignalPanel } from "./components/SignalPanel";
@@ -101,8 +102,12 @@ export default function App() {
   const [signals, setSignals] = useState<Signal[] | null>(null);
   const [forecasts, setForecasts] = useState<ForecastFile | null>(null);
   const [impact, setImpact] = useState<ImpactFile | null>(null);
+  const [quality, setQuality] = useState<QualityFile | null>(null);
   const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [page, setPage] = useState<"dashboard" | "methodology">(() =>
+    window.location.hash.includes("page=methodology") ? "methodology" : "dashboard",
+  );
   // Color follows the entity: a series keeps its slot while selected.
   const slotMap = useRef(
     new Map<string, string>((parseHash().ids ?? DEFAULT_SELECTION).map((id, i) => [id, SLOT_VARS[i]])),
@@ -110,9 +115,11 @@ export default function App() {
 
   // The URL hash mirrors the view state — every view is a shareable link.
   useEffect(() => {
-    const h = `#s=${selected.join(",")}&t=${transform}&w=${rangeYears ?? "all"}&p=${projectionOn ? 1 : 0}`;
+    const h = `#s=${selected.join(",")}&t=${transform}&w=${rangeYears ?? "all"}&p=${projectionOn ? 1 : 0}${
+      page === "methodology" ? "&page=methodology" : ""
+    }`;
     window.history.replaceState(null, "", h);
-  }, [selected, transform, rangeYears, projectionOn]);
+  }, [selected, transform, rangeYears, projectionOn, page]);
 
   // Apply shared links opened while the app is already running (hash navigation
   // doesn't remount React). Our own replaceState writes never fire hashchange.
@@ -127,6 +134,7 @@ export default function App() {
       if (h.transform) setTransform(h.transform);
       if (h.years !== undefined) setRangeYears(h.years);
       if (h.projection != null) setProjectionOn(h.projection);
+      setPage(window.location.hash.includes("page=methodology") ? "methodology" : "dashboard");
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -181,6 +189,7 @@ export default function App() {
       .catch((e) => setLoadError(String(e)));
     loadForecasts().then(setForecasts);
     loadImpact().then(setImpact);
+    loadQuality().then(setQuality);
   }, []);
 
   // Load everything once for the signal engine (payload is small snapshot JSON).
@@ -294,20 +303,52 @@ export default function App() {
 
       <nav className="product-nav">
         {PRODUCTS.map((p) => (
-          <button key={p.key} className={p.live ? "active" : ""} disabled={!p.live}>
+          <button
+            key={p.key}
+            className={p.live && page === "dashboard" ? "active" : ""}
+            disabled={!p.live}
+            onClick={() => p.live && setPage("dashboard")}
+          >
             Nexus {p.label}
             {!p.live && <span className="soon">roadmap</span>}
           </button>
         ))}
+        <button
+          className={`nav-method${page === "methodology" ? " active" : ""}`}
+          onClick={() => { setPage("methodology"); window.scrollTo({ top: 0 }); }}
+        >
+          Methodology
+        </button>
       </nav>
 
       {refreshedAt && catalog.length > 0 && (
         <p className="data-stamp">
           Data through <strong>{fmtDate(catalog.reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), ""))}</strong>
           {" "}· snapshots refreshed {fmtDateTime(refreshedAt)} · auto-updates every weekday
+          {quality && (
+            <span
+              className={`qc-chip ${quality.summary.flagged + quality.summary.failed.length ? "qc-warn" : "qc-ok"}`}
+              title={
+                quality.summary.flagged + quality.summary.failed.length
+                  ? Object.entries(quality.series)
+                      .filter(([, q]) => q.flags.length)
+                      .map(([id, q]) => `${id}: ${q.flags.map((f) => f.detail).join("; ")}`)
+                      .join("\n")
+                  : "All series passed staleness, gap, spike, range and history-drift checks on the last refresh."
+              }
+            >
+              {quality.summary.flagged + quality.summary.failed.length
+                ? `⚠ QC: ${quality.summary.flagged + quality.summary.failed.length} flag${quality.summary.flagged + quality.summary.failed.length === 1 ? "" : "s"}`
+                : `✓ QC: ${quality.summary.ok}/${quality.summary.ok + quality.summary.flagged} series clean`}
+            </span>
+          )}
         </p>
       )}
 
+      {page === "methodology" ? (
+        <Methodology />
+      ) : (
+        <>
       <SectionNav />
 
       <div className="preset-row">
@@ -399,6 +440,7 @@ export default function App() {
           catalog={catalog}
           selected={selected}
           colors={slotMap.current}
+          quality={quality}
           onToggle={toggleSeries}
         />
         <OverlayChart items={overlayItems} projections={projections} transform={effectiveTransform} themeMode={mode} />
@@ -477,10 +519,15 @@ export default function App() {
           <p className="sub">Loading impact universe…</p>
         )}
       </section>
+        </>
+      )}
 
       <footer className="footer">
-        NexusQ MVP (Nexus Signal preview) · data: FRED, Yahoo Finance, World Bank — snapshot refreshed by
-        pipeline · not investment advice. © 2026 Gygante Quantitative Systems.
+        NexusQ MVP (Nexus Signal preview) · data: FRED, Yahoo Finance, World Bank, IMF, EIA ·{" "}
+        <button className="cta-link" onClick={() => { setPage("methodology"); window.scrollTo({ top: 0 }); }}>
+          Methodology
+        </button>
+        {" "}· not investment advice. © 2026 Gygante Quantitative Systems.
       </footer>
     </div>
   );

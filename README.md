@@ -1,5 +1,8 @@
 # NexusQ
 
+[![CI](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml)
+[![Data refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml)
+
 **The Causal Intelligence Platform for Capital Markets** — by Gygante Quantitative Systems.
 
 NexusQ transforms energy, commodity and macro-economic data into continuously updated

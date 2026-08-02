@@ -111,9 +111,25 @@ body {
 .product-nav button.active { color: var(--text-primary); font-weight: 600; border-bottom-color: var(--accent); }
 .product-nav button:disabled { cursor: default; }
 .product-nav .soon { font-size: 10px; color: var(--text-muted); margin-left: 5px; border: 1px solid var(--gridline); border-radius: 6px; padding: 1px 5px; vertical-align: 1px; }
+.product-nav .nav-method { margin-left: auto; cursor: pointer; }
+
+/* ---- methodology page ---- */
+.methodology .card h3 { margin: 4px 0 8px; font-size: 14px; }
+.methodology .card h3:not(:first-child) { margin-top: 16px; }
+.method-list { margin: 6px 0 2px; padding-left: 18px; color: var(--text-secondary); font-size: 13px; }
+.method-list li { margin-bottom: 8px; }
+.methodology code { font-size: 12px; background: var(--chip-wash); padding: 1px 5px; border-radius: 4px; }
+.methodology .beta-table td { white-space: normal; }
 
 .data-stamp { font-size: 12px; color: var(--text-muted); margin: -8px 0 10px; }
 .data-stamp strong { color: var(--text-secondary); font-weight: 600; }
+.qc-chip {
+  display: inline-flex; align-items: center; margin-left: 8px; padding: 1px 8px;
+  border-radius: 999px; border: 1px solid var(--gridline); font-size: 11px; font-weight: 600;
+  cursor: help;
+}
+.qc-chip.qc-ok { color: var(--text-secondary); }
+.qc-chip.qc-warn { color: var(--text-primary); border-color: var(--status-warning); }
 
 /* ---- section jump-bar ---- */
 .section-nav {
@@ -207,6 +223,7 @@ body {
 .chip:hover { background: var(--chip-wash); }
 .chip.on { color: var(--text-primary); border-color: var(--baseline); background: var(--chip-wash); font-weight: 600; }
 .chip .swatch { width: 9px; height: 9px; border-radius: 3px; }
+.chip .chip-flag { font-size: 10px; margin-left: 2px; }
 .chip:disabled { opacity: 0.45; cursor: default; }
 .picker-note { font-size: 12px; color: var(--text-muted); }
 @media (max-width: 700px) {
