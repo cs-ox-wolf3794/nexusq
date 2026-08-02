@@ -99,6 +99,11 @@ body {
 .brand .byline { font-size: 11.5px; color: var(--text-muted); }
 .masthead .spacer { flex: 1; }
 .tagline { font-size: 12.5px; color: var(--text-secondary); max-width: 380px; }
+@media (max-width: 600px) {
+  /* tagline wraps two lines on phones and pushes the toggle onto its own row */
+  .tagline { display: none; }
+  .masthead { padding: 14px 0 4px; flex-wrap: nowrap; }
+}
 .theme-toggle {
   border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
   border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; font-size: 12.5px;
@@ -356,6 +361,47 @@ body {
 .shock-group input[type="range"] { width: 220px; accent-color: var(--accent); }
 @media (max-width: 700px) { .shock-group input[type="range"] { width: 100%; } }
 
-.footer { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+/* ---- footer lockup ---- */
+.footer {
+  margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--gridline);
+  font-size: 12px; color: var(--text-muted);
+  display: flex; flex-direction: column; gap: 6px;
+}
 .footer a { color: var(--accent); }
+.footer-brand { font-size: 13px; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.2px; }
+.footer-brand span { color: var(--accent); }
+.footer-links { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.footer-fine { font-size: 11.5px; }
+
+/* ---- loading skeletons ---- */
+.skeleton {
+  border-radius: 8px; background: var(--gridline);
+  position: relative; overflow: hidden; min-height: 14px;
+}
+.skeleton-row { height: 15px; margin-bottom: 10px; }
+.skeleton-tile { height: 104px; border-radius: 10px; }
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after {
+    content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface-1) 65%, transparent), transparent);
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+}
+@keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
+
+/* ---- micro-transitions (interactive surfaces only, never layout) ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .chip, .seg button, .cta-link, .sev-pill, .preset-toggle, .theme-toggle,
+  .product-nav button, .fresh, .qc-chip {
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .kpi-tile { transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease; }
+  .kpi-tile:hover { transform: translateY(-1px); }
+}
+
+/* ---- brand rule: full-width gradient hairline at the very top ---- */
+body::before {
+  content: ""; display: block; height: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 45%, transparent) 45%, transparent 78%);
+}
 .chart { width: 100%; }

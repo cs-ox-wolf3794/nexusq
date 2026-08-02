@@ -14,6 +14,7 @@ import { Freshness } from "./components/Freshness";
 import { SectionNav } from "./components/SectionNav";
 import { Methodology } from "./components/Methodology";
 import { ValidationPanel } from "./components/ValidationPanel";
+import { Skeleton, SkeletonRows, SkeletonTiles } from "./components/Skeleton";
 import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { SignalPanel } from "./components/SignalPanel";
@@ -102,9 +103,10 @@ export default function App() {
   const [seriesMap, setSeriesMap] = useState<Map<string, Series>>(new Map());
   const [signals, setSignals] = useState<Signal[] | null>(null);
   const [forecasts, setForecasts] = useState<ForecastFile | null>(null);
-  const [impact, setImpact] = useState<ImpactFile | null>(null);
+  // undefined = still loading (skeleton), null = fetch failed (honest message)
+  const [impact, setImpact] = useState<ImpactFile | null | undefined>(undefined);
   const [quality, setQuality] = useState<QualityFile | null>(null);
-  const [backtest, setBacktest] = useState<BacktestFile | null>(null);
+  const [backtest, setBacktest] = useState<BacktestFile | null | undefined>(undefined);
   const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
   const [linkCopied, setLinkCopied] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false); // mobile-only disclosure
@@ -387,7 +389,11 @@ export default function App() {
             date={[...seriesMap.values()].reduce((m, s) => (s.lastUpdated > m ? s.lastUpdated : m), "") || null}
           />
         </div>
-        <KpiStrip seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} />
+        {seriesMap.size ? (
+          <KpiStrip seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} />
+        ) : (
+          <SkeletonTiles />
+        )}
       </div>
 
       <section id="overlay" className="card anchor-target">
@@ -456,7 +462,11 @@ export default function App() {
           quality={quality}
           onToggle={toggleSeries}
         />
-        <OverlayChart items={overlayItems} projections={projections} transform={effectiveTransform} themeMode={mode} />
+        {seriesMap.size ? (
+          <OverlayChart items={overlayItems} projections={projections} transform={effectiveTransform} themeMode={mode} />
+        ) : (
+          <Skeleton height={430} />
+        )}
       </section>
 
       <div className="grid-2">
@@ -472,7 +482,11 @@ export default function App() {
             Pearson ρ of log-returns across the selected window, forward-filled to a common grid.{" "}
             <a className="cta-link" href="#signals">Regime shifts appear as signals ↗</a>
           </p>
-          <CorrelationMatrix list={selectedSeries} from={from} themeMode={mode} />
+          {seriesMap.size ? (
+            <CorrelationMatrix list={selectedSeries} from={from} themeMode={mode} />
+          ) : (
+            <Skeleton height={300} />
+          )}
         </section>
 
         <section id="signals" className="card anchor-target">
@@ -488,7 +502,7 @@ export default function App() {
             Dislocations, momentum regimes and correlation-regime shifts across the full catalog.{" "}
             <a className="cta-link" href="#validation">How reliable are these? See the backtest ↗</a>
           </p>
-          {signals === null ? <p className="sub">Computing…</p> : <SignalPanel signals={signals} onView={viewInOverlay} />}
+          {signals === null ? <SkeletonRows rows={6} /> : <SignalPanel signals={signals} onView={viewInOverlay} />}
         </section>
       </div>
 
@@ -502,7 +516,13 @@ export default function App() {
           over history, with publication lag imposed and firings collapsed to episodes — nulls
           published alongside positives.
         </p>
-        {backtest ? <ValidationPanel bt={backtest} /> : <p className="sub">Backtest results not available.</p>}
+        {backtest ? (
+          <ValidationPanel bt={backtest} />
+        ) : backtest === undefined ? (
+          <SkeletonRows rows={7} />
+        ) : (
+          <p className="sub">Backtest results unavailable.</p>
+        )}
       </section>
 
       <section id="equity-impact" className="card anchor-target">
@@ -517,10 +537,12 @@ export default function App() {
           shock implies. β = Cov/Var on daily log-returns (rolling 90 days).{" "}
           <a className="cta-link" href="#sovereign-impact">Country-level view ↗</a>
         </p>
-        {impact ? (
+        {impact && seriesMap.size ? (
           <EquityImpact companies={impact.companies} seriesMap={seriesMap} />
+        ) : impact === null ? (
+          <p className="sub">Impact data unavailable.</p>
         ) : (
-          <p className="sub">Loading impact universe…</p>
+          <SkeletonRows rows={9} />
         )}
       </section>
 
@@ -542,21 +564,31 @@ export default function App() {
           and the first-order impact of a sustained price shock.{" "}
           <a className="cta-link" href="#overlay">GDP paths with IMF projections on the overlay ↗</a>
         </p>
-        {impact ? (
+        {impact && seriesMap.size ? (
           <GdpImpact impact={impact} />
+        ) : impact === null ? (
+          <p className="sub">Impact data unavailable.</p>
         ) : (
-          <p className="sub">Loading impact universe…</p>
+          <SkeletonRows rows={9} />
         )}
       </section>
         </>
       )}
 
       <footer className="footer">
-        NexusQ MVP (Nexus Signal preview) · data: FRED, Yahoo Finance, World Bank, IMF, EIA ·{" "}
-        <button className="cta-link" onClick={() => { setPage("methodology"); window.scrollTo({ top: 0 }); }}>
-          Methodology
-        </button>
-        {" "}· not investment advice. © 2026 Gygante Quantitative Systems.
+        <div className="footer-brand">Nexus<span>Q</span> · Gygante Quantitative Systems</div>
+        <div className="footer-links">
+          <button className="cta-link" onClick={() => { setPage("methodology"); window.scrollTo({ top: 0 }); }}>
+            Methodology
+          </button>
+          <a className="cta-link" href="https://github.com/cs-ox-wolf3794/nexusq" target="_blank" rel="noreferrer">
+            Source &amp; data on GitHub
+          </a>
+          <span>Data: FRED · Yahoo Finance · World Bank · IMF · EIA</span>
+        </div>
+        <div className="footer-fine">
+          Nexus Signal preview · model output, not investment advice · © 2026 Gygante Quantitative Systems
+        </div>
       </footer>
     </div>
   );

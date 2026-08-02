@@ -136,8 +136,13 @@ Energy Beta / Sovereign / Validation tables (REUSE for any new data table; Metho
 reference tables stay scrollable); (3) correlation matrix hides cell labels <480px via
 resize-aware `useCompact` hook (width as state — render-time innerWidth reads go stale).
 Verified 375px + desktop, no horizontal scroll anywhere, build+types clean.
-Next UI work: P1 batch in UI-BACKLOG.md (skeletons, transitions, masthead tagline
-hide <600px, footer, then P2: PWA, glossary tooltips, mini-tour).
+
+P1 batch also DONE same session (specs + Done log in UI-BACKLOG.md): Skeleton.tsx
+(loading = `undefined` state → skeleton, `null` = failed → honest message; shimmer
+gated on prefers-reduced-motion), 150ms micro-transitions (reduced-motion gated),
+masthead tagline hidden <600px + 3px gradient brand rule via body::before,
+three-line structured footer. Next UI work: P2 in UI-BACKLOG.md (PWA manifest +
+icons, glossary tooltips, "How to read this" toggles, mini-tour).
 
 **Open items (next session):**
 -1. TRUST Phase 2 (~Oct, needs ~60d history): calibration scoreboard from
