@@ -96,6 +96,15 @@ catalog.json/forecasts.json/impact.json — a degraded run must never overwrite 
 committed data. (Also: `node script | tail` masks exit codes — don't.)
 
 **Open items (next session):**
+-1. TRUST ROADMAP (agreed 2026-07-31, do first): Phase 1 = pipeline QC checks →
+   quality.json (staleness/gaps/5σ spikes/sanity ranges/count drift) surfaced in UI;
+   start committing daily signals.json snapshots IMMEDIATELY (track-record clock);
+   in-app Methodology page from DOMAIN §1–3 (sanitized — no §4–5/Rystad refs);
+   CI tests for src/lib with known-answer fixtures + README badge.
+   Phase 2 (~Oct, needs ~60d history): calibration scoreboard from git history of
+   forecasts.json/signals.json; 95% CIs on betas; public data-lineage page.
+   Phase 3: PBO/DSR-style validation badges per signal family; cross-source Brent
+   check (FRED vs Yahoo BZ=F); source-outage banners; Mariano methodology review.
 0. Workflow queue from the doc synthesis: Market State Score (percentile conditions —
    vol/trend/DXY free, CFTC COT free); Inventory Divergence (EIA key live); validation
    badges per signal (→ eventually PBO/DSR from outcome history); EUA↔steel pilot needs
