@@ -18,27 +18,27 @@ const FRED = [
   { id: "WTI", fred: "DCOILWTICO", name: "WTI crude", unit: "USD/bbl", category: "energy" },
   { id: "HENRYHUB", fred: "DHHNGSP", name: "Henry Hub natural gas", unit: "USD/MMBtu", category: "energy" },
   { id: "EUGAS", fred: "PNGASEUUSDM", name: "European natural gas (TTF)", unit: "USD/MMBtu", category: "energy" },
-  { id: "COAL", fred: "PCOALAUUSDM", name: "Coal (Newcastle)", unit: "USD/t", category: "energy" },
+  { id: "COAL", fred: "PCOALAUUSDM", name: "Coal (Newcastle)", unit: "USD/tonne", category: "energy" },
   // NOTE: EIA weekly inventory series were removed from FRED; Inventory Divergence
   // signals need the EIA v2 API (free key) — add via env var EIA_API_KEY later.
-  { id: "COPPER", fred: "PCOPPUSDM", name: "Copper", unit: "USD/t", category: "commodity" },
-  { id: "WHEAT", fred: "PWHEAMTUSDM", name: "Wheat", unit: "USD/t", category: "commodity" },
+  { id: "COPPER", fred: "PCOPPUSDM", name: "Copper", unit: "USD/tonne", category: "commodity" },
+  { id: "WHEAT", fred: "PWHEAMTUSDM", name: "Wheat", unit: "USD/tonne", category: "commodity" },
   { id: "SP500", fred: "SP500", name: "S&P 500", unit: "index", category: "equity" },
   { id: "NASDAQ", fred: "NASDAQCOM", name: "Nasdaq Composite", unit: "index", category: "equity" },
-  { id: "VIX", fred: "VIXCLS", name: "VIX", unit: "index", category: "macro" },
+  { id: "VIX", fred: "VIXCLS", name: "VIX", unit: "pts", category: "macro" },
   { id: "UST10Y", fred: "DGS10", name: "US 10Y Treasury yield", unit: "%", category: "macro" },
   { id: "BREAKEVEN10Y", fred: "T10YIE", name: "10Y inflation breakeven", unit: "%", category: "macro" },
   { id: "CPI", fred: "CPIAUCSL", name: "US CPI (all items)", unit: "index", category: "macro" },
   { id: "INDPRO", fred: "INDPRO", name: "US industrial production", unit: "index", category: "macro" },
   { id: "DXY", fred: "DTWEXBGS", name: "US dollar index (broad)", unit: "index", category: "fx" },
-  { id: "EURUSD", fred: "DEXUSEU", name: "USD per EUR", unit: "USD", category: "fx" },
+  { id: "EURUSD", fred: "DEXUSEU", name: "USD per EUR", unit: "USD/EUR", category: "fx" },
 ];
 
 const YAHOO = [
-  { id: "XLE", sym: "XLE", name: "Energy equities (XLE)", unit: "USD", category: "equity" },
-  { id: "ICLN", sym: "ICLN", name: "Global clean energy (ICLN)", unit: "USD", category: "renewables" },
-  { id: "TAN", sym: "TAN", name: "Solar (TAN)", unit: "USD", category: "renewables" },
-  { id: "GOLD", sym: "GLD", name: "Gold (GLD)", unit: "USD", category: "commodity" },
+  { id: "XLE", sym: "XLE", name: "Energy equities (XLE)", unit: "USD/share", category: "equity" },
+  { id: "ICLN", sym: "ICLN", name: "Global clean energy (ICLN)", unit: "USD/share", category: "renewables" },
+  { id: "TAN", sym: "TAN", name: "Solar (TAN)", unit: "USD/share", category: "renewables" },
+  { id: "GOLD", sym: "GLD", name: "Gold (GLD)", unit: "USD/share", category: "commodity" },
 ];
 
 const WORLDBANK = [
@@ -328,7 +328,7 @@ for (const c of COMPANIES) {
     const points = await fetchYahoo(c);
     if (points.length < 200) throw new Error(`only ${points.length} points`);
     impact.companies.push({
-      id: c.id, name: c.name, sector: c.sector, unit: "USD",
+      id: c.id, name: c.name, sector: c.sector, unit: "USD/share",
       source: "Yahoo Finance", lastUpdated: points[points.length - 1][0], points,
     });
     console.log(`ok   impact ${c.id.padEnd(6)} ${String(points.length).padStart(5)} pts`);

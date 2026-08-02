@@ -130,9 +130,15 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
           const list = (Array.isArray(params) ? params : [params]) as {
             seriesName?: string; marker?: string; value?: [string | number, number]; axisValueLabel?: string;
           }[];
+          // units are only meaningful on the raw scale — transforms are unitless
+          const unitOf = new Map(items.map((i) => [i.series.name, i.series.unit]));
           const rows = list
             .filter((p) => p.seriesName && !p.seriesName.startsWith("__"))
-            .map((p) => `${p.marker ?? ""} ${p.seriesName}&nbsp;&nbsp;<b>${fmtNum(p.value?.[1])}</b>`);
+            .map((p) => {
+              const base = p.seriesName!.split(" · ")[0]; // projections inherit their series' unit
+              const unit = transform === "raw" ? unitOf.get(base) : undefined;
+              return `${p.marker ?? ""} ${p.seriesName}&nbsp;&nbsp;<b>${fmtNum(p.value?.[1])}</b>${unit ? ` <span style="opacity:.65;font-size:11px">${unit}</span>` : ""}`;
+            });
           if (!rows.length) return "";
           const date = list[0]?.axisValueLabel ?? "";
           return `<div style="font-size:11px;opacity:.75">${date}</div>${rows.join("<br/>")}`;

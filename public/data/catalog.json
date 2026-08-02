@@ -40,7 +40,7 @@
     {
       "id": "COAL",
       "name": "Coal (Newcastle)",
-      "unit": "USD/t",
+      "unit": "USD/tonne",
       "category": "energy",
       "source": "FRED",
       "lastUpdated": "2026-06-01",
@@ -49,7 +49,7 @@
     {
       "id": "COPPER",
       "name": "Copper",
-      "unit": "USD/t",
+      "unit": "USD/tonne",
       "category": "commodity",
       "source": "FRED",
       "lastUpdated": "2026-06-01",
@@ -58,7 +58,7 @@
     {
       "id": "WHEAT",
       "name": "Wheat",
-      "unit": "USD/t",
+      "unit": "USD/tonne",
       "category": "commodity",
       "source": "FRED",
       "lastUpdated": "2026-06-01",
@@ -85,7 +85,7 @@
     {
       "id": "VIX",
       "name": "VIX",
-      "unit": "index",
+      "unit": "pts",
       "category": "macro",
       "source": "FRED",
       "lastUpdated": "2026-07-29",
@@ -139,7 +139,7 @@
     {
       "id": "EURUSD",
       "name": "USD per EUR",
-      "unit": "USD",
+      "unit": "USD/EUR",
       "category": "fx",
       "source": "FRED",
       "lastUpdated": "2026-07-24",
@@ -148,7 +148,7 @@
     {
       "id": "XLE",
       "name": "Energy equities (XLE)",
-      "unit": "USD",
+      "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-07-30",
@@ -157,7 +157,7 @@
     {
       "id": "ICLN",
       "name": "Global clean energy (ICLN)",
-      "unit": "USD",
+      "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-07-30",
@@ -166,7 +166,7 @@
     {
       "id": "TAN",
       "name": "Solar (TAN)",
-      "unit": "USD",
+      "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-07-30",
@@ -175,7 +175,7 @@
     {
       "id": "GOLD",
       "name": "Gold (GLD)",
-      "unit": "USD",
+      "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-07-30",

@@ -69,7 +69,7 @@ export function computeSignals(all: Map<string, Series>): Signal[] {
       signals.push({
         kind: "Dislocation",
         subject: s.name,
-        detail: `${z.z > 0 ? "Rich" : "Cheap"} vs trailing-year norm (latest ${fmt(z.last)} ${s.unit})`,
+        detail: `${z.z > 0 ? "Rich" : "Cheap"} vs trailing-year norm (latest ${s.unit === "index" ? `index level ${fmt(z.last)}` : `${fmt(z.last)} ${s.unit}`})`,
         value: `z = ${z.z >= 0 ? "+" : ""}${z.z.toFixed(1)}σ`,
         severity: sevFromAbs(Math.abs(z.z), 1.5, 2, 2.5),
         score: Math.abs(z.z),
