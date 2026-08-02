@@ -1,7 +1,7 @@
 import type { CatalogEntry, Category, QualityFile } from "../lib/data";
 import { CATEGORY_LABELS } from "../lib/data";
 
-const CATEGORY_ORDER: Category[] = ["energy", "commodity", "equity", "renewables", "macro", "fx"];
+const CATEGORY_ORDER: Category[] = ["energy", "fundamentals", "commodity", "equity", "renewables", "macro", "fx"];
 export const MAX_SELECTED = 6;
 
 export function SeriesPicker({ catalog, selected, colors, quality, onToggle }: {

@@ -144,7 +144,31 @@ masthead tagline hidden <600px + 3px gradient brand rule via body::before,
 three-line structured footer. Next UI work: P2 in UI-BACKLOG.md (PWA manifest +
 icons, glossary tooltips, "How to read this" toggles, mini-tour).
 
+## Session 6 (2026-08-02, late): intelligence queue — Market State + Inventory Divergence, uncommitted
+
+**Market State Score** (descriptive percentile conditions, NOT a trading signal —
+deliberately distinct from Mariano's proprietary trading rules): `src/lib/state.ts`
+(percentileOf + trend/vol/dollar/positioning conditions, ~3y lookback, composite bands
+headwinds/mixed/constructive) + MarketState card (id=market-state, in SectionNav).
+Positioning = CFTC COT managed-money net/OI via keyless Socrata API → cot.json in the
+pipeline (WTI 067651, HENRYHUB 023651, BRENT 06765T = thin NYMEX Last Day proxy — outright
+ICE Brent COT is NOT in the CFTC dataset; caveat shipped in UI+Methodology). First live
+reading was coherent: Brent "Headwinds 29" (95th-pct vol + crowded 87th-pct longs after
+the spike), WTI light 11th-pct, HH net short.
+
+**Inventory Divergence** signal family: `seasonalZ()` in signals.ts (same-calendar-window
+±15d vs prior 5y — plain trailing z would flag every summer) crossed with price dislocation
+z; fires only on TENSION (glut+rich / tight+cheap). Data: EIA weekly series (key-gated like
+STEO — USCRUDESTOCKS WCESTUS1 → million bbl, USGASSTORAGE NW2_EPG0_SWO_R48_BCF → Bcf), new
+catalog category "fundamentals" (type+labels+picker order updated). **Locally absent (no
+key) — the cron populates them automatically on the next weekday run; verify then.**
+Family is auto-excluded from the backtest (weekly primary → daily filter) + noted as
+unvalidated in ValidationPanel + Methodology. Ledger records it automatically once live.
+Tests: 31 passing (state percentiles, crowding orientation, seasonal z, tension logic).
+
 **Open items (next session):**
+0. Verify post-cron: USCRUDESTOCKS/USGASSTORAGE in production catalog + picker
+   (Fundamentals row), QC clean, any Inventory divergence signals sane, cot.json fresh.
 -1. TRUST Phase 2 (~Oct, needs ~60d history): calibration scoreboard from
    history/*.json (spot anchors vs digest quantiles); 95% CIs on betas; public
    data-lineage page. Phase 3: PBO/DSR-style validation badges per signal family;

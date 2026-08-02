@@ -1,4 +1,4 @@
-export type Category = "energy" | "commodity" | "equity" | "macro" | "fx" | "renewables";
+export type Category = "energy" | "commodity" | "equity" | "macro" | "fx" | "renewables" | "fundamentals";
 
 export interface CatalogEntry {
   id: string;
@@ -16,6 +16,7 @@ export interface Series extends Omit<CatalogEntry, "count"> {
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   energy: "Energy",
+  fundamentals: "Fundamentals",
   commodity: "Commodities",
   equity: "Equities",
   renewables: "Renewables",
@@ -80,6 +81,29 @@ export interface ImpactFile {
 export async function loadImpact(): Promise<ImpactFile | null> {
   try {
     const res = await fetch(`${base}data/impact.json`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export interface CotMarket {
+  label: string;
+  code: string;
+  lastUpdated: string;
+  points: [string, number, number][]; // [report date, managed-money net, open interest]
+}
+
+export interface CotFile {
+  generated: string;
+  source: string;
+  markets: Record<string, CotMarket>;
+}
+
+export async function loadCot(): Promise<CotFile | null> {
+  try {
+    const res = await fetch(`${base}data/cot.json`);
     if (!res.ok) return null;
     return await res.json();
   } catch {

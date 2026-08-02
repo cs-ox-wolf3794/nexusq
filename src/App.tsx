@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { BacktestFile, CatalogEntry, ForecastFile, ImpactFile, QualityFile, Series } from "./lib/data";
-import { loadBacktest, loadCatalog, loadForecasts, loadImpact, loadQuality, loadSeries } from "./lib/data";
+import type { BacktestFile, CatalogEntry, CotFile, ForecastFile, ImpactFile, QualityFile, Series } from "./lib/data";
+import { loadBacktest, loadCatalog, loadCot, loadForecasts, loadImpact, loadQuality, loadSeries } from "./lib/data";
 import type { Transform } from "./lib/transform";
 import { TRANSFORM_LABELS, applyTransform, clampRange } from "./lib/transform";
 import type { Signal } from "./lib/signals";
@@ -15,6 +15,7 @@ import { SectionNav } from "./components/SectionNav";
 import { Methodology } from "./components/Methodology";
 import { ValidationPanel } from "./components/ValidationPanel";
 import { Skeleton, SkeletonRows, SkeletonTiles } from "./components/Skeleton";
+import { MarketStatePanel } from "./components/MarketState";
 import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { SignalPanel } from "./components/SignalPanel";
@@ -107,6 +108,7 @@ export default function App() {
   const [impact, setImpact] = useState<ImpactFile | null | undefined>(undefined);
   const [quality, setQuality] = useState<QualityFile | null>(null);
   const [backtest, setBacktest] = useState<BacktestFile | null | undefined>(undefined);
+  const [cot, setCot] = useState<CotFile | null>(null);
   const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
   const [linkCopied, setLinkCopied] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false); // mobile-only disclosure
@@ -196,6 +198,7 @@ export default function App() {
     loadImpact().then(setImpact);
     loadQuality().then(setQuality);
     loadBacktest().then(setBacktest);
+    loadCot().then(setCot);
   }, []);
 
   // Load everything once for the signal engine (payload is small snapshot JSON).
@@ -505,6 +508,23 @@ export default function App() {
           {signals === null ? <SkeletonRows rows={6} /> : <SignalPanel signals={signals} onView={viewInOverlay} />}
         </section>
       </div>
+
+      <section id="market-state" className="card anchor-target">
+        <div className="card-head">
+          <h2>Market state — percentile conditions</h2>
+          <Freshness
+            date={cot ? Object.values(cot.markets).reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), "") : null}
+            prefix="positioning through"
+            cadence="monthly"
+            title="CFTC COT publishes weekly (Friday, for Tuesday positions). Price conditions use the daily snapshots."
+          />
+        </div>
+        <p className="sub">
+          Where each energy market sits inside its own history: trend, volatility, dollar backdrop and
+          futures positioning, each as a percentile — the regime at a glance.
+        </p>
+        {seriesMap.size ? <MarketStatePanel seriesMap={seriesMap} cot={cot} /> : <SkeletonRows rows={7} />}
+      </section>
 
       <section id="validation" className="card anchor-target">
         <div className="card-head">

@@ -48,6 +48,16 @@ const WORLDBANK = [
   { id: "GDP_DEU", iso: "DEU", name: "Germany GDP growth", category: "macro" },
 ];
 
+// ---- CFTC COT positioning (keyless Socrata API) ------------------------------
+// Managed-money net position + open interest, weekly. Brent uses the NYMEX
+// Last Day contract — the outright ICE Brent COT is not in the CFTC dataset,
+// so Brent positioning is a thin-venue proxy (percentile vs own history only).
+const COT_MARKETS = [
+  { id: "WTI", code: "067651", label: "WTI (NYMEX)" },
+  { id: "HENRYHUB", code: "023651", label: "Henry Hub (NYMEX)" },
+  { id: "BRENT", code: "06765T", label: "Brent (NYMEX Last Day — thin venue proxy)" },
+];
+
 // ---- impact universe (Energy Beta board + sovereign exposure) ---------------
 // Energy-sensitive equities across the transmission channels from the Nexus docs:
 // producers benefit from energy strength, consumers (airlines, chemicals, steel)
@@ -144,6 +154,33 @@ async function fetchWorldBank(s) {
     .sort((a, b) => (a[0] < b[0] ? -1 : 1));
 }
 
+// ---- EIA weekly fundamentals (requires EIA_API_KEY, like STEO) ---------------
+// New catalog series (category "fundamentals"): overlayable, QC'd, freshness-badged.
+const EIA_WEEKLY = [
+  {
+    id: "USCRUDESTOCKS", name: "US crude inventories (ex-SPR)", unit: "million bbl",
+    category: "fundamentals",
+    route: "petroleum/stoc/wstk", series: "WCESTUS1", scale: 1 / 1000, // kbbl → million bbl
+  },
+  {
+    id: "USGASSTORAGE", name: "US natural gas storage (Lower 48)", unit: "Bcf",
+    category: "fundamentals",
+    route: "natural-gas/stor/wkly", series: "NW2_EPG0_SWO_R48_BCF", scale: 1,
+  },
+];
+
+async function fetchEiaWeekly(s) {
+  const j = await get(
+    `https://api.eia.gov/v2/${s.route}/data/?api_key=${process.env.EIA_API_KEY}` +
+    `&frequency=weekly&data[0]=value&facets[series][]=${s.series}` +
+    `&start=2014-01-01&sort[0][column]=period&sort[0][direction]=asc&length=5000`,
+    true
+  );
+  return (j.response?.data ?? [])
+    .filter((r) => r.value != null && Number.isFinite(Number(r.value)))
+    .map((r) => [r.period, Math.round(Number(r.value) * s.scale * 10) / 10]);
+}
+
 // ---- main ------------------------------------------------------------------
 await mkdir(OUT_DIR, { recursive: true });
 const catalog = [];
@@ -156,7 +193,11 @@ const jobs = [
   ...WORLDBANK.map((s) => ({
     ...s, unit: "% y/y", source: "World Bank", fetcher: () => fetchWorldBank(s),
   })),
+  ...(process.env.EIA_API_KEY
+    ? EIA_WEEKLY.map((s) => ({ ...s, source: "EIA", fetcher: () => fetchEiaWeekly(s) }))
+    : []),
 ];
+if (!process.env.EIA_API_KEY) console.log("skip EIA weekly fundamentals (no EIA_API_KEY set)");
 
 const prevCounts = new Map(); // id -> point count before this refresh (for drift check)
 
@@ -204,6 +245,7 @@ const SANITY = { // plausible latest-value ranges for key series (source-corrupt
   BRENT: [10, 400], WTI: [10, 400], HENRYHUB: [0.5, 60], EUGAS: [1, 200],
   COAL: [20, 600], COPPER: [2000, 40000], WHEAT: [50, 1500], VIX: [5, 100],
   UST10Y: [-1, 20], BREAKEVEN10Y: [-1, 10], EURUSD: [0.5, 2.5], SP500: [1000, 30000],
+  USCRUDESTOCKS: [250, 650], USGASSTORAGE: [300, 4600],
 };
 
 // Normal publication lags (days) that must NOT flag: IMF monthly series arrive ~2
@@ -482,5 +524,42 @@ await writeFile(path.join(OUT_DIR, "impact.json"), JSON.stringify(impact));
   console.log(`ok   impact.json (${impact.companies.length} companies, ${impact.countries.length} countries)`);
 } else {
   console.error(`ABORT impact.json: only ${impact.companies.length}/${COMPANIES.length} companies, ${impact.countries.length}/${COUNTRIES.length} countries — leaving existing file untouched.`);
+  process.exitCode = 1;
+}
+
+// ---- cot.json (CFTC managed-money positioning, keyless) ----------------------
+async function fetchCot(code) {
+  const rows = await get(
+    "https://publicreporting.cftc.gov/resource/72hh-3qpy.json?" +
+    `cftc_contract_market_code=${encodeURIComponent(code)}` +
+    "&%24select=report_date_as_yyyy_mm_dd,open_interest_all,m_money_positions_long_all,m_money_positions_short_all" +
+    "&%24order=report_date_as_yyyy_mm_dd%20ASC&%24limit=3000",
+    true
+  );
+  return rows
+    .map((r) => [
+      r.report_date_as_yyyy_mm_dd.slice(0, 10),
+      Number(r.m_money_positions_long_all) - Number(r.m_money_positions_short_all),
+      Number(r.open_interest_all),
+    ])
+    .filter((p) => p[0] >= "2010-01-01" && Number.isFinite(p[1]) && Number.isFinite(p[2]) && p[2] > 0);
+}
+
+const cot = { generated: new Date().toISOString(), source: "CFTC Commitments of Traders (disaggregated, futures only)", markets: {} };
+for (const m of COT_MARKETS) {
+  try {
+    const points = await fetchCot(m.code);
+    if (points.length < 100) throw new Error(`only ${points.length} rows`);
+    cot.markets[m.id] = { label: m.label, code: m.code, lastUpdated: points[points.length - 1][0], points };
+    console.log(`ok   cot ${m.id.padEnd(10)} ${String(points.length).padStart(4)} wks  (${points[points.length - 1][0]})`);
+  } catch (err) {
+    console.error(`FAIL cot ${m.id}: ${err.message}`);
+  }
+}
+if (Object.keys(cot.markets).length >= 2) {
+  await writeFile(path.join(OUT_DIR, "cot.json"), JSON.stringify(cot));
+  console.log(`ok   cot.json (${Object.keys(cot.markets).length} markets)`);
+} else {
+  console.error("ABORT cot.json: fewer than 2 markets fetched — leaving existing file untouched.");
   process.exitCode = 1;
 }

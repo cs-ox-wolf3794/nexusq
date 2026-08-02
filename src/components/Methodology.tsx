@@ -78,6 +78,34 @@ export function Methodology() {
       </section>
 
       <section className="card">
+        <h3>Market state (percentile conditions)</h3>
+        <p className="sub">
+          Each condition is the current value's percentile within its own trailing ~3-year history:
+          trend (price / 50-day average − 1), volatility (20-day realized, annualized), US dollar
+          backdrop (DXY 60-day change, shared across markets), and futures positioning
+          (CFTC managed-money net position / open interest, percentile vs full weekly history;
+          Brent uses the thin NYMEX Last Day contract as a proxy — the outright ICE Brent COT is
+          not in the CFTC dataset). The composite orients every condition to a common "supportive"
+          direction (uptrend · calm · soft dollar · light positioning) and averages: &lt;35 headwinds,
+          35–65 mixed, &gt;65 constructive. It describes the regime; it does not forecast returns and
+          carries no positions or thresholds tuned to outcomes.
+        </p>
+      </section>
+
+      <section className="card">
+        <h3>Inventory divergence</h3>
+        <p className="sub">
+          Weekly EIA fundamentals (US crude inventories ex-SPR; Lower-48 natural gas storage) are
+          scored as a <em>seasonal</em> z: the latest level vs same-calendar-window (±15 days)
+          observations from the prior five years — a plain trailing z would flag every summer.
+          A signal fires only when fundamentals and price are in tension: stocks ≥ +1.5σ above
+          seasonal norm while price is rich (z ≥ +1) — oversupply priced richly, bearish tension —
+          or the mirror image. This family is <strong>not yet in the event-study backtest</strong>
+          (weekly data, young history); it validates on the live ledger as history accrues.
+        </p>
+      </section>
+
+      <section className="card">
         <h3>Forecasts</h3>
         <ul className="method-list">
           <li><strong>Model fans (P10–P90):</strong> estimation window 3y daily / 120 obs monthly; log-returns (first differences for series that can be ≤ 0); EWMA volatility (λ = 0.97 daily, 0.90 monthly); drift = ½ × (½·long-run mean + ½·last-quarter mean) ; deliberately damped so the fan never promises trend continuation; quantiles S₀·exp(μt + z·σ√t), z ∈ {"{−1.28, −0.67, 0, +0.67, +1.28}"}, anchored at the last actual observation.</li>
@@ -159,6 +187,7 @@ export function Methodology() {
               <tr><td className="beta-name">2026-07-31</td><td>Sovereign β respecified: naive OLS → Frisch–Waugh with world-cycle control; oil driver extended to full-history annual averages.</td><td>Naive version was spuriously positive for all economies (common shocks + oil procyclicality).</td></tr>
               <tr><td className="beta-name">2026-08-02</td><td>Automated per-series QC (quality.json); daily public snapshots of signals and forecast digests (history/); analytics library under CI tests.</td><td>Trust roadmap Phase 1.</td></tr>
               <tr><td className="beta-name">2026-08-02</td><td>Event-study backtest of all signal families published (backtest.json + Validation section), including null results. No thresholds changed.</td><td>Signal validation: backtest = hypothesis, live ledger = accumulating proof.</td></tr>
+              <tr><td className="beta-name">2026-08-02</td><td>Market state board (percentile conditions incl. CFTC COT positioning) and Inventory divergence signal family (EIA weekly fundamentals, seasonal z × price tension) added. Inventory family ships unvalidated, outside the backtest.</td><td>Intelligence layer: regime description + fundamentals-vs-price cross-signals.</td></tr>
             </tbody>
           </table>
         </div>

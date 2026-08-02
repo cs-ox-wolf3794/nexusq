@@ -67,7 +67,10 @@ export function ValidationPanel({ bt }: { bt: BacktestFile }) {
       </div>
 
       <p className="sub val-caveats">
-        Method: event-study replay of the production signal engine as-of each trading day since{" "}
+        Scope note: the <strong>Inventory divergence</strong> family (added 2026-08-02) is not yet
+        backtested — weekly fundamentals data is too young for honest episode statistics; it
+        accumulates validation on the live daily ledger instead.
+        {" "}Method: event-study replay of the production signal engine as-of each trading day since{" "}
         {bt.method.options.start.slice(0, 4)} — <em>not</em> a strategy backtest (no positions, sizing or costs).
         Publication lag of {bt.method.options.visibilityLagDays} days imposed before outcomes are measured;
         firings collapsed to episodes ({bt.method.options.cooldownDays}-day cooldown); baselines are each

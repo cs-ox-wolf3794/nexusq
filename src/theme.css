@@ -123,6 +123,25 @@ body {
   .product-nav { margin: 8px 0 12px; }
 }
 
+/* ---- market state ---- */
+.state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.state-card { border: 1px solid var(--gridline); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+.state-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.state-name { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.state-cond { margin-bottom: 10px; cursor: help; }
+.state-cond-top { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px; }
+.state-cond-label { font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-size: 10.5px; }
+.state-cond-pct { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.pct-track { position: relative; height: 8px; border-radius: 4px; background: var(--gridline); }
+.pct-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--baseline); opacity: 0.6; }
+.pct-marker {
+  position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface-1);
+  transform: translate(-50%, -50%);
+}
+.state-cond-reading { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+.state-asof { font-size: 10.5px; color: var(--text-muted); border-top: 1px solid var(--gridline); padding-top: 6px; margin-top: 2px; }
+
 /* ---- validation panel ---- */
 .val-ci { font-size: 10.5px; color: var(--text-muted); font-weight: 400; }
 .val-na { color: var(--text-muted); font-size: 12px; }
