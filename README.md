@@ -30,33 +30,47 @@ kept out of this public repo.)
 
 A responsive static web app (browser / tablet / mobile) with:
 
-- **Cross-asset overlay** — up to six series from a 24-series catalog (energy fundamentals,
-  commodities, equities, renewables, macro, FX) on a single comparable axis
-  (indexed, z-score, y/y % or raw). No dual axes, ever.
+- **Cross-asset overlay** — up to six series from the catalog (energy fundamentals,
+  weekly EIA inventories, commodities, equities, renewables, macro, FX) on a single
+  comparable axis (indexed, z-score, y/y % or raw). No dual axes, ever. Question presets
+  and shareable view links.
 - **Correlation structure** — Pearson ρ of log-returns over the selected window,
   forward-filled onto a common daily grid.
-- **Live signals** — dislocation z-scores, 50/200-day momentum regimes, and
-  correlation-regime shifts on curated energy↔cross-asset pairs (the "beta" family).
+- **Live signals** — dislocation z-scores, 50/200-day momentum regimes,
+  correlation-regime shifts on curated energy↔cross-asset pairs, and inventory-divergence
+  flags (EIA weekly fundamentals vs price, seasonal z × dislocation tension).
+- **Market state** — trend / volatility / dollar / CFTC managed-money-positioning
+  percentile conditions per energy market, with a supportive-oriented composite. A regime
+  description, not a trading signal.
+- **Signal validation** — an event-study backtest of every signal family since 2015,
+  publication-lag-honest and episode-collapsed, with null results published alongside the
+  real structure.
 - **Equity impact (Energy Beta board)** — rolling 90-day β / α / R² of ~15 energy-exposed
   stocks (majors, services, steel, chemicals, airlines, transition names) against
   Brent / WTI / Henry Hub, with a first-order shock translator.
 - **Sovereign impact** — GDP sensitivity of major energy exporters vs importers to oil
-  (annual OLS betas with r and n disclosed), grounded in World Bank fuel-trade intensity.
-- Light/dark theme, colorblind-validated palette.
+  (cycle-controlled Frisch–Waugh betas with r and n disclosed), grounded in World Bank
+  fuel-trade intensity.
+- **Trust layer** — per-series QC (`quality.json`), a daily public signal/forecast ledger,
+  an in-app Methodology page, and a CI-tested analytics library.
+- Light/dark theme, colorblind-validated palette, mobile-first responsive.
 
 ### Architecture
 
 ```
-FRED / Yahoo Finance / World Bank
+FRED / Yahoo Finance / World Bank / IMF / EIA / CFTC
         │  scripts/refresh-data.mjs   (node, also runs on a GitHub Actions cron)
+        │  + snapshot-signals.ts (daily ledger) + backtest-signals.ts
         ▼
-public/data/*.json  (snapshot series + catalog manifest)
+public/data/*.json  (series + catalog, forecasts, impact, cot, quality, backtest, history/)
         ▼
 Vite + React + TypeScript SPA (ECharts) — fully static, free to host
 ```
 
-No backend, no API keys, no runtime dependencies: data is snapshotted into the repo
-by the refresh pipeline, so the site works offline and never hits rate limits.
+No backend and no runtime API keys: data is snapshotted into the repo by the refresh
+pipeline, so the site works offline and never hits rate limits. (The pipeline itself
+uses a free EIA key held as an Actions secret for STEO forecasts and weekly inventories;
+FRED, Yahoo, World Bank and CFTC are keyless.)
 
 ### Develop
 

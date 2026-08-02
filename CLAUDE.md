@@ -44,6 +44,30 @@ commit it).
 - Mobile: verify at 375px before calling UI work done (grid tracks need `minmax(0,1fr)`;
   the page must never scroll horizontally).
 
+## CURRENT STATE (end of session 6, 2026-08-02) — read this first
+
+Live, self-updating, verified at **https://nexus.gygante.com**. Everything through
+session 6 is **committed and pushed** (last commit `459f65c`, tree clean). The
+weekday cron refreshes data, runs QC, writes the daily ledger, and redeploys unattended.
+
+**Dashboard sections** (top to bottom): market-pulse KPI strip · question presets +
+shareable links · cross-asset overlay (26-series catalog incl. EIA weekly fundamentals;
+projections = model fans / EIA STEO / IMF WEO) · correlation matrix · live signals
+(dislocation / momentum / correlation-regime / **inventory divergence**) · **market
+state** (percentile conditions incl. CFTC COT) · **validation** (event-study backtest,
+nulls published) · equity impact (Energy Beta board) · sovereign impact (Frisch–Waugh
+GDP betas) · in-app **Methodology** page (own change log). Mobile-first (P0+P1 UI done).
+
+**Data files** in public/data/: per-series JSON + catalog.json, forecasts.json,
+impact.json, cot.json, quality.json, backtest.json, history/YYYY-MM-DD.json (+ index).
+**Sources**: FRED, Yahoo, World Bank, IMF (keyless) + EIA (key = Actions secret, STEO +
+weekly inventories) + CFTC COT (keyless Socrata). 31 vitest tests, CI green.
+
+**Libs**: transform.ts, signals.ts (+ seasonalZ), beta.ts, state.ts, backtest.ts.
+**Internal docs** (gitignored): TECHNICAL / DOMAIN / VALUE / STRATEGY / UI-BACKLOG.
+**Next**: verify EIA weekly series live in production post-cron (open item 0); then
+Trust Phase 2 (calibration scoreboard, ~Oct) or UI P2 (UI-BACKLOG.md) or landing-page link.
+
 ## State as of 2026-07-31 (end of session 1)
 
 **The platform is live, self-updating, and verified at https://nexus.gygante.com.**
