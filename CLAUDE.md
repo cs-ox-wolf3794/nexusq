@@ -110,6 +110,18 @@ formula change). devDeps added: tsx, vitest. oilAnnual auto-upgraded to FRED Bre
 (FRED recovered; fallback logic verified both ways).
 
 **Open items (next session):**
+-2. SIGNAL BACKTESTING (agreed 2026-08-02, do first) — event-study frame, NOT strategy
+   backtest: scripts/backtest-signals.ts replays the signal engine over history →
+   backtest.json → per-family validation cards in UI. Non-negotiables: impose live
+   publication lag (evaluate from signal-visible date, not data date); collapse to
+   EPISODES (first threshold crossing + cooldown), block bootstrap for CIs; macro
+   series carry revision-bias asterisk (prices don't revise); report severity
+   monotonicity (extreme > elevated > watch or thresholds are decoration); per-category
+   + pre/post-2020 splits; family-level aggregates are the headline (≈200 hypotheses →
+   multiple-testing discipline). Thresholds were a priori — any tuning after seeing
+   results = snooping, goes through the Methodology change log with pre-change results
+   preserved. Frame: backtest = hypothesis, live ledger (history/) = accumulating proof.
+   Strategy backtests only later, with full CSCV/PBO + DSR + walk-forward stack.
 -1. TRUST Phase 2 (~Oct, needs ~60d history): calibration scoreboard from
    history/*.json (spot anchors vs digest quantiles); 95% CIs on betas; public
    data-lineage page. Phase 3: PBO/DSR-style validation badges per signal family;
