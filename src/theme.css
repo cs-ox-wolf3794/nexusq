@@ -288,7 +288,17 @@ body {
 .kpi-spark { color: var(--text-muted); flex: 0 0 auto; }
 
 /* ---- signals (stacked card rows at every width — the panel is always narrow) ---- */
-.sig-list { display: flex; flex-direction: column; font-size: 13px; }
+.sig-list { display: flex; flex-direction: column; font-size: 13px; scrollbar-width: thin; }
+/* Equal-height row: the signals card takes its height from the correlation card,
+   and the list scrolls inside it instead of stretching the whole grid row. */
+@media (min-width: 861px) {
+  #signals { display: flex; flex-direction: column; }
+  #signals .sig-list { flex: 1 1 0; min-height: 220px; overflow-y: auto; padding-right: 4px; }
+}
+@media (max-width: 860px) {
+  /* single-column layout: cap instead of flex (flex would collapse the list) */
+  .sig-list { max-height: 440px; overflow-y: auto; padding-right: 4px; }
+}
 .sig-row {
   display: grid; grid-template-columns: 1fr auto;
   grid-template-areas: "subject pill" "detail detail" "type value";
