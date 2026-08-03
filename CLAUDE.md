@@ -44,6 +44,29 @@ commit it).
 - Mobile: verify at 375px before calling UI work done (grid tracks need `minmax(0,1fr)`;
   the page must never scroll horizontally).
 
+## Session 7 (2026-08-03): refresh-data.yml failure — FIXED, uncommitted
+
+**Symptom**: refresh-data.yml run failed, exit code 1 at step `node scripts/refresh-data.mjs`;
+commit + deploy skipped, so the daily refresh silently stopped shipping.
+**Root cause**: the impact.json / cot.json guards set `process.exitCode = 1` on a
+coverage shortfall. On 2026-08-03 the **World Bank API was flaky** (country GDP fetches
+timed out → 9/13 countries, below the 80% guard), so impact aborted with exit 1 — even
+though ALL 24 core series + forecasts + quality + cot refreshed fine. A transient outage
+of a *secondary annual enrichment* was sinking the whole pipeline and blocking deploy.
+**Fix** (scripts/refresh-data.mjs only): impact + cot are now skip-and-keep on shortfall
+(warn, keep last good file, **no exitCode**); the oilAnnual fallback + worldGdp fetch are
+wrapped so a timeout can't hard-crash; World Bank calls use a gentler retry profile
+(`get(url, json, {retries:2, timeout:15000})`) so a WB outage caps the impact phase at a
+few minutes, not ~an hour. **Only ONE fatal path remains**: the core-catalog <80% guard
+(`process.exit(1)`, line ~234) — correct, we must not commit garbage core data.
+Verified locally: exit 0 with WB flaky (impact skipped/kept) AND healthy (12/13 written).
+**Rule going forward**: secondary enrichments (impact, cot, and future ones) must NEVER
+set a nonzero exit code — only genuine core-data failure may fail the run.
+**Next**: user commits + pushes the fix, then may manually dispatch refresh-data.yml to
+ship today's skipped refresh (`gh workflow run refresh-data.yml` / Actions UI). World Bank
+batch-fetch (39 calls → 3 via `country/A;B;C/…`) is a noted follow-up (untested — WB was
+down at fix time).
+
 ## CURRENT STATE (end of session 6, 2026-08-02) — read this first
 
 Live, self-updating, verified at **https://nexus.gygante.com**. Everything through

@@ -98,14 +98,14 @@ const COUNTRIES = [
 ];
 
 // ---- fetchers --------------------------------------------------------------
-async function get(url, asJson) {
-  for (let attempt = 1; attempt <= 3; attempt++) {
+async function get(url, asJson, { retries = 3, timeout = 30000 } = {}) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30000) });
+      const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(timeout) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return asJson ? res.json() : res.text();
     } catch (err) {
-      if (attempt === 3) throw err;
+      if (attempt === retries) throw err;
       await new Promise((r) => setTimeout(r, 1500 * attempt));
     }
   }
@@ -434,9 +434,13 @@ console.log(`ok   forecasts.json (${Object.keys(forecasts).length} series)`);
 
 // ---- impact.json (Energy Beta board + sovereign exposure) --------------------
 async function fetchWorldBankIndicator(iso, indicator) {
+  // Gentle profile: World Bank is a flaky SECONDARY source and never fails the run.
+  // Bound the worst case so a WB outage can't stall the whole job on retries
+  // (2 × 15s across ~40 country calls ≈ a few minutes cap, not ~an hour).
   const j = await get(
     `https://api.worldbank.org/v2/country/${iso}/indicator/${indicator}?format=json&per_page=100`,
-    true
+    true,
+    { retries: 2, timeout: 15000 }
   );
   return (j[1] ?? [])
     .filter((row) => row.value != null && row.date >= "2000")
@@ -480,51 +484,57 @@ for (const c of COUNTRIES) {
   }
 }
 
-// Same guard as the main catalog: never overwrite a good impact.json with a stub.
-if (impact.companies.length >= COMPANIES.length * 0.8 && impact.countries.length >= COUNTRIES.length * 0.8) {
-  // Long-history annual oil averages for the sovereign GDP regression (needs 2000+,
-// which the trimmed daily snapshots can't provide). Prefer full-history FRED Brent;
-// fall back to Yahoo WTI futures (CL=F, monthly since 2000).
+// impact.json is a SECONDARY enrichment (Energy Beta board + sovereign betas) built on
+// occasionally-flaky sources (World Bank annual data especially). It must never fail the
+// run or block the commit of the freshly-refreshed core series: on any shortfall we skip
+// the rewrite, keep the last good committed impact.json, and continue with exit 0.
 try {
-  const csv = await get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU", false);
-  const sums = new Map();
-  for (const line of csv.trim().split("\n").slice(1)) {
-    const [date, raw] = line.split(",");
-    const v = parseFloat(raw);
-    if (!Number.isFinite(v) || date < "2000") continue;
-    const y = date.slice(0, 4);
-    const e = sums.get(y) ?? { s: 0, c: 0 };
-    e.s += v; e.c++;
-    sums.set(y, e);
+  if (impact.companies.length < COMPANIES.length * 0.8 || impact.countries.length < COUNTRIES.length * 0.8) {
+    throw new Error(`coverage ${impact.companies.length}/${COMPANIES.length} companies, ${impact.countries.length}/${COUNTRIES.length} countries below 80%`);
   }
-  impact.oilAnnual = [...sums].filter(([, e]) => e.c >= 120)
-    .map(([y, e]) => [y, Math.round((e.s / e.c) * 100) / 100]).sort();
-  impact.oilAnnualSource = "Brent (FRED), annual averages";
-} catch {
-  const j = await get("https://query1.finance.yahoo.com/v8/finance/chart/CL=F?range=max&interval=1mo", true);
-  const r = j.chart.result[0];
-  const sums = new Map();
-  for (let i = 0; i < r.timestamp.length; i++) {
-    const v = r.indicators.quote[0].close[i];
-    if (v == null) continue;
-    const y = new Date(r.timestamp[i] * 1000).toISOString().slice(0, 4);
-    const e = sums.get(y) ?? { s: 0, c: 0 };
-    e.s += v; e.c++;
-    sums.set(y, e);
+  // Long-history annual oil averages for the sovereign GDP regression (needs 2000+, which
+  // the trimmed daily snapshots can't provide). Prefer full-history FRED Brent; fall back
+  // to Yahoo WTI futures (CL=F, monthly since 2000). If BOTH fail, abandon the rewrite.
+  try {
+    const csv = await get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU", false);
+    const sums = new Map();
+    for (const line of csv.trim().split("\n").slice(1)) {
+      const [date, raw] = line.split(",");
+      const v = parseFloat(raw);
+      if (!Number.isFinite(v) || date < "2000") continue;
+      const y = date.slice(0, 4);
+      const e = sums.get(y) ?? { s: 0, c: 0 };
+      e.s += v; e.c++;
+      sums.set(y, e);
+    }
+    impact.oilAnnual = [...sums].filter(([, e]) => e.c >= 120)
+      .map(([y, e]) => [y, Math.round((e.s / e.c) * 100) / 100]).sort();
+    impact.oilAnnualSource = "Brent (FRED), annual averages";
+  } catch {
+    const j = await get("https://query1.finance.yahoo.com/v8/finance/chart/CL=F?range=max&interval=1mo", true);
+    const r = j.chart.result[0];
+    const sums = new Map();
+    for (let i = 0; i < r.timestamp.length; i++) {
+      const v = r.indicators.quote[0].close[i];
+      if (v == null) continue;
+      const y = new Date(r.timestamp[i] * 1000).toISOString().slice(0, 4);
+      const e = sums.get(y) ?? { s: 0, c: 0 };
+      e.s += v; e.c++;
+      sums.set(y, e);
+    }
+    impact.oilAnnual = [...sums].filter(([, e]) => e.c >= 6)
+      .map(([y, e]) => [y, Math.round((e.s / e.c) * 100) / 100]).sort();
+    impact.oilAnnualSource = "WTI futures (CL=F), Yahoo Finance, annual averages";
   }
-  impact.oilAnnual = [...sums].filter(([, e]) => e.c >= 6)
-    .map(([y, e]) => [y, Math.round((e.s / e.c) * 100) / 100]).sort();
-  impact.oilAnnualSource = "WTI futures (CL=F), Yahoo Finance, annual averages";
-}
-// World GDP growth: the global-cycle control for the sovereign oil-beta regression.
-const wldRows = await fetchWorldBankIndicator("WLD", "NY.GDP.MKTP.KD.ZG");
-impact.worldGdp = wldRows.map((r) => [`${r.date}-12-31`, Math.round(r.value * 100) / 100]);
+  // World GDP growth: the global-cycle control for the sovereign oil-beta regression.
+  const wldRows = await fetchWorldBankIndicator("WLD", "NY.GDP.MKTP.KD.ZG");
+  if (!wldRows.length) throw new Error("world GDP control unavailable");
+  impact.worldGdp = wldRows.map((r) => [`${r.date}-12-31`, Math.round(r.value * 100) / 100]);
 
-await writeFile(path.join(OUT_DIR, "impact.json"), JSON.stringify(impact));
+  await writeFile(path.join(OUT_DIR, "impact.json"), JSON.stringify(impact));
   console.log(`ok   impact.json (${impact.companies.length} companies, ${impact.countries.length} countries)`);
-} else {
-  console.error(`ABORT impact.json: only ${impact.companies.length}/${COMPANIES.length} companies, ${impact.countries.length}/${COUNTRIES.length} countries — leaving existing file untouched.`);
-  process.exitCode = 1;
+} catch (err) {
+  console.error(`SKIP impact.json (${err.message}) — keeping last good file. Secondary enrichment; NOT fatal to the refresh.`);
 }
 
 // ---- cot.json (CFTC managed-money positioning, keyless) ----------------------
@@ -556,10 +566,11 @@ for (const m of COT_MARKETS) {
     console.error(`FAIL cot ${m.id}: ${err.message}`);
   }
 }
+// cot.json is also secondary enrichment (Market State positioning) — skip-and-keep on
+// shortfall, never fail the run.
 if (Object.keys(cot.markets).length >= 2) {
   await writeFile(path.join(OUT_DIR, "cot.json"), JSON.stringify(cot));
   console.log(`ok   cot.json (${Object.keys(cot.markets).length} markets)`);
 } else {
-  console.error("ABORT cot.json: fewer than 2 markets fetched — leaving existing file untouched.");
-  process.exitCode = 1;
+  console.error("SKIP cot.json: fewer than 2 markets fetched — keeping last good file. Secondary enrichment; NOT fatal.");
 }
