@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-02T20:53:19.669Z",
+  "generated": "2026-08-03T10:39:19.725Z",
   "series": [
     {
       "id": "BRENT",
@@ -216,6 +216,24 @@
       "source": "World Bank",
       "lastUpdated": "2025-12-31",
       "count": 26
+    },
+    {
+      "id": "USCRUDESTOCKS",
+      "name": "US crude inventories (ex-SPR)",
+      "unit": "million bbl",
+      "category": "fundamentals",
+      "source": "EIA",
+      "lastUpdated": "2026-07-24",
+      "count": 656
+    },
+    {
+      "id": "USGASSTORAGE",
+      "name": "US natural gas storage (Lower 48)",
+      "unit": "Bcf",
+      "category": "fundamentals",
+      "source": "EIA",
+      "lastUpdated": "2026-07-24",
+      "count": 656
     }
   ]
 }
