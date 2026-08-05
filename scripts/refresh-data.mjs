@@ -143,9 +143,23 @@ async function fetchYahoo(s) {
   return points;
 }
 
+function buildWorldBankUrl(countryOrIso, indicator) {
+  const iso = String(countryOrIso).trim().toUpperCase();
+  const ind = String(indicator).trim();
+  // Guard against accidentally shipping unresolved template placeholders.
+  if (!iso || iso.includes("${") || ind.includes("${")) {
+    throw new Error(`invalid World Bank request params: iso='${iso}', indicator='${ind}'`);
+  }
+  if (!/^[A-Z0-9]{3}$/.test(iso)) {
+    throw new Error(`invalid World Bank ISO code '${iso}'`);
+  }
+  const base = `https://api.worldbank.org/v2/country/${encodeURIComponent(iso)}/indicator/${encodeURIComponent(ind)}`;
+  return `${base}?format=json&per_page=100`;
+}
+
 async function fetchWorldBank(s) {
   const j = await get(
-    `https://api.worldbank.org/v2/country/${s.iso}/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=100`,
+    buildWorldBankUrl(s.iso, "NY.GDP.MKTP.KD.ZG"),
     true
   );
   return (j[1] ?? [])
@@ -438,7 +452,7 @@ async function fetchWorldBankIndicator(iso, indicator) {
   // Bound the worst case so a WB outage can't stall the whole job on retries
   // (2 × 15s across ~40 country calls ≈ a few minutes cap, not ~an hour).
   const j = await get(
-    `https://api.worldbank.org/v2/country/${iso}/indicator/${indicator}?format=json&per_page=100`,
+    buildWorldBankUrl(iso, indicator),
     true,
     { retries: 2, timeout: 15000 }
   );
