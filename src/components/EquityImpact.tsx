@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { ImpactCompany, Series } from "../lib/data";
 import type { RollingBeta } from "../lib/beta";
 import { rollingBeta } from "../lib/beta";
+import { GlossaryTip, HowToRead } from "./Guidance";
 
 const DRIVERS = [
   { id: "BRENT", label: "Brent" },
@@ -69,16 +70,20 @@ export function EquityImpact({ companies, seriesMap }: {
         </div>
       </div>
 
+      <HowToRead>
+        Use <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver." /> for directional sensitivity and <GlossaryTip term="R²" definition="Share of return variance explained by the selected driver in this rolling window." /> for fit quality. A high beta with low R² is weak explanatory evidence.
+      </HowToRead>
+
       <div className="table-wrap stack-wrap">
         <table className="beta-table stack-sm">
           <thead>
             <tr>
               <th>Company</th>
               <th>Sector</th>
-              <th className="num" title="Cov(stock, driver) / Var(driver), 90d daily log-returns">β 90d</th>
-              <th title="Rolling 90d beta, weekly steps, last 12 months">β trend</th>
+              <th className="num" title="Cov(stock, driver) / Var(driver), 90d daily log-returns"><GlossaryTip term="β" definition="Cov(stock, driver) / Var(driver), estimated on rolling 90-day paired log-returns." /> 90d</th>
+              <th title="Rolling 90d beta, weekly steps, last 12 months"><GlossaryTip term="β" definition="Rolling beta history over the last 12 months; weekly steps." /> trend</th>
               <th className="num" title="Annualized return not explained by the energy driver">α ann.</th>
-              <th className="num" title="Share of daily variance explained by the driver">R²</th>
+              <th className="num" title="Share of daily variance explained by the driver"><GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver." /></th>
               <th className="num" title="First-order: β × shock. Ignores second-order effects.">
                 Implied @ {shockPct >= 0 ? "+" : ""}{shockPct}%
               </th>

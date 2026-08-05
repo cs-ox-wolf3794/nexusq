@@ -4,6 +4,7 @@ import { EChart } from "./EChart";
 import { readTokens } from "./useTheme";
 import type { Series } from "../lib/data";
 import type { Points, Transform } from "../lib/transform";
+import { GlossaryTip } from "./Guidance";
 
 export interface OverlaySeries {
   series: Series;
@@ -169,8 +170,11 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
           : items.length === 1
             ? `${items[0].series.name}, ${items[0].series.unit} (${items[0].series.source})`
             : "Select at least one series."}
-        {projections.length > 0 &&
-          " · Dashed = projection beyond the today line; shaded fan = P10–P90 from damped-drift + EWMA volatility; GDP projections from IMF WEO. Model output, not investment advice."}
+        {projections.length > 0 && (
+          <>
+            {" "}· Dashed = projection beyond the today line; shaded fan = <GlossaryTip term="P10-P90" definition="Projected 10th-to-90th percentile range at each horizon." /> from damped-drift + EWMA volatility; GDP projections from IMF WEO. Model output, not investment advice.
+          </>
+        )}
       </p>
     </div>
   );

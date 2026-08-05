@@ -18,6 +18,7 @@ import { Skeleton, SkeletonRows, SkeletonTiles } from "./components/Skeleton";
 import { MarketStatePanel } from "./components/MarketState";
 import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
+import { GlossaryTip, HowToRead } from "./components/Guidance";
 import { SignalPanel } from "./components/SignalPanel";
 
 const PRODUCTS = [
@@ -414,6 +415,9 @@ export default function App() {
           </span>
         </div>
         <p className="sub">Compare energy fundamentals, commodities, equities and macro on one comparable axis.</p>
+        <HowToRead>
+          Projections are directional uncertainty envelopes, not point calls. A shaded <GlossaryTip term="P10-P90" definition="Expected range where the model places outcomes between the 10th and 90th percentile at each horizon." /> band means higher uncertainty; dashed lines mark the projected median or external forecast path.
+        </HowToRead>
         <div className="controls">
           <div className="control-group">
             <span className="control-label">Scale</span>
@@ -505,6 +509,9 @@ export default function App() {
             Dislocations, momentum regimes and correlation-regime shifts across the full catalog.{" "}
             <a className="cta-link" href="#validation">How reliable are these? See the backtest ↗</a>
           </p>
+          <HowToRead>
+            Dislocation signals are standardized moves using a trailing <GlossaryTip term="z-score" definition="Distance from trailing mean measured in standard deviations; +2 means two sigmas above average." />. Bigger absolute z-score means a more unusual move relative to that series' own history.
+          </HowToRead>
           {signals === null ? <SkeletonRows rows={6} /> : <SignalPanel signals={signals} onView={viewInOverlay} />}
         </section>
       </div>
@@ -554,9 +561,12 @@ export default function App() {
         </div>
         <p className="sub">
           How sensitive each energy-exposed stock is to the selected driver, and what a hypothetical
-          shock implies. β = Cov/Var on daily log-returns (rolling 90 days).{" "}
+          shock implies. <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> = Cov/Var on daily log-returns (rolling 90 days).{" "}
           <a className="cta-link" href="#sovereign-impact">Country-level view ↗</a>
         </p>
+        <HowToRead>
+          <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> is slope sensitivity, while <GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver in the same regression window." /> is explanatory fit. Treat implied move as first-order context only.
+        </HowToRead>
         {impact && seriesMap.size ? (
           <EquityImpact companies={impact.companies} seriesMap={seriesMap} />
         ) : impact === null ? (
@@ -584,6 +594,9 @@ export default function App() {
           and the first-order impact of a sustained price shock.{" "}
           <a className="cta-link" href="#overlay">GDP paths with IMF projections on the overlay ↗</a>
         </p>
+        <HowToRead>
+          Sovereign <GlossaryTip term="β" definition="Cycle-controlled GDP sensitivity: percentage-point change in GDP growth per +10% oil move." /> is estimated on annual data with world-cycle control; use it as regime context, not a precise near-term forecast.
+        </HowToRead>
         {impact && seriesMap.size ? (
           <GdpImpact impact={impact} />
         ) : impact === null ? (

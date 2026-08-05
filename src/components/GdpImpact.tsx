@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { ImpactCountry, ImpactFile } from "../lib/data";
 import type { GdpBeta } from "../lib/beta";
 import { gdpBeta } from "../lib/beta";
+import { GlossaryTip, HowToRead } from "./Guidance";
 
 const ROLE_LABEL: Record<ImpactCountry["role"], string> = {
   exporter: "Net energy exporter",
@@ -37,13 +38,17 @@ export function GdpImpact({ impact }: { impact: ImpactFile }) {
         </div>
       </div>
 
+      <HowToRead>
+        <GlossaryTip term="β" definition="Cycle-controlled GDP sensitivity, in percentage points of GDP growth per +10% oil move." /> captures historical association after removing the global cycle. Use sign and relative magnitude as context, not exact point predictions.
+      </HowToRead>
+
       <div className="table-wrap stack-wrap">
         <table className="beta-table stack-sm">
           <thead>
             <tr>
               <th>Economy</th>
               <th title="World Bank: fuel exports as % of merchandise exports / net energy imports as % of energy use">Energy trade profile</th>
-              <th className="num" title="Annual GDP growth on same-year oil % change, controlling for world GDP growth (Frisch–Waugh)">β GDP</th>
+              <th className="num" title="Annual GDP growth on same-year oil % change, controlling for world GDP growth (Frisch–Waugh)"><GlossaryTip term="β" definition="Frisch-Waugh slope: GDP-growth sensitivity per +10% oil move after world-cycle control." /> GDP</th>
               <th title="Cycle-adjusted GDP sensitivity, percentage points per +10% oil">Sensitivity</th>
               <th className="num" title="Partial correlation after removing the global cycle (n = years)">r (n)</th>
               <th className="num" title="First-order: β × shock — direction and order of magnitude only">
