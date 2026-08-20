@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-19T07:07:00.378Z",
+  "generated": "2026-08-20T07:07:36.695Z",
   "series": [
     {
       "id": "BRENT",
@@ -7,8 +7,8 @@
       "unit": "USD/bbl",
       "category": "energy",
       "source": "FRED",
-      "lastUpdated": "2026-08-11",
-      "count": 3453
+      "lastUpdated": "2026-08-18",
+      "count": 3458
     },
     {
       "id": "WTI",
@@ -16,8 +16,8 @@
       "unit": "USD/bbl",
       "category": "energy",
       "source": "FRED",
-      "lastUpdated": "2026-08-11",
-      "count": 3409
+      "lastUpdated": "2026-08-18",
+      "count": 3414
     },
     {
       "id": "HENRYHUB",
@@ -25,8 +25,8 @@
       "unit": "USD/MMBtu",
       "category": "energy",
       "source": "FRED",
-      "lastUpdated": "2026-08-11",
-      "count": 3430
+      "lastUpdated": "2026-08-18",
+      "count": 3435
     },
     {
       "id": "EUGAS",
@@ -70,7 +70,7 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-08-18",
+      "lastUpdated": "2026-08-19",
       "count": 2512
     },
     {
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-08-18",
-      "count": 3428
+      "lastUpdated": "2026-08-19",
+      "count": 3429
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-08-17",
-      "count": 3458
+      "lastUpdated": "2026-08-18",
+      "count": 3459
     },
     {
       "id": "UST10Y",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-08-17",
-      "count": 3407
+      "lastUpdated": "2026-08-18",
+      "count": 3408
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-08-18",
-      "count": 3408
+      "lastUpdated": "2026-08-19",
+      "count": 3409
     },
     {
       "id": "CPI",
@@ -151,7 +151,7 @@
       "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-08-18",
+      "lastUpdated": "2026-08-19",
       "count": 2512
     },
     {
@@ -160,8 +160,8 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-08-17",
-      "count": 2511
+      "lastUpdated": "2026-08-19",
+      "count": 2512
     },
     {
       "id": "TAN",
@@ -169,8 +169,8 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-08-17",
-      "count": 2508
+      "lastUpdated": "2026-08-19",
+      "count": 2509
     },
     {
       "id": "GOLD",
@@ -178,8 +178,8 @@
       "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-08-17",
-      "count": 2511
+      "lastUpdated": "2026-08-19",
+      "count": 2512
     },
     {
       "id": "GDP_USA",
@@ -223,8 +223,8 @@
       "unit": "million bbl",
       "category": "fundamentals",
       "source": "EIA",
-      "lastUpdated": "2026-08-07",
-      "count": 658
+      "lastUpdated": "2026-08-14",
+      "count": 659
     },
     {
       "id": "USGASSTORAGE",
