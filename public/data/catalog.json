@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-31T13:54:25.660Z",
+  "generated": "2026-09-01T11:41:27.429Z",
   "series": [
     {
       "id": "BRENT",
@@ -70,8 +70,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-08-28",
-      "count": 2514
+      "lastUpdated": "2026-08-31",
+      "count": 2512
     },
     {
       "id": "NASDAQ",
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-08-28",
-      "count": 3436
+      "lastUpdated": "2026-08-31",
+      "count": 3437
     },
     {
       "id": "VIX",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-08-27",
-      "count": 3415
+      "lastUpdated": "2026-08-28",
+      "count": 3416
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-08-28",
-      "count": 3416
+      "lastUpdated": "2026-08-31",
+      "count": 3417
     },
     {
       "id": "CPI",
@@ -133,8 +133,8 @@
       "unit": "index",
       "category": "fx",
       "source": "FRED",
-      "lastUpdated": "2026-08-21",
-      "count": 3397
+      "lastUpdated": "2026-08-28",
+      "count": 3402
     },
     {
       "id": "EURUSD",
@@ -142,8 +142,8 @@
       "unit": "USD/EUR",
       "category": "fx",
       "source": "FRED",
-      "lastUpdated": "2026-08-21",
-      "count": 3410
+      "lastUpdated": "2026-08-28",
+      "count": 3415
     },
     {
       "id": "XLE",
@@ -152,7 +152,7 @@
       "category": "equity",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-08-31",
-      "count": 2513
+      "count": 2512
     },
     {
       "id": "ICLN",
@@ -161,7 +161,7 @@
       "category": "renewables",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-08-31",
-      "count": 2513
+      "count": 2511
     },
     {
       "id": "TAN",
@@ -170,7 +170,7 @@
       "category": "renewables",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-08-31",
-      "count": 2513
+      "count": 2511
     },
     {
       "id": "GOLD",
@@ -179,7 +179,7 @@
       "category": "commodity",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-08-31",
-      "count": 2513
+      "count": 2512
     },
     {
       "id": "GDP_USA",
