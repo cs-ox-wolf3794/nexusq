@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-22T11:41:20.582Z",
+  "generated": "2026-09-23T11:39:55.315Z",
   "series": [
     {
       "id": "BRENT",
@@ -70,7 +70,7 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "count": 2512
     },
     {
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-09-21",
-      "count": 3451
+      "lastUpdated": "2026-09-22",
+      "count": 3452
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-18",
-      "count": 3482
+      "lastUpdated": "2026-09-21",
+      "count": 3483
     },
     {
       "id": "UST10Y",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-18",
-      "count": 3430
+      "lastUpdated": "2026-09-21",
+      "count": 3431
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-21",
-      "count": 3431
+      "lastUpdated": "2026-09-22",
+      "count": 3432
     },
     {
       "id": "CPI",
@@ -152,7 +152,7 @@
       "category": "equity",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-09-21",
-      "count": 2512
+      "count": 2511
     },
     {
       "id": "ICLN",
@@ -161,7 +161,7 @@
       "category": "renewables",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-09-21",
-      "count": 2512
+      "count": 2511
     },
     {
       "id": "TAN",
@@ -170,7 +170,7 @@
       "category": "renewables",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-09-21",
-      "count": 2512
+      "count": 2511
     },
     {
       "id": "GOLD",
@@ -179,7 +179,7 @@
       "category": "commodity",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-09-21",
-      "count": 2512
+      "count": 2511
     },
     {
       "id": "GDP_USA",
