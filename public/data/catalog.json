@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-28T13:58:46.698Z",
+  "generated": "2026-09-29T12:55:45.443Z",
   "series": [
     {
       "id": "BRENT",
@@ -70,8 +70,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-09-25",
-      "count": 2514
+      "lastUpdated": "2026-09-28",
+      "count": 2512
     },
     {
       "id": "NASDAQ",
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-09-25",
-      "count": 3455
+      "lastUpdated": "2026-09-28",
+      "count": 3456
     },
     {
       "id": "VIX",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-24",
-      "count": 3434
+      "lastUpdated": "2026-09-25",
+      "count": 3435
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-25",
-      "count": 3435
+      "lastUpdated": "2026-09-28",
+      "count": 3436
     },
     {
       "id": "CPI",
@@ -133,8 +133,8 @@
       "unit": "index",
       "category": "fx",
       "source": "FRED",
-      "lastUpdated": "2026-09-18",
-      "count": 3416
+      "lastUpdated": "2026-09-25",
+      "count": 3421
     },
     {
       "id": "EURUSD",
@@ -142,8 +142,8 @@
       "unit": "USD/EUR",
       "category": "fx",
       "source": "FRED",
-      "lastUpdated": "2026-09-18",
-      "count": 3429
+      "lastUpdated": "2026-09-25",
+      "count": 3434
     },
     {
       "id": "XLE",
@@ -152,7 +152,7 @@
       "category": "equity",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-09-28",
-      "count": 2513
+      "count": 2512
     },
     {
       "id": "ICLN",
@@ -161,7 +161,7 @@
       "category": "renewables",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-09-28",
-      "count": 2513
+      "count": 2512
     },
     {
       "id": "TAN",
@@ -170,7 +170,7 @@
       "category": "renewables",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-09-28",
-      "count": 2513
+      "count": 2512
     },
     {
       "id": "GOLD",
@@ -179,7 +179,7 @@
       "category": "commodity",
       "source": "Yahoo Finance",
       "lastUpdated": "2026-09-28",
-      "count": 2513
+      "count": 2512
     },
     {
       "id": "GDP_USA",
@@ -193,6 +193,15 @@
     {
       "id": "GDP_CHN",
       "name": "China GDP growth",
+      "unit": "% y/y",
+      "category": "macro",
+      "source": "World Bank",
+      "lastUpdated": "2025-12-31",
+      "count": 26
+    },
+    {
+      "id": "GDP_IND",
+      "name": "India GDP growth",
       "unit": "% y/y",
       "category": "macro",
       "source": "World Bank",
