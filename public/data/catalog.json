@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-29T12:55:45.443Z",
+  "generated": "2026-09-30T12:37:25.833Z",
   "series": [
     {
       "id": "BRENT",
@@ -70,7 +70,7 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-09-28",
+      "lastUpdated": "2026-09-29",
       "count": 2512
     },
     {
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-09-28",
-      "count": 3456
+      "lastUpdated": "2026-09-29",
+      "count": 3457
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-22",
-      "count": 3484
+      "lastUpdated": "2026-09-28",
+      "count": 3488
     },
     {
       "id": "UST10Y",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-25",
-      "count": 3435
+      "lastUpdated": "2026-09-28",
+      "count": 3436
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-28",
-      "count": 3436
+      "lastUpdated": "2026-09-29",
+      "count": 3437
     },
     {
       "id": "CPI",
@@ -151,7 +151,7 @@
       "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-09-28",
+      "lastUpdated": "2026-09-29",
       "count": 2512
     },
     {
@@ -160,7 +160,7 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-09-28",
+      "lastUpdated": "2026-09-29",
       "count": 2512
     },
     {
@@ -169,7 +169,7 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-09-28",
+      "lastUpdated": "2026-09-29",
       "count": 2512
     },
     {
@@ -178,7 +178,7 @@
       "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-09-28",
+      "lastUpdated": "2026-09-29",
       "count": 2512
     },
     {
