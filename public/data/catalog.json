@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-01T13:19:06.153Z",
+  "generated": "2026-10-02T12:38:22.502Z",
   "series": [
     {
       "id": "BRENT",
@@ -70,8 +70,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-09-30",
-      "count": 2512
+      "lastUpdated": "2026-10-01",
+      "count": 2513
     },
     {
       "id": "NASDAQ",
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-09-30",
-      "count": 3458
+      "lastUpdated": "2026-10-01",
+      "count": 3459
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-29",
-      "count": 3489
+      "lastUpdated": "2026-09-30",
+      "count": 3490
     },
     {
       "id": "UST10Y",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-29",
-      "count": 3437
+      "lastUpdated": "2026-09-30",
+      "count": 3438
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-09-30",
-      "count": 3438
+      "lastUpdated": "2026-10-01",
+      "count": 3439
     },
     {
       "id": "CPI",
@@ -151,8 +151,8 @@
       "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-09-30",
-      "count": 2512
+      "lastUpdated": "2026-10-01",
+      "count": 2513
     },
     {
       "id": "ICLN",
@@ -160,8 +160,8 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-09-30",
-      "count": 2512
+      "lastUpdated": "2026-10-01",
+      "count": 2513
     },
     {
       "id": "TAN",
@@ -169,8 +169,8 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-09-30",
-      "count": 2512
+      "lastUpdated": "2026-10-01",
+      "count": 2513
     },
     {
       "id": "GOLD",
@@ -178,8 +178,8 @@
       "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-09-30",
-      "count": 2512
+      "lastUpdated": "2026-10-01",
+      "count": 2513
     },
     {
       "id": "GDP_USA",
@@ -232,8 +232,8 @@
       "unit": "Bcf",
       "category": "fundamentals",
       "source": "EIA",
-      "lastUpdated": "2026-09-18",
-      "count": 664
+      "lastUpdated": "2026-09-25",
+      "count": 665
     }
   ]
 }
