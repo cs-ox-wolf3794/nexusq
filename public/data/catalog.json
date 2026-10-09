@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-08T13:32:51.486Z",
+  "generated": "2026-10-09T13:19:58.594Z",
   "series": [
     {
       "id": "BRENT",
@@ -70,8 +70,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-10-07",
-      "count": 2512
+      "lastUpdated": "2026-10-08",
+      "count": 2513
     },
     {
       "id": "NASDAQ",
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-10-07",
-      "count": 3463
+      "lastUpdated": "2026-10-08",
+      "count": 3464
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-06",
-      "count": 3494
+      "lastUpdated": "2026-10-07",
+      "count": 3495
     },
     {
       "id": "UST10Y",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-06",
-      "count": 3442
+      "lastUpdated": "2026-10-07",
+      "count": 3443
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-07",
-      "count": 3443
+      "lastUpdated": "2026-10-08",
+      "count": 3444
     },
     {
       "id": "CPI",
@@ -232,8 +232,8 @@
       "unit": "Bcf",
       "category": "fundamentals",
       "source": "EIA",
-      "lastUpdated": "2026-09-25",
-      "count": 665
+      "lastUpdated": "2026-10-02",
+      "count": 666
     }
   ]
 }
