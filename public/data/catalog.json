@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-09T13:19:58.594Z",
+  "generated": "2026-10-12T15:29:28.449Z",
   "series": [
     {
       "id": "BRENT",
@@ -70,8 +70,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-10-08",
-      "count": 2513
+      "lastUpdated": "2026-10-09",
+      "count": 2514
     },
     {
       "id": "NASDAQ",
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-10-08",
-      "count": 3464
+      "lastUpdated": "2026-10-09",
+      "count": 3465
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-07",
-      "count": 3495
+      "lastUpdated": "2026-10-09",
+      "count": 3497
     },
     {
       "id": "UST10Y",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-07",
-      "count": 3443
+      "lastUpdated": "2026-10-08",
+      "count": 3444
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-08",
-      "count": 3444
+      "lastUpdated": "2026-10-09",
+      "count": 3445
     },
     {
       "id": "CPI",
@@ -151,7 +151,7 @@
       "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-08",
+      "lastUpdated": "2026-10-12",
       "count": 2513
     },
     {
@@ -160,7 +160,7 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-08",
+      "lastUpdated": "2026-10-12",
       "count": 2513
     },
     {
@@ -169,7 +169,7 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-08",
+      "lastUpdated": "2026-10-12",
       "count": 2513
     },
     {
@@ -178,7 +178,7 @@
       "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-08",
+      "lastUpdated": "2026-10-12",
       "count": 2513
     },
     {
