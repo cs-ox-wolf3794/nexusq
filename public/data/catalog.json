@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-12T15:29:28.449Z",
+  "generated": "2026-10-13T14:14:29.313Z",
   "series": [
     {
       "id": "BRENT",
@@ -70,8 +70,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-10-09",
-      "count": 2514
+      "lastUpdated": "2026-10-12",
+      "count": 2512
     },
     {
       "id": "NASDAQ",
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-10-09",
-      "count": 3465
+      "lastUpdated": "2026-10-12",
+      "count": 3466
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-09",
-      "count": 3497
+      "lastUpdated": "2026-10-12",
+      "count": 3498
     },
     {
       "id": "UST10Y",
@@ -151,7 +151,7 @@
       "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-12",
+      "lastUpdated": "2026-10-13",
       "count": 2513
     },
     {
@@ -160,7 +160,7 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-12",
+      "lastUpdated": "2026-10-13",
       "count": 2513
     },
     {
@@ -169,7 +169,7 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-12",
+      "lastUpdated": "2026-10-13",
       "count": 2513
     },
     {
@@ -178,7 +178,7 @@
       "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-12",
+      "lastUpdated": "2026-10-13",
       "count": 2513
     },
     {
