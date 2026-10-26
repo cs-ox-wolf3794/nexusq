@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-23T11:41:51.751Z",
+  "generated": "2026-10-26T13:06:52.353Z",
   "series": [
     {
       "id": "BRENT",
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-10-22",
-      "count": 3474
+      "lastUpdated": "2026-10-23",
+      "count": 3475
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-21",
-      "count": 3505
+      "lastUpdated": "2026-10-22",
+      "count": 3506
     },
     {
       "id": "UST10Y",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-21",
-      "count": 3452
+      "lastUpdated": "2026-10-22",
+      "count": 3453
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-10-22",
-      "count": 3453
+      "lastUpdated": "2026-10-23",
+      "count": 3454
     },
     {
       "id": "CPI",
@@ -151,8 +151,8 @@
       "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-22",
-      "count": 2513
+      "lastUpdated": "2026-10-23",
+      "count": 2514
     },
     {
       "id": "ICLN",
@@ -160,8 +160,8 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-22",
-      "count": 2513
+      "lastUpdated": "2026-10-23",
+      "count": 2514
     },
     {
       "id": "TAN",
@@ -169,8 +169,8 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-22",
-      "count": 2513
+      "lastUpdated": "2026-10-23",
+      "count": 2514
     },
     {
       "id": "GOLD",
@@ -178,8 +178,8 @@
       "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-10-22",
-      "count": 2513
+      "lastUpdated": "2026-10-23",
+      "count": 2514
     },
     {
       "id": "GDP_USA",
@@ -193,15 +193,6 @@
     {
       "id": "GDP_CHN",
       "name": "China GDP growth",
-      "unit": "% y/y",
-      "category": "macro",
-      "source": "World Bank",
-      "lastUpdated": "2025-12-31",
-      "count": 26
-    },
-    {
-      "id": "GDP_IND",
-      "name": "India GDP growth",
       "unit": "% y/y",
       "category": "macro",
       "source": "World Bank",
