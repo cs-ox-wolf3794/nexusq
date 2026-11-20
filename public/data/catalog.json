@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-19T15:46:41.814Z",
+  "generated": "2026-11-20T15:29:10.909Z",
   "series": [
     {
       "id": "BRENT",
@@ -79,8 +79,8 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-11-18",
-      "count": 3493
+      "lastUpdated": "2026-11-19",
+      "count": 3494
     },
     {
       "id": "VIX",
@@ -88,8 +88,8 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-11-18",
-      "count": 3525
+      "lastUpdated": "2026-11-19",
+      "count": 3526
     },
     {
       "id": "UST10Y",
@@ -97,8 +97,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-11-17",
-      "count": 3470
+      "lastUpdated": "2026-11-18",
+      "count": 3471
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +106,8 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-11-18",
-      "count": 3471
+      "lastUpdated": "2026-11-19",
+      "count": 3472
     },
     {
       "id": "CPI",
@@ -151,8 +151,8 @@
       "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-11-19",
-      "count": 2513
+      "lastUpdated": "2026-11-20",
+      "count": 2514
     },
     {
       "id": "ICLN",
@@ -160,8 +160,8 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-11-19",
-      "count": 2513
+      "lastUpdated": "2026-11-20",
+      "count": 2514
     },
     {
       "id": "TAN",
@@ -169,8 +169,8 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-11-19",
-      "count": 2513
+      "lastUpdated": "2026-11-20",
+      "count": 2514
     },
     {
       "id": "GOLD",
@@ -178,8 +178,8 @@
       "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
-      "lastUpdated": "2026-11-19",
-      "count": 2513
+      "lastUpdated": "2026-11-20",
+      "count": 2514
     },
     {
       "id": "GDP_USA",
@@ -232,8 +232,8 @@
       "unit": "Bcf",
       "category": "fundamentals",
       "source": "EIA",
-      "lastUpdated": "2026-11-06",
-      "count": 671
+      "lastUpdated": "2026-11-13",
+      "count": 672
     }
   ]
 }
