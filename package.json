@@ -11,6 +11,7 @@
     "test": "vitest run",
     "refresh": "node --import tsx scripts/refresh-data.mjs",
     "refresh:quotes": "node --import tsx scripts/refresh-quotes.mjs",
+    "refresh:nexsi": "node --import tsx scripts/refresh-nexsi.mjs",
     "data:validate": "node --import tsx scripts/validate-data.mjs",
     "backtest": "tsx scripts/backtest-signals.ts"
   },

@@ -2,6 +2,8 @@ import { readFile, writeFile, readdir, mkdir, copyFile } from "node:fs/promises"
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { validatePoints, validDate, validateAdjustedAlignment } from "../../src/lib/quality.ts";
+import { validateNexsi } from "../../src/lib/nexsi-quality.ts";
+import { factorRows, attributeMove } from "../../src/lib/nexsi-model.ts";
 
 export async function readJson(directory, name, fallback = null) {
   try { return JSON.parse(await readFile(path.join(directory, name), "utf8")); }
@@ -9,6 +11,33 @@ export async function readJson(directory, name, fallback = null) {
 }
 
 export async function validateSnapshot(directory) {
+  const nexsi = await readJson(directory, "nexsi.json");
+  if (nexsi) {
+    validateNexsi(nexsi);
+    const inputs = await readJson(directory, "nexsi-prices.json");
+    if (!inputs || inputs.generated !== nexsi.generated) throw new Error("NexSI input generation mismatch");
+    for (const [symbol, input] of Object.entries(inputs.series)) {
+      if (!input.points.length && input.issue) continue;
+      validatePoints(input.points, { minPoints: 2 });
+      validateAdjustedAlignment(input.points, input.adjustedPoints);
+      if (input.points.some(p => p[1] <= 0)) throw new Error(`NexSI nonpositive price: ${symbol}`);
+    }
+    const factorData = Object.fromEntries(["SPY", "QQQ", "IEF", "CL=F", "NG=F"].map(s => [s, inputs.series[s]?.adjustedPoints ?? []]));
+    for (const company of nexsi.companies) {
+      const input = inputs.series[company.symbol];
+      if (!input || (input.points.at(-1)?.[0] ?? null) !== company.asOf || (input.points.at(-1)?.[1] ?? null) !== company.price
+        || JSON.stringify(input.adjustedPoints.slice(-252)) !== JSON.stringify(company.history)) throw new Error(`NexSI company/input mismatch: ${company.symbol}`);
+      const rows = factorRows(input.adjustedPoints, factorData);
+      for (const a of [...Object.values(company.moves), ...company.largestDrops].filter(Boolean)) {
+        const recalculated = attributeMove(rows, a.start, a.end, a.sessions);
+        const sameNumbers = recalculated && ["actual", "energy"].every(k => Math.abs(recalculated[k] - a[k]) < 1e-8)
+          && Object.keys(a.components).every(k => Math.abs(recalculated.components[k] - a.components[k]) < 1e-8)
+          && a.energyCI.every((v, i) => Math.abs(recalculated.energyCI[i] - v) < 1e-8);
+        // Allow harmless floating-point differences between Windows and Linux/V8 versions.
+        if (!sameNumbers || recalculated.fit.through !== a.fit.through || recalculated.fit.n !== a.fit.n) throw new Error(`NexSI attribution not reproducible: ${company.symbol}`);
+      }
+    }
+  }
   const catalog = await readJson(directory, "catalog.json");
   const quality = await readJson(directory, "quality.json");
   if (!catalog?.series?.length || !quality || quality.generated !== catalog.generated) throw new Error("catalog and QC generations disagree");

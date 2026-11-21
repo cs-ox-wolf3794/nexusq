@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Series } from "./lib/data";
 import { loadSnapshot, type Snapshot } from "./lib/snapshot";
-import { analysisEligibility, freshness, observationEnd, qualityCurrent, companyEligible, recentTimestamp } from "./lib/quality";
+import { analysisEligibility, freshness, observationEnd, qualityCurrent, companyEligible, recentTimestamp, validDate } from "./lib/quality";
 import { externalForecastCurrent } from "./lib/forecast";
 import { DataStatus, QuotePanel } from "./components/DataStatus";
 import type { Transform } from "./lib/transform";
@@ -22,9 +22,11 @@ import { OverlayChart, type OverlaySeries, type Projection } from "./components/
 import { CorrelationMatrix } from "./components/CorrelationMatrix";
 import { GlossaryTip, HowToRead } from "./components/Guidance";
 import { SignalPanel } from "./components/SignalPanel";
+import { NexSI } from "./components/NexSI";
 
 const PRODUCTS = [
   { key: "signal", label: "Signal", live: true },
+  { key: "nexsi", label: "NexSI", live: true },
   { key: "model", label: "Model", live: false },
   { key: "scenario", label: "Scenario", live: false },
   { key: "portfolio", label: "Portfolio", live: false },
@@ -108,9 +110,12 @@ export default function App() {
   const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
   const [linkCopied, setLinkCopied] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false); // mobile-only disclosure
-  const [page, setPage] = useState<"dashboard" | "methodology">(() =>
-    window.location.hash.includes("page=methodology") ? "methodology" : "dashboard",
+  const [page, setPage] = useState<"dashboard" | "methodology" | "nexsi">(() =>
+    window.location.hash.includes("page=methodology") ? "methodology" : window.location.hash.includes("page=nexsi") ? "nexsi" : "dashboard",
   );
+  const [nexsiSymbol, setNexsiSymbol] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get("company") ?? "NVDA");
+  const [nexsiHorizon, setNexsiHorizon] = useState(() => { const h = Number(new URLSearchParams(window.location.hash.slice(1)).get("horizon")); return [1, 5, 20].includes(h) ? h : 1; });
+  const [nexsiEvent, setNexsiEvent] = useState(() => { const d = new URLSearchParams(window.location.hash.slice(1)).get("event"); return validDate(d) ? d : ""; });
   // Color follows the entity: a series keeps its slot while selected.
   const slotMap = useRef(
     new Map<string, string>((parseHash().ids ?? DEFAULT_SELECTION).map((id, i) => [id, SLOT_VARS[i]])),
@@ -119,10 +124,10 @@ export default function App() {
   // The URL hash mirrors the view state — every view is a shareable link.
   useEffect(() => {
     const h = `#s=${selected.join(",")}&t=${transform}&w=${rangeYears ?? "all"}&p=${projectionOn ? 1 : 0}${
-      page === "methodology" ? "&page=methodology" : ""
+      page === "methodology" ? "&page=methodology" : page === "nexsi" ? `&page=nexsi&company=${encodeURIComponent(nexsiSymbol)}&horizon=${nexsiHorizon}${nexsiEvent ? `&event=${nexsiEvent}` : ""}` : ""
     }`;
     window.history.replaceState(null, "", h);
-  }, [selected, transform, rangeYears, projectionOn, page]);
+  }, [selected, transform, rangeYears, projectionOn, page, nexsiSymbol, nexsiHorizon, nexsiEvent]);
 
   // Apply shared links opened while the app is already running (hash navigation
   // doesn't remount React). Our own replaceState writes never fire hashchange.
@@ -137,7 +142,13 @@ export default function App() {
       if (h.transform) setTransform(h.transform);
       if (h.years !== undefined) setRangeYears(h.years);
       if (h.projection != null) setProjectionOn(h.projection);
-      setPage(window.location.hash.includes("page=methodology") ? "methodology" : "dashboard");
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      setPage(params.get("page") === "methodology" ? "methodology" : params.get("page") === "nexsi" ? "nexsi" : "dashboard");
+      setNexsiSymbol(params.get("company") ?? "NVDA");
+      const horizon = Number(params.get("horizon"));
+      setNexsiHorizon([1, 5, 20].includes(horizon) ? horizon : 1);
+      const event = params.get("event");
+      setNexsiEvent(validDate(event) ? event : "");
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -300,11 +311,11 @@ export default function App() {
         {PRODUCTS.map((p) => (
           <button
             key={p.key}
-            className={p.live && page === "dashboard" ? "active" : ""}
+            className={(p.key === "signal" && page === "dashboard") || (p.key === "nexsi" && page === "nexsi") ? "active" : ""}
             disabled={!p.live}
-            onClick={() => p.live && setPage("dashboard")}
+            onClick={() => p.live && setPage(p.key === "nexsi" ? "nexsi" : "dashboard")}
           >
-            Nexus {p.label}
+            {p.key === "nexsi" ? p.label : `Nexus ${p.label}`}
             {!p.live && <span className="soon">roadmap</span>}
           </button>
         ))}
@@ -316,10 +327,12 @@ export default function App() {
         </button>
       </nav>
 
-      <DataStatus snapshot={snapshot} now={now} error={loadError} />
+      {(page !== "nexsi" || loadError) && <DataStatus snapshot={snapshot} now={now} error={loadError} />}
 
       {page === "methodology" ? (
         <Methodology />
+      ) : page === "nexsi" ? (
+        <NexSI snapshot={snapshot} now={now} mode={mode} symbol={nexsiSymbol} horizon={nexsiHorizon} onSymbol={setNexsiSymbol} onHorizon={setNexsiHorizon} eventDate={nexsiEvent} setEventDate={setNexsiEvent} />
       ) : (
         <>
       <SectionNav />

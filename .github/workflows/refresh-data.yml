@@ -51,6 +51,9 @@ jobs:
       - name: Verify analytical code
         if: steps.scope.outputs.mode == 'full'
         run: npm test && npx tsc -b
+      - name: Install public membership PDF reader
+        if: steps.scope.outputs.mode == 'full'
+        run: python -m pip install pypdf==6.21.4
       - name: Refresh validated analytical snapshot
         id: data
         if: steps.scope.outputs.mode == 'full'

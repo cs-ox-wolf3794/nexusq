@@ -463,6 +463,18 @@ if (Object.keys(cot.markets).length === COT_MARKETS.length) {
   console.error("SKIP cot.json: fewer than 2 markets fetched — keeping last good file. Secondary enrichment; NOT fatal.");
 }
 
+// NexSI is a separately versioned enrichment. A failed refresh keeps its last
+// published observations with a visible failure; it cannot take core data down.
+try {
+  const { refreshNexsi } = await import("./refresh-nexsi.mjs");
+  const nexsi = await refreshNexsi(OUT_DIR, GENERATED);
+  if (nexsi.status !== "ok") enrichmentIssues.push({ source: "NexSI", detail: `${nexsi.failures.length} source issues; see per-company coverage and evidence status` });
+} catch (error) {
+  enrichmentIssues.push({ source: "NexSI", detail: error.message });
+  const prior = await readJson(OUT_DIR, "nexsi.json");
+  if (prior) await writeFile(path.join(OUT_DIR, "nexsi.json"), JSON.stringify({ ...prior, attemptedAt: GENERATED, status: "retained", failures: [...prior.failures, error.message] }));
+}
+
 await writeFile(path.join(OUT_DIR, "health.json"), JSON.stringify({
   generated: GENERATED, status: quality.summary.flagged || failures.length || enrichmentIssues.length ? "degraded" : "ok",
   coreFailures: failures, enrichmentIssues,

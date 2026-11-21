@@ -8,12 +8,14 @@ const directory = path.resolve(process.env.NEXUSQ_DATA_DIR ?? "public/data");
 const previous = await readJson(directory, "quotes.json");
 const catalog = await readJson(directory, "catalog.json");
 const impact = await readJson(directory, "impact.json");
+const nexsi = await readJson(directory, "nexsi.json");
 // Quotes cover the existing Yahoo instruments only. FRED spot prices and monthly
 // benchmarks keep their official histories; no futures/ETF proxy masquerades as spot.
-const instruments = [
+const instruments = [...new Map([
   ...catalog.series.filter((s) => s.source === "Yahoo Finance").map((s) => [s.id, s.id === "GOLD" ? "GLD" : s.id]),
   ...impact.companies.map((c) => [c.id, c.id]),
-];
+  ...(nexsi?.universe.members ?? []).map((c) => [c.symbol, c.symbol]),
+]).entries()];
 const quotes = {}, failures = [];
 await mapLimit(instruments, 3, async ([id, symbol]) => {
   try {
