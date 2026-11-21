@@ -35,11 +35,14 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
   await mapLimit(symbols, 3, async symbol => {
     const old = previousPrices?.series[symbol];
     try {
-      const result = parseYahooDaily(await yahooChart(symbol, "1d", "5y"), now, symbol);
-      const points = result.points.slice(-850), adjustedPoints = result.adjustedPoints.slice(-850);
-      validatePoints(points, { now, previous: old?.points, minPoints: 2 });
-      validateAdjustedAlignment(points, adjustedPoints);
-      if (now - Date.parse(points.at(-1)[0]) > 7 * DAY) throw new Error("Completed daily close is overdue");
+      let points, adjustedPoints;
+      await yahooChart(symbol, "1d", "5y", raw => {
+        const result = parseYahooDaily(raw, now, symbol);
+        points = result.points.slice(-850); adjustedPoints = result.adjustedPoints.slice(-850);
+        validatePoints(points, { now, previous: old?.points, minPoints: 2 });
+        validateAdjustedAlignment(points, adjustedPoints);
+        if (now - Date.parse(points.at(-1)[0]) > 7 * DAY) throw new Error("Completed daily close is overdue");
+      });
       prices.series[symbol] = { points, adjustedPoints, retrievedAt: generated, issue: null };
     } catch (error) {
       failures.push(`${symbol}: ${error.message}`);

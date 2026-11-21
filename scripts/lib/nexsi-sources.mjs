@@ -87,7 +87,7 @@ export function parsePowerRates(json, now = Date.now()) {
     // The endpoint can include Census-region aggregates. They are not states.
     if (!/^[A-Z]{2}$/.test(row.stateid)) continue;
     if (row.sectorid !== "COM" || row["price-units"] !== "cents per kilowatthour" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(row.period)
-      || !/^[A-Z]{2}$/.test(row.stateid) || row.price == null || !Number.isFinite(Number(row.price)) || Number(row.price) <= 0) throw new Error("EIA electricity identity/unit/value mismatch");
+      || !/^[A-Z]{2}$/.test(row.stateid) || row.price == null || !Number.isFinite(Number(row.price)) || Number(row.price) <= 0) throw new Error(`EIA electricity identity/unit/value mismatch: ${row.stateid} ${row.period}; sector ${row.sectorid}; unit ${String(row["price-units"]).slice(0, 60)}; price ${String(row.price).slice(0, 30)}`);
     const [y, m] = row.period.split("-").map(Number);
     const end = Date.UTC(y, m, 0);
     if (end > now || now - end > 150 * 86400000) continue;

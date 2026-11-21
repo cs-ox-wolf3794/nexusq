@@ -1,11 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseFilings, parseHeadlines, parsePowerRates, classify } from "../../../scripts/lib/nexsi-sources.mjs";
 import { companyStatus, nexsiStatus, validateNexsi } from "../nexsi-quality";
 import type { NexsiCompany, NexsiFile } from "../nexsi-types";
 import { readFileSync } from "node:fs";
+import { yahooChart } from "../../../scripts/lib/yahoo.mjs";
 
 const now = Date.parse("2026-11-21T12:00:00Z");
 describe("NexSI public source contracts", () => {
+  it("tries the alternate Yahoo host when the first reachable host fails data validation", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ chart: { result: [{ value: "old" }] } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ chart: { result: [{ value: "current" }] } }) });
+    vi.stubGlobal("fetch", fetcher);
+    try {
+      const result = await yahooChart("SNDK", "1d", "5y", (r: { value: string }) => { if (r.value !== "current") throw new Error("latest observation regressed"); });
+      expect(result.value).toBe("current");
+      expect(fetcher.mock.calls[1][0]).toContain("query2.finance.yahoo.com");
+    } finally { vi.unstubAllGlobals(); }
+  });
   it("keeps SEC issuer identity and acceptance time, excluding future/unsupported disclosures", () => {
     const data = { cik: 1045810, filings: { recent: { form: ["8-K", "10-Q", "4"], acceptanceDateTime: ["2026-11-17T21:20:51Z", "2026-12-01T12:00:00Z", "2026-11-19T12:00:00Z"], accessionNumber: ["0001045810-26-000088"], primaryDocument: ["nvda-20261117.htm"], items: ["2.02,9.01"] } } };
     expect(parseFilings(data, 1045810, now)).toEqual([expect.objectContaining({ kind: "filing", publishedAt: "2026-11-17T21:20:51.000Z", title: expect.stringContaining("earnings"), url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000088/nvda-20261117.htm" })]);

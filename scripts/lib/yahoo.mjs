@@ -1,6 +1,7 @@
 import { get } from "./http.mjs";
 
-export async function yahooChart(symbol, interval = "1d", range = "10y") {
+/** @param {(result: object) => void} [validate] */
+export async function yahooChart(symbol, interval = "1d", range = "10y", validate = undefined) {
   const url = `/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
   let failure;
   // Same instrument/provider on both hosts: never substitute a futures contract for spot.
@@ -8,6 +9,9 @@ export async function yahooChart(symbol, interval = "1d", range = "10y") {
     try {
       const json = await get(`https://${host}${url}`, true, { retries: 2, timeout: 10000 });
       if (json.chart?.error || !json.chart?.result?.[0]) throw new Error("Yahoo chart response unavailable");
+      // A reachable host can still return an incomplete or regressed snapshot.
+      // Callers can reject it before trying the same instrument on the other host.
+      validate?.(json.chart.result[0]);
       return json.chart.result[0];
     } catch (error) { failure = error; }
   }
