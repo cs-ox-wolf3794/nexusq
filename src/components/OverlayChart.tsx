@@ -19,6 +19,7 @@ export interface Projection {
   fan?: [string, number, number, number, number, number][]; // [date,p10,p25,p50,p75,p90]
   external?: [string, number][];
   sourceLabel: string; // "model P50" | "IMF WEO" | "EIA STEO"
+  note?: string;
 }
 
 const CAPTION_TEXT: Record<Transform, string> = {
@@ -176,6 +177,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
           </>
         )}
       </p>
+      {projections.filter((p) => p.note).map((p) => <p className="sub" key={p.name}>{p.note}</p>)}
     </div>
   );
 }

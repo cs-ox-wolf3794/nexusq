@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { get } from "./lib/http.mjs";
 import { readJson, publishSnapshot } from "./lib/snapshot.mjs";
 import { modelFan, validateForecastPoints } from "./lib/forecast.mjs";
+import { fetchGdpForecasts } from "./lib/gdp-forecasts.mjs";
+import { externalForecastCurrent } from "../src/lib/forecast.ts";
 import { yahooChart, parseYahooDaily } from "./lib/yahoo.mjs";
 import { assessSeries, validatePoints, sourcePolicy } from "../src/lib/quality.ts";
 import path from "node:path";
@@ -262,26 +264,22 @@ for (const [id, points] of written) {
   }
 }
 
-// Layer 1 (external, institutional): IMF WEO real-GDP-growth projections.
+// Layer 1: IMF-authored forecasts delivered by World Bank Data360. Both the
+// query API and the independent bulk-file host are public and require no key.
 try {
-  const imf = await get("https://www.imf.org/external/datamapper/api/v1/NGDP_RPCH", true);
-  const table = imf.values?.NGDP_RPCH ?? {};
-  const nowYear = new Date().getUTCFullYear();
-  for (const { id, iso } of WORLDBANK) {
-    const byYear = table[iso];
-    if (!byYear || quality.series[id]?.flags.length) continue;
-    const lastActual = written.get(id)?.at(-1)?.[0]?.slice(0, 4) ?? String(nowYear - 1);
-    const pts = Object.entries(byYear)
-      .filter(([y, v]) => v != null && y > lastActual && Number(y) <= nowYear + 3)
-      .map(([y, v]) => [`${y}-12-31`, Math.round(v * 100) / 100])
-      .sort((a, b) => (a[0] < b[0] ? -1 : 1));
-    validateForecastPoints(pts);
-    forecasts[id] = { kind: "external", source: "IMF WEO (real GDP growth)", retrievedAt: GENERATED, points: pts };
+  const batch = await fetchGdpForecasts(WORLDBANK, { now: Date.parse(GENERATED), previous: previousForecasts?.series });
+  for (const { id } of WORLDBANK) {
+    if (quality.series[id]?.flags.length) continue;
+    const lastActual = written.get(id)?.at(-1)?.[0];
+    const forecast = batch[id];
+    forecast.points = forecast.points.filter(([date]) => date > lastActual);
+    validateForecastPoints(forecast.points);
+    forecasts[id] = forecast;
   }
-  console.log("ok   IMF WEO GDP projections");
+  console.log("ok   IMF WEO GDP projections via World Bank Data360");
 } catch (err) {
-  enrichmentIssues.push({ source: "IMF WEO", detail: err.message });
-  console.error(`FAIL IMF WEO: ${err.message}`);
+  enrichmentIssues.push({ source: "GDP forecasts (World Bank Data360)", detail: err.message });
+  console.error(`FAIL GDP forecasts: ${err.message}`);
 }
 
 // Layer 1b (optional): EIA Short-Term Energy Outlook — the reference forecast for
@@ -318,7 +316,7 @@ if (process.env.EIA_API_KEY) {
 for (const [id, old] of Object.entries(previousForecasts?.series ?? {})) {
   if (old.kind === "external" && forecasts[id]?.kind !== "external" && !quality.series[id]?.flags.length) {
     const retrievedAt = old.retrievedAt ?? previousForecasts.generated;
-    if (Date.now() - Date.parse(retrievedAt) <= 45 * 86400000 && old.points.some(([date]) => date > GENERATED.slice(0, 10))) forecasts[id] = { ...old, retrievedAt, retained: true };
+    if (externalForecastCurrent({ ...old, retrievedAt }) && old.points.some(([date]) => date > GENERATED.slice(0, 10))) forecasts[id] = { ...old, retrievedAt, retained: true };
   }
 }
 await writeFile(path.join(OUT_DIR, "forecasts.json"), JSON.stringify({ generated: new Date().toISOString(), series: forecasts }));

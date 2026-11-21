@@ -1,6 +1,7 @@
 import type { Snapshot } from "../lib/snapshot";
 import { quoteStatus } from "../lib/snapshot";
 import { analysisEligibility, freshness, observationEnd, sourcePolicy } from "../lib/quality";
+import { externalForecastCurrent } from "../lib/forecast";
 
 const stamp = (date?: string) => date ? `${new Date(date).toLocaleString("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" })} UTC` : "Not recorded";
 
@@ -22,7 +23,7 @@ export function DataStatus({ snapshot, now, error }: { snapshot: Snapshot | null
     {overdue && <p className="load-error">The analytical refresh is overdue. Current signals and projections are withheld until QC is renewed.</p>}
     {snapshot.refreshStatus?.outcome === "failure" && <p className="load-error">The latest analytical refresh failed at {stamp(snapshot.refreshStatus.attemptedAt)}. The previous verified snapshot remains available. {snapshot.refreshStatus.runUrl && <a href={snapshot.refreshStatus.runUrl} target="_blank" rel="noreferrer">View refresh status</a>}</p>}
     <p className="sub">{withheld.length ? `${withheld.length} of ${catalog.series.length} inputs withheld from current signals and projections.` : `${catalog.series.length} inputs passed the current operational checks.`} Historical observations remain available for inspection. Automated checks do not independently certify source accuracy.</p>
-    {health?.enrichmentIssues.length ? <p className="sub">⚠ Supplementary sources have {health.enrichmentIssues.length} unresolved update checks. Prior annual observations are labeled where retained; inspect the source details below.</p> : null}
+    {health?.enrichmentIssues.length ? <p className="sub">⚠ Supplementary sources: {health.enrichmentIssues.length} unresolved update {health.enrichmentIssues.length === 1 ? "check" : "checks"}. Prior annual observations are labeled where retained; inspect the source details below.</p> : null}
     <details>
       <summary>Inspect sources, observation dates and quality checks</summary>
       {health?.enrichmentIssues.length ? <ul>{health.enrichmentIssues.map((issue, i) => <li key={i}>{issue.source}: {issue.detail}</li>)}</ul> : null}
@@ -43,6 +44,15 @@ export function DataStatus({ snapshot, now, error }: { snapshot: Snapshot | null
           </tr>;
         })}</tbody>
       </table></div>
+      <h3>External forecast sources</h3>
+      <ul>{Object.entries(snapshot.forecasts?.series ?? {}).filter(([, forecast]) => forecast.kind === "external").map(([id, forecast]) => forecast.kind === "external" && <li key={id}>
+        <strong>{catalog.series.find((s) => s.id === id)?.name ?? id}</strong>: {forecast.sourceUrl ? <a href={forecast.sourceUrl} target="_blank" rel="noreferrer">{forecast.source}</a> : forecast.source}.
+        {forecast.sourceVintage && <> Source version {forecast.sourceVintage}.</>} Retrieved {stamp(forecast.retrievedAt)}.
+        {forecast.deliveryUrl && <> <a href={forecast.deliveryUrl} target="_blank" rel="noreferrer">Delivery source</a>.</>}
+        {forecast.retained && <> Retained from the last successful retrieval.</>}
+        {!externalForecastCurrent(forecast, now) && <> ⚠ Expired; withheld from projections.</>}
+        {forecast.periodBasis && <> {forecast.periodBasis}</>}
+      </li>)}</ul>
     </details>
   </section>;
 }

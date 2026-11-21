@@ -35,7 +35,7 @@ export type FanPoint = [string, number, number, number, number, number];
 
 export type Forecast =
   | { kind: "model"; method: string; points: FanPoint[]; issuedAt?: string; asOf?: string }
-  | { kind: "external"; source: string; points: [string, number][]; retrievedAt?: string; retained?: boolean };
+  | { kind: "external"; source: string; points: [string, number][]; retrievedAt?: string; retained?: boolean; sourceUrl?: string; deliveryUrl?: string; sourceVintage?: string; periodBasis?: string };
 
 export interface ForecastFile {
   generated: string;

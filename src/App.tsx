@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Series } from "./lib/data";
 import { loadSnapshot, type Snapshot } from "./lib/snapshot";
 import { analysisEligibility, freshness } from "./lib/quality";
+import { externalForecastCurrent } from "./lib/forecast";
 import { DataStatus, QuotePanel } from "./components/DataStatus";
 import type { Transform } from "./lib/transform";
 import { TRANSFORM_LABELS, applyTransform, clampRange } from "./lib/transform";
@@ -252,7 +253,7 @@ export default function App() {
       const fc = forecasts.series[s.id];
       if (!fc || !analyticalMap.has(s.id)) continue;
       if (fc.kind === "model" && (fc.asOf !== s.lastUpdated || !fc.issuedAt || now - Date.parse(fc.issuedAt) > 72 * 3600000)) continue;
-      if (fc.kind === "external" && (!fc.retrievedAt || now - Date.parse(fc.retrievedAt) > 45 * 86400000)) continue;
+      if (fc.kind === "external" && !externalForecastCurrent(fc, now)) continue;
       const base = clampRange(s.points, from)[0]?.[1];
       if (effectiveTransform === "index" && !(base > 0)) continue;
       const scale = (v: number) => (effectiveTransform === "index" ? (v / base) * 100 : v);
@@ -267,6 +268,7 @@ export default function App() {
         const last = s.points[s.points.length - 1];
         out.push({
           name: s.name, color, sourceLabel: `${fc.retained ? "retained " : ""}${fc.source.split(" (")[0]}`,
+          note: fc.sourceVintage ? `${s.name}: ${fc.source}, source version ${fc.sourceVintage}. ${fc.periodBasis ?? ""}` : undefined,
           external: [[last[0], scale(last[1])], ...fc.points.filter((p) => p[0] > last[0]).map((p) => [p[0], scale(p[1])] as [string, number])],
         });
       }
@@ -551,7 +553,7 @@ export default function App() {
         <p className="sub">
           Major energy exporters vs importers: how annual GDP growth has historically moved with Brent,
           and the first-order impact of a sustained price shock.{" "}
-          <a className="cta-link" href="#overlay">GDP paths with IMF projections on the overlay ↗</a>
+          <a className="cta-link" href="#overlay">GDP paths with institutional projections on the overlay ↗</a>
         </p>
         <HowToRead>
           Sovereign <GlossaryTip term="β" definition="Cycle-controlled GDP sensitivity: percentage-point change in GDP growth per +10% oil move." /> is estimated on annual data with world-cycle control; use it as regime context, not a precise near-term forecast.

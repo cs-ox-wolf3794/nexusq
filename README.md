@@ -101,7 +101,7 @@ npm run refresh
 | FRED (fredgraph CSV, keyless) | Brent, WTI, Henry Hub, EU gas, coal, copper, wheat, S&P 500, Nasdaq, VIX, UST 10Y, breakevens, CPI, INDPRO, dollar index, EURUSD | daily/monthly |
 | Yahoo Finance chart API | XLE, ICLN, TAN, GLD | 10y daily closes |
 | World Bank API | GDP growth (US, China, India, Germany) | annual |
-| IMF WEO API | GDP-growth projections to +3y (keyless) | forecast layer |
+| IMF WEO via World Bank Data360 | GDP-growth projections to +3y (keyless API and bulk-file fallback) | forecast layer; source-version dates preserved |
 | EIA v2 API (optional) | STEO Brent/WTI/Henry Hub forecasts + weekly inventories | set free `EIA_API_KEY` |
 
 ### Forecast layer
@@ -111,7 +111,7 @@ npm run refresh
 - **Model fans** — per-series P10/P25/P50/P75/P90 projections (~90 days for daily series,
   ~6 months for monthly) from deliberately transparent statistics: half-weight ("damped")
   drift + EWMA volatility. The uncertainty band is the product, not the point estimate.
-- **External forecasts** — IMF WEO GDP projections; EIA STEO oil & gas forecasts when a
+- **External forecasts** — IMF WEO GDP projections delivered by World Bank Data360; EIA STEO oil & gas forecasts when a
   key is configured.
 - Because the cron commits `forecasts.json` daily, **git history is the outcome database**:
   every published forecast is permanently recorded against what subsequently happened —
@@ -142,3 +142,9 @@ September IMF monthly prices are dated September 1 in FRED but represent the ful
 5. CI and deployment run tests and data-contract validation. The data writer is serialized; it never force-pushes. Code changes or data conflicts can stop publication and require an operator to inspect the failed run.
 
 The local regression suite covers malformed/future/duplicate observations, source outages, history regression, publication integrity, freshness expiry, incomplete trading sessions, quote timestamps, missing QC, release-lag replay, baseline look-ahead, paired return alignment and daily ledger preservation. Automated QC is not independent corroboration of provider values. A hard market-data SLA, tick-level delivery and point-in-time institutional backtesting require capabilities beyond the current free static architecture.
+
+### GDP forecast delivery
+
+The legacy IMF DataMapper endpoint is replaced by [World Bank Data360](https://data360.worldbank.org/en/api), indicator `IMF_WEO_NGDP_RPCH`. Forecast authorship remains the [IMF World Economic Outlook](https://data.imf.org/en/datasets/IMF.RES:WEO); this is alternative distribution, not an independent forecast. Four small country queries cover the US, China, India and Germany. If any API response fails or has invalid coverage, all four forecasts are read from the official World Bank bulk file as one coherent batch. No credentials or new infrastructure are required.
+
+The source metadata version is checked before and after retrieval, cannot regress and must be no older than 225 days. The entire requested annual horizon, units, country identifiers and latest-version dimensions must validate. Retained forecasts keep their original retrieval time and expire after 45 days; the client also enforces source-version expiry. India is explicitly labeled on an April-start fiscal-year basis. Forecasts are separate from revised World Bank actual histories. Source, delivery URL, version and retrieval time appear under Data status. Attribution: International Monetary Fund, World Economic Outlook (WEO), delivered by World Bank Data360; access dates are recorded per forecast.

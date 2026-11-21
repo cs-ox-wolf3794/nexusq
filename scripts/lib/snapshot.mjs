@@ -1,7 +1,7 @@
 import { readFile, writeFile, readdir, mkdir, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { validatePoints } from "../../src/lib/quality.ts";
+import { validatePoints, validDate } from "../../src/lib/quality.ts";
 
 export async function readJson(directory, name, fallback = null) {
   try { return JSON.parse(await readFile(path.join(directory, name), "utf8")); }
@@ -26,6 +26,7 @@ export async function validateSnapshot(directory) {
   for (const [id, forecast] of Object.entries(forecasts?.series ?? {})) {
     if (!ids.has(id)) throw new Error(`forecast missing actual series: ${id}`);
     if (!["model", "external"].includes(forecast.kind) || !forecast.points?.length) throw new Error(`invalid forecast schema: ${id}`);
+    if (forecast.source?.includes("World Bank Data360") && (!validDate(forecast.sourceVintage) || !forecast.deliveryUrl?.startsWith("https://data360") || !forecast.periodBasis)) throw new Error(`missing GDP forecast lineage: ${id}`);
     let previousDate = "";
     for (const p of forecast.points) {
       if (p.length !== (forecast.kind === "model" ? 6 : 2) || p[0] <= previousDate || !Number.isFinite(Date.parse(p[0])) || !p.slice(1).every(Number.isFinite)) throw new Error(`invalid forecast: ${id}`);
