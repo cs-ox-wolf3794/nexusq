@@ -95,13 +95,13 @@ export function EquityImpact({ companies, seriesMap }: {
               return (
                 <tr key={company.id}>
                   <td className="beta-name">{company.name}</td>
-                  <td data-label="Sector">{company.sector}</td>
-                  <td className="num" data-label="β 90 obs" title="Approximate 95% Newey–West HAC interval; parameter uncertainty, not a forecast range"><strong>{rb.current.beta.toFixed(2)}</strong><br/><small>[{rb.current.betaCI[0].toFixed(2)}, {rb.current.betaCI[1].toFixed(2)}]</small></td>
+                  <td data-label="Sector"><span className="cell-value">{company.sector}</span></td>
+                  <td className="num" data-label="β 90 obs" title="Approximate 95% Newey–West HAC interval; parameter uncertainty, not a forecast range"><span className="cell-value"><strong>{rb.current.beta.toFixed(2)}</strong><small>[{rb.current.betaCI[0].toFixed(2)}, {rb.current.betaCI[1].toFixed(2)}]</small></span></td>
                   <td data-label="β trend"><BetaSpark history={rb.history} /></td>
-                  <td className="num" data-label="Intercept (log %/yr)">{rb.current.alphaAnnual >= 0 ? "+" : ""}{rb.current.alphaAnnual.toFixed(1)}</td>
-                  <td className="num" data-label="R²">{rb.current.r2.toFixed(2)}<br/><small>n={rb.current.n} · {rb.current.asOf}</small></td>
-                  <td className={`num implied ${implied >= 0 ? "up" : "down"}`} data-label={`Implied @ ${shockPct >= 0 ? "+" : ""}${shockPct}%`}>
-                    {implied >= 0 ? "▲ +" : "▼ "}{implied.toFixed(1)}%
+                  <td className="num" data-label="Intercept (log %/yr)"><span className="cell-value">{rb.current.alphaAnnual >= 0 ? "+" : ""}{rb.current.alphaAnnual.toFixed(1)}</span></td>
+                  <td className="num" data-label="R²"><span className="cell-value">{rb.current.r2.toFixed(2)}<small>n={rb.current.n} · {rb.current.asOf}</small></span></td>
+                  <td className={`num implied ${implied >= 0 ? "up" : "down"}`} data-label={`Associated @ ${shockPct >= 0 ? "+" : ""}${shockPct}%`}>
+                    <span className="cell-value">{implied >= 0 ? "▲ +" : "▼ "}{implied.toFixed(1)}%</span>
                   </td>
                 </tr>
               );

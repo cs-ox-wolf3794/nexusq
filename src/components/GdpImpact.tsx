@@ -62,7 +62,7 @@ export function GdpImpact({ impact, now }: { impact: ImpactFile; now: number }) 
                 <tr key={country.iso}>
                   <td className="beta-name">{country.name}{country.retained && <><br/><small>◔ Prior annual data retained</small></>}</td>
                   <td className="gdp-profile">{profile}</td>
-                  <td className="num" data-label="β GDP" title="Approximate 95% HC3/t interval for the coefficient, not a forecast range"><strong>{gb.betaPer10Pct >= 0 ? "+" : ""}{gb.betaPer10Pct.toFixed(2)}</strong><span className="gdp-unit">pp/+10%</span><br/><small>[{gb.betaCI[0].toFixed(2)}, {gb.betaCI[1].toFixed(2)}]{uncertain && " · sign uncertain"}</small></td>
+                  <td className="num" data-label="β GDP" title="Approximate 95% HC3/t interval for the coefficient, not a forecast range"><span className="cell-value"><strong>{gb.betaPer10Pct >= 0 ? "+" : ""}{gb.betaPer10Pct.toFixed(2)}</strong><span className="gdp-unit">pp/+10%</span><small>[{gb.betaCI[0].toFixed(2)}, {gb.betaCI[1].toFixed(2)}]{uncertain && " · sign uncertain"}</small></span></td>
                   <td data-label="Sensitivity">
                     <div className="beta-bar-track">
                       <div
@@ -71,9 +71,9 @@ export function GdpImpact({ impact, now }: { impact: ImpactFile; now: number }) 
                       />
                     </div>
                   </td>
-                  <td className="num" data-label="r (n)">{gb.r.toFixed(2)} ({gb.n})<br/><small>through {gb.asOf}</small></td>
+                  <td className="num" data-label="r (n)"><span className="cell-value">{gb.r.toFixed(2)} ({gb.n})<small>through {gb.asOf}</small></span></td>
                   <td className={`num implied ${implied >= 0 ? "up" : "down"}`} data-label={`ΔGDP @ ${shockPct >= 0 ? "+" : ""}${shockPct}%`}>
-                    {implied >= 0 ? "▲ +" : "▼ "}{implied.toFixed(2)} pp
+                    <span className="cell-value">{implied >= 0 ? "▲ +" : "▼ "}{implied.toFixed(2)} pp</span>
                   </td>
                 </tr>
               );

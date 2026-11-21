@@ -11,12 +11,12 @@ function StatRow({ label, s }: { label: string; s: BacktestStats | null }) {
   return (
     <tr>
       <td className="beta-name">{label}</td>
-      <td className="num" data-label="Hit rate"><strong>{pct(s.hitRate)}</strong> <span className="val-ci">{s.hitCI ? `[${pct(s.hitCI[0])}–${pct(s.hitCI[1])}]` : "CI withheld: insufficient variation/sample"}</span></td>
-      <td className="num" data-label="Baseline">{pct(base)}</td>
+      <td className="num" data-label="Hit rate"><span className="cell-value"><strong>{pct(s.hitRate)}</strong> <span className="val-ci">{s.hitCI ? `[${pct(s.hitCI[0])}–${pct(s.hitCI[1])}]` : "CI withheld: insufficient variation/sample"}</span></span></td>
+      <td className="num" data-label="Baseline"><span className="cell-value">{pct(base)}</span></td>
       <td className="num" data-label="Difference">
-        {edge >= 0 ? "+" : ""}{(edge * 100).toFixed(1)}pp
+        <span className="cell-value">{edge >= 0 ? "+" : ""}{(edge * 100).toFixed(1)}pp</span>
       </td>
-      <td className="num" data-label="Episodes (n)">{s.n}</td>
+      <td className="num" data-label="Episodes (n)"><span className="cell-value">{s.n}</span></td>
     </tr>
   );
 }

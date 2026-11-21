@@ -379,44 +379,55 @@ body {
 .beta-table th {
   text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
   color: var(--text-muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--gridline);
-  white-space: nowrap;
+  white-space: normal;
 }
 .beta-table th.num { text-align: right; }
 .beta-table td { padding: 7px 8px; border-bottom: 1px solid var(--gridline); color: var(--text-secondary); white-space: nowrap; }
 .beta-table tr:last-child td { border-bottom: none; }
+.beta-table td.beta-name { white-space: normal; }
+.beta-table td.gdp-profile { font-size: 12px; max-width: 300px; white-space: normal; overflow-wrap: anywhere; }
+.cell-value { display: block; min-width: 0; }
+.cell-value > small, .cell-value > .val-ci { display: block; white-space: normal; }
 
-/* Stacked-card table pattern: data tables become label:value cards on phones.
+/* Data tables become labeled cards before their columns become cramped.
    Opt in with .stack-wrap on the wrapper + .stack-sm on the table + data-label on tds.
    Reference tables (Methodology) stay as horizontally scrollable tables. */
-@media (max-width: 600px) {
-  .stack-wrap { overflow-x: visible; }
-  table.stack-sm { min-width: 0; }
+@media (max-width: 1100px) {
+  .stack-wrap { overflow-x: visible; min-width: 0; }
+  table.stack-sm { display: block; min-width: 0; }
   .stack-sm thead { display: none; }
-  .stack-sm tbody, .stack-sm tr, .stack-sm td { display: block; }
+  .stack-sm tbody { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .stack-sm tr {
+    display: block; min-width: 0;
     border: 1px solid var(--gridline); border-radius: 10px;
-    padding: 8px 12px; margin-bottom: 8px;
+    padding: 12px;
   }
-  .stack-sm tr:last-child { margin-bottom: 0; }
   .stack-sm td {
-    border-bottom: none; padding: 3px 0; white-space: normal;
-    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    border-bottom: none; padding: 5px 0; white-space: normal; min-width: 0;
+    display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: start; column-gap: 12px; overflow-wrap: anywhere;
   }
   .stack-sm td[data-label]::before {
     content: attr(data-label);
     color: var(--text-muted); font-size: 10.5px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.5px; flex: 0 0 auto;
+    text-transform: uppercase; letter-spacing: 0.5px; text-align: left;
+    line-height: 1.5; min-width: 0;
   }
-  .stack-sm td.beta-name { font-size: 14px; padding-bottom: 5px; display: block; }
-  .stack-sm td.gdp-profile { max-width: none; display: block; padding-bottom: 5px; }
-  .stack-sm td.val-na { display: flex; }
+  .stack-sm td.beta-name { font-size: 14px; padding: 0 0 8px; display: block; text-align: left; }
+  .stack-sm td.gdp-profile { max-width: none; display: block; padding: 0 0 10px; line-height: 1.5; }
+  .stack-sm td.val-na { display: block; }
+  .stack-sm .cell-value { text-align: right; white-space: normal; }
+  .stack-sm .beta-spark, .stack-sm .beta-bar-track { justify-self: end; max-width: 100%; }
+  .stack-sm .gdp-unit { display: inline-block; }
+}
+@media (max-width: 800px) {
+  .stack-sm tbody { grid-template-columns: minmax(0, 1fr); }
 }
 .beta-name { color: var(--text-primary); font-weight: 600; }
 .beta-spark { color: var(--text-muted); display: block; }
 .implied { font-weight: 600; }
 .implied.up { color: var(--delta-up); }
 .implied.down { color: var(--status-critical); }
-.gdp-profile { font-size: 12px; max-width: 300px; white-space: normal; }
 .gdp-unit { font-size: 10.5px; color: var(--text-muted); margin-left: 4px; }
 .beta-bar-track { width: 110px; height: 10px; border-radius: 5px; background: var(--gridline); overflow: hidden; }
 .beta-bar { height: 100%; border-radius: 5px; }
