@@ -1,0 +1,78 @@
+import type { Snapshot } from "../lib/snapshot";
+import { quoteStatus } from "../lib/snapshot";
+import { analysisEligibility, freshness, observationEnd, sourcePolicy } from "../lib/quality";
+
+const stamp = (date?: string) => date ? `${new Date(date).toLocaleString("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" })} UTC` : "Not recorded";
+
+export function DataStatus({ snapshot, now, error }: { snapshot: Snapshot | null; now: number; error: string | null }) {
+  if (!snapshot) return error ? <p className="load-error" role="alert">Data could not be verified. {error} Retrying automatically.</p> : null;
+  const { catalog, seriesMap, quality, health } = snapshot;
+  const withheld = [...seriesMap.values()].filter((s) => !analysisEligibility(s, quality, now).eligible);
+  const overdue = now - Date.parse(catalog.generated) > 72 * 3600000;
+  return <section className="card data-status" aria-label="Data reliability">
+    <div className="card-head">
+      <h2>Data status</h2>
+      <span className={`qc-chip ${withheld.length || error || overdue ? "qc-warn" : "qc-ok"}`}>
+        {withheld.length || error || overdue ? "⚠ Review required" : "✓ Within source tolerances"}
+      </span>
+    </div>
+    <p className="sub">Analytical snapshot checked {stamp(catalog.generated)}. Official series follow their publication schedules;
+      daily and monthly observations are not live prices. Open pages check for published updates every minute.</p>
+    {error && <p className="load-error" role="alert">Update could not be verified. Keeping the previous verified snapshot and retrying. {error}</p>}
+    {overdue && <p className="load-error">The analytical refresh is overdue. Current signals and projections are withheld until QC is renewed.</p>}
+    {snapshot.refreshStatus?.outcome === "failure" && <p className="load-error">The latest analytical refresh failed at {stamp(snapshot.refreshStatus.attemptedAt)}. The previous verified snapshot remains available. {snapshot.refreshStatus.runUrl && <a href={snapshot.refreshStatus.runUrl} target="_blank" rel="noreferrer">View refresh status</a>}</p>}
+    <p className="sub">{withheld.length ? `${withheld.length} of ${catalog.series.length} inputs withheld from current signals and projections.` : `${catalog.series.length} inputs passed the current operational checks.`} Historical observations remain available for inspection. Automated checks do not independently certify source accuracy.</p>
+    {health?.enrichmentIssues.length ? <p className="sub">⚠ Supplementary sources have {health.enrichmentIssues.length} unresolved update checks. Prior annual observations are labeled where retained; inspect the source details below.</p> : null}
+    <details>
+      <summary>Inspect sources, observation dates and quality checks</summary>
+      {health?.enrichmentIssues.length ? <ul>{health.enrichmentIssues.map((issue, i) => <li key={i}>{issue.source}: {issue.detail}</li>)}</ul> : null}
+      <div className="table-wrap"><table className="beta-table">
+        <thead><tr><th>Series / source</th><th>Observation period through</th><th>Last successful retrieval</th><th>Status</th></tr></thead>
+        <tbody>{catalog.series.map((entry) => {
+          const s = seriesMap.get(entry.id)!;
+          const assessment = analysisEligibility(s, quality, now);
+          const policy = sourcePolicy(s.id);
+          const f = freshness(s.id, s.lastUpdated, now);
+          return <tr key={entry.id}>
+            <td>{entry.name}<br/>{entry.sourceUrl ? <a href={entry.sourceUrl} target="_blank" rel="noreferrer">{entry.source}</a> : entry.source}</td>
+            <td>{observationEnd(s.id, s.lastUpdated)} · {policy.cadence}<br/><small>{Math.max(0, f.ageDays)} days since period end; tolerance {policy.maxAgeDays} days</small></td>
+            <td>{stamp(s.retrievedAt)}{s.checkedAt && <><br/><small>Checked {stamp(s.checkedAt)}</small></>}</td>
+            <td>{assessment.eligible ? "✓ Available for snapshot analysis" : `⚠ ${assessment.reason}`}<br/><small>{policy.note}</small>
+              {quality.series[s.id]?.flags.map((flag) => <p key={flag.code}>{flag.detail}</p>)}
+            </td>
+          </tr>;
+        })}</tbody>
+      </table></div>
+    </details>
+  </section>;
+}
+
+export function QuotePanel({ snapshot, now }: { snapshot: Snapshot | null; now: number }) {
+  const file = snapshot?.quotes;
+  if (!file) return <p className="sub">Intraday quotes unavailable. Daily analytical observations are shown below.</p>;
+  return <section className="card" aria-label="Latest market quotes">
+    <div className="card-head"><h2>Latest ETF quotes</h2><span className="sub">Target: checks every 15 minutes</span></div>
+    <p className="sub">Yahoo Finance quotes, shown separately from completed daily observations. Delivery is best effort; exchange delays vary.
+      These quotes do not update the daily signals, betas or forecasts.</p>
+    {now - Date.parse(file.generated) > 30 * 60000 && <p className="sub">⚠ Quote checks have not run in the last 30 minutes. The scheduled checks cover weekdays 12:00–23:59 UTC; outside that window the last quotes remain visible.</p>}
+    {file.failures.length > 0 && <p className="sub">⚠ {file.failures.length} quote sources could not be refreshed.</p>}
+    <div className="quote-grid">{["XLE", "ICLN", "TAN", "GOLD"].map((id) => {
+      const quote = file.quotes[id];
+      if (!quote) return <div className="quote-tile" key={id}><strong>{id}</strong><p>Quote unavailable</p></div>;
+      const status = quoteStatus(quote, now);
+      return <div className="quote-tile" key={id}>
+        <strong>{quote.symbol}</strong><div className="quote-price">{quote.price.toLocaleString("en-US", { maximumFractionDigits: 2 })} {quote.currency}</div>
+        <p className="sub">{status.current ? "✓" : "◔"} {status.label}<br/>Observed {stamp(quote.observedAt)}<br/>Provider delay: {quote.delayMinutes == null ? "not disclosed" : `${quote.delayMinutes} min`}</p>
+      </div>;
+    })}</div>
+    <details className="company-quotes">
+      <summary>Inspect company quotes</summary>
+      <div className="table-wrap"><table className="beta-table">
+        <thead><tr><th>Instrument</th><th>Quote</th><th>Observed at</th><th>Status</th></tr></thead>
+        <tbody>{Object.values(file.quotes).filter((quote) => !["XLE", "ICLN", "TAN", "GOLD"].includes(quote.id)).map((quote) => <tr key={quote.id}>
+          <td>{quote.name} ({quote.symbol})</td><td>{quote.price.toFixed(2)} {quote.currency}</td><td>{stamp(quote.observedAt)}</td><td>{quoteStatus(quote, now).label}</td>
+        </tr>)}</tbody>
+      </table></div>
+    </details>
+  </section>;
+}

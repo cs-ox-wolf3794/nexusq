@@ -35,17 +35,17 @@ A responsive static web app (browser / tablet / mobile) with:
   comparable axis (indexed, z-score, y/y % or raw). No dual axes, ever. Question presets
   and shareable view links.
 - **Correlation structure** — Pearson ρ of log-returns over the selected window,
-  forward-filled onto a common daily grid.
-- **Live signals** — dislocation z-scores, 50/200-day momentum regimes,
+  matched on common observation intervals without forward filling; incompatible frequencies are withheld.
+- **Snapshot signals** — dislocation z-scores, 50/200-day momentum regimes,
   correlation-regime shifts on curated energy↔cross-asset pairs, and inventory-divergence
   flags (EIA weekly fundamentals vs price, seasonal z × dislocation tension).
 - **Market state** — trend / volatility / dollar / CFTC managed-money-positioning
   percentile conditions per energy market, with a supportive-oriented composite. A regime
   description, not a trading signal.
 - **Signal validation** — an event-study backtest of every signal family since 2015,
-  publication-lag-honest and episode-collapsed, with null results published alongside the
+  source-lag-aware and episode-collapsed, using revised histories rather than point-in-time vintages, with null results published alongside the
   real structure.
-- **Equity impact (Energy Beta board)** — rolling 90-day β / α / R² of ~15 energy-exposed
+- **Equity impact (Energy Beta board)** — rolling 90-observation β / α / R² of ~15 energy-exposed
   stocks (majors, services, steel, chemicals, airlines, transition names) against
   Brent / WTI / Henry Hub, with a first-order shock translator.
 - **Sovereign impact** — GDP sensitivity of major energy exporters vs importers to oil
@@ -68,7 +68,7 @@ Vite + React + TypeScript SPA (ECharts) — fully static, free to host
 ```
 
 No backend and no runtime API keys: data is snapshotted into the repo by the refresh
-pipeline, so the site works offline and never hits rate limits. (The pipeline itself
+pipeline, so analytical views use local snapshots. Providers can still throttle the refresh pipeline; failed inputs retain their prior observations and explicit status. (The pipeline itself
 uses a free EIA key held as an Actions secret for STEO forecasts and weekly inventories;
 FRED, Yahoo, World Bank and CFTC are keyless.)
 
@@ -82,7 +82,7 @@ npm run dev        # http://localhost:5173
 ### Refresh data
 
 ```bash
-node scripts/refresh-data.mjs
+npm run refresh
 ```
 
 ### Deploy (free)
@@ -118,3 +118,27 @@ node scripts/refresh-data.mjs
   the raw material for a calibration scoreboard.
 
 *Not investment advice. © 2026 Gygante Quantitative Systems.*
+
+## Reliability and update operations
+
+- `npm run refresh`: stage and validate a full analytical update, retaining individual failures. Requires `EIA_API_KEY` for weekly inventories and STEO. Missing credentials are reported; inventory histories are never removed from the catalog.
+- `npm run refresh:quotes`: check the existing Yahoo ETFs and stocks. Quotes are separate from daily analytics. Redistribution permission must be established for client delivery.
+- `npm run data:validate -- --manifest`: validate catalog/series/QC/forecast contracts and build the SHA-256 publication manifest.
+- `npm run backtest`: regenerate event studies after analytical engine changes. Results with a different engine version are withheld by the UI. Regenerate the manifest after updating results.
+- `NEXUSQ_DATA_DIR` selects an isolated data directory for validation runs. The default is `public/data`.
+
+GitHub Actions targets quote checks at minutes 7, 22, 37 and 52 during weekdays 12:00–23:59 UTC. Full analytical refreshes run at 06:17, 16:17, 18:17 and 22:17 UTC weekdays, plus Saturday 06:17. The static browser checks the manifest every minute and on return to the tab. The same infrastructure is retained: GitHub Actions, versioned JSON, GitHub Pages, no new paid service or runtime secret.
+
+**This is not a guaranteed 15-minute service.** Provider timestamps and exchange delays determine quote freshness; Actions scheduling and deployment add latency. Official daily, weekly, monthly and annual inputs do not become intraday data when polled more frequently. The quote panel does not imply intraday signals or betas. [GitHub scheduling limits](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) and [Yahoo exchange delays](https://help.yahoo.com/kb/finance/article-exchanges-data-delays-sln2310.html) apply.
+
+September IMF monthly prices are dated September 1 in FRED but represent the full month. QC measures age from September 30 with an explicit 60-day tolerance; it does not suppress source delays. The broad dollar series is the Federal Reserve trade-weighted index, not ICE DXY. Source definitions, operational tolerances and statistical limits are detailed on the in-app Methodology page.
+
+### Failure and recovery
+
+1. Inspect Data status, `quality.json`, `health.json`, `quotes.json` and the latest Actions run. Retrieval time is distinct from observation date. `refresh-status.json` reports rejected full refreshes while the last verified analytical snapshot remains available.
+2. Fix source access or credentials, then dispatch **Refresh data snapshots → full**. Quote-only runs cannot cure overdue analytical QC. Never widen a tolerance simply to make a warning disappear.
+3. Failed/rejected replacements retain prior observations, withhold affected current analysis and preserve original successful-retrieval timestamps. A systemic market-source outage rejects the complete staged update. Annual enrichment failures cannot block otherwise-valid daily market updates.
+4. Missing/mixed/corrupted publications fail client integrity checks and are retried; a loaded page retains its previous verified snapshot. A new page fails visibly rather than computing from a partial set.
+5. CI and deployment run tests and data-contract validation. The data writer is serialized; it never force-pushes. Code changes or data conflicts can stop publication and require an operator to inspect the failed run.
+
+The local regression suite covers malformed/future/duplicate observations, source outages, history regression, publication integrity, freshness expiry, incomplete trading sessions, quote timestamps, missing QC, release-lag replay, baseline look-ahead, paired return alignment and daily ledger preservation. Automated QC is not independent corroboration of provider values. A hard market-data SLA, tick-level delivery and point-in-time institutional backtesting require capabilities beyond the current free static architecture.

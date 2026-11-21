@@ -64,6 +64,11 @@ describe("computeMarketState", () => {
     const weekly = weeklySeries("X", Array.from({ length: 400 }, () => 100));
     expect(computeMarketState({ id: "X", name: "X" }, weekly, dxy, undefined)).toBeNull();
   });
+  it("includes the limiting dollar observation in its input date", () => {
+    const olderDollar = { ...dxy, lastUpdated: "2023-01-01" };
+    const state = computeMarketState({ id: "WTI", name: "WTI" }, price, olderDollar, undefined)!;
+    expect(state.asOf).toBe("2023-01-01");
+  });
 });
 
 describe("seasonalZ", () => {

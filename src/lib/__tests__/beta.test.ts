@@ -26,6 +26,8 @@ describe("rollingBeta", () => {
     expect(rb.current.r2).toBeCloseTo(1, 2);
     expect(Math.abs(rb.current.alphaAnnual)).toBeLessThan(0.2);
     expect(rb.current.n).toBe(90);
+    expect(rb.current.betaCI[0]).toBeCloseTo(2, 8);
+    expect(rb.current.betaCI[1]).toBeCloseTo(2, 8);
   });
 
   it("recovers a negative beta", () => {
@@ -39,6 +41,19 @@ describe("rollingBeta", () => {
     const driver = pricesFromReturns(driverR.slice(0, 10));
     const asset = pricesFromReturns(driverR.slice(0, 10));
     expect(rollingBeta(asset, driver, 90)).toBeNull();
+  });
+  it("does not compress a missing driver day into a supposedly daily beta observation", () => {
+    const asset = pricesFromReturns(driverR.slice(0, 91));
+    const driver = pricesFromReturns(driverR.slice(0, 91)).filter((_, i) => i !== 50);
+    // Both intervals touching the missing source day are excluded: only 89 remain.
+    expect(rollingBeta(asset, driver, 90)).toBeNull();
+  });
+  it("reports nonzero parameter uncertainty for a noisy relationship", () => {
+    const driver = pricesFromReturns(driverR);
+    const asset = pricesFromReturns(driverR.map((r, i) => r + 0.01 * Math.sin(i)));
+    const stats = rollingBeta(asset, driver)!.current;
+    expect(stats.betaCI[0]).toBeLessThan(stats.beta);
+    expect(stats.betaCI[1]).toBeGreaterThan(stats.beta);
   });
 });
 

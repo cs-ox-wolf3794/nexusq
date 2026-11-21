@@ -27,19 +27,13 @@ export function ValidationPanel({ bt }: { bt: BacktestFile }) {
   const c = bt.families["Correlation regime"];
   const corrH = String(bt.method.options.corrEvalObs);
 
+  const describe = (stats: BacktestStats | null, baseline?: number) => stats
+    ? `${stats.n} evaluated episodes: hit rate ${pct(stats.hitRate)} versus ${pct(baseline ?? stats.baselineHit)} baseline. The interval [${pct(stats.hitCI[0])}, ${pct(stats.hitCI[1])}] describes uncertainty in the measured hit rate; it is not a significance test of the difference.`
+    : "Insufficient completed episodes to estimate outcomes.";
   const verdicts: [string, string][] = [
-    ["Dislocation",
-      "Aggregate hit rates are indistinguishable from baseline — but reversion is monotone in severity: " +
-      "mild (watch) episodes are description, not prediction, while extreme (|z| ≥ 2.5) episodes reverted " +
-      `${d.bySeverity.extreme ? pct(d.bySeverity.extreme.hitRate) : "—"} of the time with a ` +
-      `${d.bySeverity.extreme ? `+${d.bySeverity.extreme.meanMove.toFixed(1)}%` : "—"} mean move (small n — read the CI). ` +
-      "At 60 observations the aggregate mean reversion move is positive with a CI excluding zero: an asymmetric-payoff, not a hit-rate, effect."],
-    ["Momentum",
-      "A clean null: 50/200-day crossings show no forward edge at any tested horizon (if anything, slight reversal). " +
-      "Momentum badges describe the current trend state — they do not forecast its continuation."],
-    ["Correlation regime",
-      `Regime shifts are mostly transitory: ρ reverted toward the OLD regime in ${c.horizons[corrH] ? pct(1 - c.horizons[corrH]!.hitRate) : "—"} of episodes. ` +
-      "Read these alerts as 'hedging relationships temporarily unstable', not as a durable new normal."],
+    ["Dislocation", describe(d.horizons["20"])],
+    ["Momentum", describe(m.horizons["20"])],
+    ["Correlation regime", describe(c.horizons[corrH], bt.corrPersistenceBaseline)],
   ];
 
   return (
@@ -68,14 +62,14 @@ export function ValidationPanel({ bt }: { bt: BacktestFile }) {
 
       <p className="sub val-caveats">
         Scope note: the <strong>Inventory divergence</strong> family (added 2026-08-02) is not yet
-        backtested — weekly fundamentals data is too young for honest episode statistics; it
+        backtested — historical release vintages have not been validated; it
         accumulates validation on the live daily ledger instead.
         {" "}Method: event-study replay of the production signal engine as-of each trading day since{" "}
         {bt.method.options.start.slice(0, 4)} — <em>not</em> a strategy backtest (no positions, sizing or costs).
-        Publication lag of {bt.method.options.visibilityLagDays} days imposed before outcomes are measured;
+        Source-specific publication lags are imposed before signal formation, then entry waits {bt.method.options.visibilityLagDays} additional day;
         firings collapsed to episodes ({bt.method.options.cooldownDays}-day cooldown); baselines are each
-        series' own unconditional same-sign probability (drift-honest); CIs from moving-block bootstrap;
-        daily series only. Thresholds were fixed a priori and have not been tuned on these results —
+        series' pre-entry same-sign probability; CIs from moving-block bootstrap;
+        daily price series only. Results use revised histories and approximate release lags, so they do not establish a tradable or causal edge. Bootstrap intervals do not fully capture cross-asset dependence or multiple testing. Thresholds were unchanged in this revision —
         the live daily ledger (public git history) re-verifies these findings out-of-sample as it accumulates.
       </p>
     </div>

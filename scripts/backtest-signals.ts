@@ -8,12 +8,13 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { ENGINE_VERSION } from "../src/lib/signals";
 import type { Series } from "../src/lib/data";
 import {
   DEFAULT_OPTIONS, aggregate, corrPersistenceBaseline, evaluateEpisodes, replayEpisodes,
 } from "../src/lib/backtest";
 
-const DATA = path.resolve(process.cwd(), "public/data");
+const DATA = path.resolve(process.env.NEXUSQ_DATA_DIR ?? "public/data");
 const read = (f: string) => JSON.parse(readFileSync(path.join(DATA, f), "utf8"));
 
 const catalog = read("catalog.json") as { series: { id: string }[] };
@@ -57,6 +58,7 @@ const H = DEFAULT_OPTIONS.horizons.map(String);
 const corrH = String(DEFAULT_OPTIONS.corrEvalObs);
 
 const result = {
+  engineVersion: ENGINE_VERSION,
   generated: new Date().toISOString(),
   method: {
     frame: "event-study (NOT a strategy backtest: no positions, sizing or costs)",
@@ -67,12 +69,13 @@ const result = {
       "Correlation regime": `persistence: ρ120 after ${corrH} obs is closer to the new regime than the old`,
     },
     baselines: {
-      directional: "per-episode unconditional P(same-sign move) in the same series (drift-honest)",
+      directional: "per-episode P(same-sign move) from completed outcomes strictly before entry",
       corrPersistence: "random monthly-stepped dates on the same pairs",
     },
-    scope: "daily series only (monthly excluded: horizon comparability + revision bias)",
-    thresholds: "production values, chosen a priori — tuning after seeing results is snooping",
-    ci: "moving-block bootstrap (block 5, B=1000, seeded)",
+    scope: "daily price series only; yield/breakeven dislocations excluded from percent-return aggregation. Latest revised histories, not point-in-time vintages.",
+    thresholds: "unchanged production thresholds; no tuning during this methodology correction",
+    ci: "chronological moving-block bootstrap (block 5, B=1000, seeded); overlapping episodes/cross-asset dependence and multiple comparisons limit inference",
+    publicationLags: "FRED 3 calendar days; H.10 FX 10; Yahoo 1; then entry after 1 additional day. Conservative proxies, not historical release timestamps.",
   },
   corrPersistenceBaseline: corrBase,
   families: {

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { BacktestFile, CatalogEntry, CotFile, ForecastFile, ImpactFile, QualityFile, Series } from "./lib/data";
-import { loadBacktest, loadCatalog, loadCot, loadForecasts, loadImpact, loadQuality, loadSeries } from "./lib/data";
+import type { Series } from "./lib/data";
+import { loadSnapshot, type Snapshot } from "./lib/snapshot";
+import { analysisEligibility, freshness } from "./lib/quality";
+import { DataStatus, QuotePanel } from "./components/DataStatus";
 import type { Transform } from "./lib/transform";
 import { TRANSFORM_LABELS, applyTransform, clampRange } from "./lib/transform";
-import type { Signal } from "./lib/signals";
-import { computeSignals } from "./lib/signals";
+import { ENGINE_VERSION, computeSignals } from "./lib/signals";
 import { useTheme } from "./components/useTheme";
 import { SeriesPicker } from "./components/SeriesPicker";
 import { KpiStrip } from "./components/KpiStrip";
@@ -74,16 +75,6 @@ function parseHash(): {
   };
 }
 
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-}
-
-function fmtDateTime(iso: string): string {
-  return `${new Date(iso).toLocaleString("en-GB", {
-    day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC",
-  })} UTC`;
-}
-
 function rangeStart(years: number | null): string {
   if (years == null) return "1900-01-01";
   const d = new Date();
@@ -93,8 +84,19 @@ function rangeStart(years: number | null): string {
 
 export default function App() {
   const { mode, toggle } = useTheme();
-  const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
-  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [now, setNow] = useState(Date.now());
+  const catalog = snapshot?.catalog.series ?? [];
+  const seriesMap = useMemo(() => snapshot?.seriesMap ?? new Map<string, Series>(), [snapshot]);
+  const quality = snapshot?.quality ?? null;
+  const forecasts = snapshot?.forecasts ?? null;
+  const impact = snapshot ? snapshot.impact : undefined;
+  const backtest = snapshot ? (snapshot.backtest?.engineVersion === ENGINE_VERSION ? snapshot.backtest : null) : undefined;
+  const cot = useMemo(() => snapshot?.cot ? { ...snapshot.cot, markets: Object.fromEntries(
+    Object.entries(snapshot.cot.markets).filter(([id, market]) => !market.refreshFailed && !freshness(`COT_${id}`, market.lastUpdated, now).stale)
+  ) } : null, [snapshot, now]);
+  const analyticalMap = useMemo(() => new Map([...seriesMap].filter(([, series]) => analysisEligibility(series, quality, now).eligible)), [seriesMap, quality, now]);
+  const signals = useMemo(() => snapshot ? computeSignals(analyticalMap, new Date(now).toISOString().slice(0, 10)) : null, [snapshot, analyticalMap, now]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>(() => parseHash().ids ?? DEFAULT_SELECTION);
   const [transform, setTransform] = useState<Transform>(() => parseHash().transform ?? "index");
@@ -102,14 +104,6 @@ export default function App() {
     const y = parseHash().years;
     return y === undefined ? 3 : y;
   });
-  const [seriesMap, setSeriesMap] = useState<Map<string, Series>>(new Map());
-  const [signals, setSignals] = useState<Signal[] | null>(null);
-  const [forecasts, setForecasts] = useState<ForecastFile | null>(null);
-  // undefined = still loading (skeleton), null = fetch failed (honest message)
-  const [impact, setImpact] = useState<ImpactFile | null | undefined>(undefined);
-  const [quality, setQuality] = useState<QualityFile | null>(null);
-  const [backtest, setBacktest] = useState<BacktestFile | null | undefined>(undefined);
-  const [cot, setCot] = useState<CotFile | null>(null);
   const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
   const [linkCopied, setLinkCopied] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false); // mobile-only disclosure
@@ -189,43 +183,28 @@ export default function App() {
     transform === p.t && rangeYears === p.w && projectionOn === p.p;
 
   useEffect(() => {
-    loadCatalog()
-      .then((file) => {
-        setCatalog(file.series);
-        setRefreshedAt(file.generated);
-      })
-      .catch((e) => setLoadError(String(e)));
-    loadForecasts().then(setForecasts);
-    loadImpact().then(setImpact);
-    loadQuality().then(setQuality);
-    loadBacktest().then(setBacktest);
-    loadCot().then(setCot);
-  }, []);
-
-  // Load everything once for the signal engine (payload is small snapshot JSON).
-  useEffect(() => {
-    if (!catalog.length) return;
-    let cancelled = false;
-    Promise.allSettled(catalog.map((c) => loadSeries(c.id))).then((results) => {
-      if (cancelled) return;
-      const map = new Map<string, Series>();
-      for (const r of results) if (r.status === "fulfilled") map.set(r.value.id, r.value);
-      setSeriesMap(map);
-      setSignals(computeSignals(map));
-      // prune ids from a shared link that don't exist (renamed series, typos)
-      setSelected((prev) => {
-        const valid = prev.filter((id) => map.has(id));
-        if (valid.length === prev.length) return prev;
-        for (const id of prev) if (!map.has(id)) slotMap.current.delete(id);
-        if (!valid.length) {
-          DEFAULT_SELECTION.forEach((id, i) => slotMap.current.set(id, SLOT_VARS[i]));
-          return DEFAULT_SELECTION;
+    let cancelled = false, inFlight = false;
+    let previous: Snapshot | undefined;
+    const refresh = async () => {
+      setNow(Date.now());
+      if (inFlight || document.hidden) return;
+      inFlight = true;
+      try {
+        const next = await loadSnapshot(previous);
+        if (!cancelled) {
+          previous = next;
+          setSnapshot(next);
+          setLoadError(null);
         }
-        return valid;
-      });
-    });
-    return () => { cancelled = true; };
-  }, [catalog]);
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Data refresh failed");
+      } finally { inFlight = false; }
+    };
+    void refresh();
+    const timer = window.setInterval(() => { void refresh(); }, 60000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { cancelled = true; clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
+  }, []);
 
   // CTA target: load a signal's series into the overlay and navigate there.
   const viewInOverlay = (ids: string[]) => {
@@ -251,17 +230,17 @@ export default function App() {
   };
 
   const from = rangeStart(rangeYears);
-  const selectedSeries = selected.map((id) => seriesMap.get(id)).filter((s): s is Series => !!s);
+  const selectedSeries = useMemo(() => selected.map((id) => seriesMap.get(id)).filter((s): s is Series => !!s), [selected, seriesMap]);
   const sameUnit = new Set(selectedSeries.map((s) => s.unit)).size <= 1;
   const effectiveTransform: Transform = transform === "raw" && !sameUnit ? "index" : transform;
 
   const overlayItems: OverlaySeries[] = useMemo(
     () => selectedSeries.map((s) => ({
       series: s,
-      points: applyTransform(clampRange(s.points, from), effectiveTransform),
+      points: effectiveTransform === "yoy" ? clampRange(applyTransform(s.points, "yoy"), from) : applyTransform(clampRange(s.points, from), effectiveTransform),
       color: slotMap.current.get(s.id) ?? SLOT_VARS[0],
     })),
-    [selectedSeries.map((s) => s.id).join(","), seriesMap, from, effectiveTransform],
+    [selectedSeries, from, effectiveTransform],
   );
 
   // Projections only make sense on comparable level scales (raw / indexed).
@@ -271,7 +250,9 @@ export default function App() {
     const out: Projection[] = [];
     for (const s of selectedSeries) {
       const fc = forecasts.series[s.id];
-      if (!fc) continue;
+      if (!fc || !analyticalMap.has(s.id)) continue;
+      if (fc.kind === "model" && (fc.asOf !== s.lastUpdated || !fc.issuedAt || now - Date.parse(fc.issuedAt) > 72 * 3600000)) continue;
+      if (fc.kind === "external" && (!fc.retrievedAt || now - Date.parse(fc.retrievedAt) > 45 * 86400000)) continue;
       const base = clampRange(s.points, from)[0]?.[1];
       if (effectiveTransform === "index" && !(base > 0)) continue;
       const scale = (v: number) => (effectiveTransform === "index" ? (v / base) * 100 : v);
@@ -285,13 +266,13 @@ export default function App() {
         // anchor the dashed external line to the last actual observation
         const last = s.points[s.points.length - 1];
         out.push({
-          name: s.name, color, sourceLabel: fc.source.split(" (")[0],
-          external: [[last[0], scale(last[1])], ...fc.points.map((p) => [p[0], scale(p[1])] as [string, number])],
+          name: s.name, color, sourceLabel: `${fc.retained ? "retained " : ""}${fc.source.split(" (")[0]}`,
+          external: [[last[0], scale(last[1])], ...fc.points.filter((p) => p[0] > last[0]).map((p) => [p[0], scale(p[1])] as [string, number])],
         });
       }
     }
     return out;
-  }, [projectionOn, projectionAllowed, forecasts, selectedSeries.map((s) => s.id).join(","), seriesMap, from, effectiveTransform]);
+  }, [projectionOn, projectionAllowed, forecasts, selectedSeries, analyticalMap, now, from, effectiveTransform]);
 
   return (
     <div className="app">
@@ -331,29 +312,7 @@ export default function App() {
         </button>
       </nav>
 
-      {refreshedAt && catalog.length > 0 && (
-        <p className="data-stamp">
-          Data through <strong>{fmtDate(catalog.reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), ""))}</strong>
-          {" "}· snapshots refreshed {fmtDateTime(refreshedAt)} · auto-updates every weekday
-          {quality && (
-            <span
-              className={`qc-chip ${quality.summary.flagged + quality.summary.failed.length ? "qc-warn" : "qc-ok"}`}
-              title={
-                quality.summary.flagged + quality.summary.failed.length
-                  ? Object.entries(quality.series)
-                      .filter(([, q]) => q.flags.length)
-                      .map(([id, q]) => `${id}: ${q.flags.map((f) => f.detail).join("; ")}`)
-                      .join("\n")
-                  : "All series passed staleness, gap, spike, range and history-drift checks on the last refresh."
-              }
-            >
-              {quality.summary.flagged + quality.summary.failed.length
-                ? `⚠ QC: ${quality.summary.flagged + quality.summary.failed.length} flag${quality.summary.flagged + quality.summary.failed.length === 1 ? "" : "s"}`
-                : `✓ QC: ${quality.summary.ok}/${quality.summary.ok + quality.summary.flagged} series clean`}
-            </span>
-          )}
-        </p>
-      )}
+      <DataStatus snapshot={snapshot} now={now} error={loadError} />
 
       {page === "methodology" ? (
         <Methodology />
@@ -384,8 +343,8 @@ export default function App() {
         </div>
       </div>
 
-      {loadError && <div className="card"><p className="sub">Failed to load data catalog: {loadError}</p></div>}
 
+      <QuotePanel snapshot={snapshot} now={now} />
       <div id="kpis" className="anchor-target">
         <div className="strip-head">
           <span className="control-label">Market pulse — click a tile to overlay it</span>
@@ -394,7 +353,7 @@ export default function App() {
           />
         </div>
         {seriesMap.size ? (
-          <KpiStrip seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} />
+          <KpiStrip quality={quality} now={now} seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} />
         ) : (
           <SkeletonTiles />
         )}
@@ -486,11 +445,11 @@ export default function App() {
             />
           </div>
           <p className="sub">
-            Pearson ρ of log-returns across the selected window, forward-filled to a common grid.{" "}
+            Pearson ρ on matched observation intervals. Mixed daily/monthly frequencies are withheld; no forward-filled returns.{" "}
             <a className="cta-link" href="#signals">Regime shifts appear as signals ↗</a>
           </p>
           {seriesMap.size ? (
-            <CorrelationMatrix list={selectedSeries} from={from} themeMode={mode} />
+            <CorrelationMatrix list={selectedSeries.filter((s) => analyticalMap.has(s.id))} from={from} themeMode={mode} />
           ) : (
             <Skeleton height={300} />
           )}
@@ -498,15 +457,15 @@ export default function App() {
 
         <section id="signals" className="card anchor-target">
           <div className="card-head">
-            <h2>Live signals</h2>
+            <h2>Snapshot signals</h2>
             <Freshness
-              date={catalog.length ? catalog.reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), "") : null}
+              date={signals?.length ? signals.reduce((m, signal) => signal.asOf < m ? signal.asOf : m, "9999") : null}
               prefix="computed through"
-              title="Signals recompute from the full catalog on every load; date shown is the newest observation used."
+              title="Oldest observation used by the displayed signals. Inputs failing QC are excluded; this is snapshot analysis, not intraday analysis."
             />
           </div>
           <p className="sub">
-            Dislocations, momentum regimes and correlation-regime shifts across the full catalog.{" "}
+            Dislocations, momentum regimes and correlation-regime shifts from inputs that pass QC.{" "}
             <a className="cta-link" href="#validation">How reliable are these? See the backtest ↗</a>
           </p>
           <HowToRead>
@@ -522,7 +481,7 @@ export default function App() {
           <Freshness
             date={cot ? Object.values(cot.markets).reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), "") : null}
             prefix="positioning through"
-            cadence="monthly"
+            cadence="weekly"
             title="CFTC COT publishes weekly (Friday, for Tuesday positions). Price conditions use the daily snapshots."
           />
         </div>
@@ -530,7 +489,7 @@ export default function App() {
           Where each energy market sits inside its own history: trend, volatility, dollar backdrop and
           futures positioning, each as a percentile — the regime at a glance.
         </p>
-        {seriesMap.size ? <MarketStatePanel seriesMap={seriesMap} cot={cot} /> : <SkeletonRows rows={7} />}
+        {seriesMap.size ? <MarketStatePanel seriesMap={analyticalMap} cot={cot} /> : <SkeletonRows rows={7} />}
       </section>
 
       <section id="validation" className="card anchor-target">
@@ -548,7 +507,7 @@ export default function App() {
         ) : backtest === undefined ? (
           <SkeletonRows rows={7} />
         ) : (
-          <p className="sub">Backtest results unavailable.</p>
+          <p className="sub">Current-methodology backtest results unavailable. Earlier results are not presented as validation of a changed engine.</p>
         )}
       </section>
 
@@ -561,14 +520,14 @@ export default function App() {
         </div>
         <p className="sub">
           How sensitive each energy-exposed stock is to the selected driver, and what a hypothetical
-          shock implies. <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> = Cov/Var on daily log-returns (rolling 90 days).{" "}
+          shock implies. <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> = Cov/Var on daily log-returns (rolling 90 paired observations).{" "}
           <a className="cta-link" href="#sovereign-impact">Country-level view ↗</a>
         </p>
         <HowToRead>
           <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> is slope sensitivity, while <GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver in the same regression window." /> is explanatory fit. Treat implied move as first-order context only.
         </HowToRead>
         {impact && seriesMap.size ? (
-          <EquityImpact companies={impact.companies} seriesMap={seriesMap} />
+          <EquityImpact companies={impact.companies.filter((c) => !c.refreshFailed && c.adjustedPoints && !c.quality?.flags.length && !freshness(c.id, c.lastUpdated, now).stale && now - Date.parse(c.retrievedAt ?? "") <= 72 * 3600000)} seriesMap={analyticalMap} />
         ) : impact === null ? (
           <p className="sub">Impact data unavailable.</p>
         ) : (

@@ -29,7 +29,7 @@ export function SeriesPicker({ catalog, selected, colors, quality, onToggle }: {
                   className={`chip${on ? " on" : ""}`}
                   disabled={!on && full}
                   onClick={() => onToggle(e.id)}
-                  title={`${e.name} — ${e.source}, updated ${e.lastUpdated}${
+                  title={`${e.name} — ${e.source}, observation period ${e.lastUpdated}${
                     flags.length ? `\nQC: ${flags.map((f) => f.detail).join("; ")}` : ""
                   }`}
                 >

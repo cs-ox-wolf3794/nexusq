@@ -8,10 +8,16 @@ export interface CatalogEntry {
   source: string;
   lastUpdated: string;
   count: number;
+  cadence?: import("./quality").Cadence;
+  sourceUrl?: string;
+  retrievedAt?: string;
+  checkedAt?: string;
 }
 
 export interface Series extends Omit<CatalogEntry, "count"> {
   points: [string, number][]; // [ISO date, value], ascending
+  adjustedPoints?: [string, number][];
+  returnBasis?: string;
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -28,26 +34,17 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 export type FanPoint = [string, number, number, number, number, number];
 
 export type Forecast =
-  | { kind: "model"; method: string; points: FanPoint[] }
-  | { kind: "external"; source: string; points: [string, number][] };
+  | { kind: "model"; method: string; points: FanPoint[]; issuedAt?: string; asOf?: string }
+  | { kind: "external"; source: string; points: [string, number][]; retrievedAt?: string; retained?: boolean };
 
 export interface ForecastFile {
   generated: string;
   series: Record<string, Forecast>;
 }
 
-const base = import.meta.env.BASE_URL;
-const seriesCache = new Map<string, Promise<Series>>();
-
 export interface CatalogFile {
   generated: string; // ISO timestamp of the pipeline run
   series: CatalogEntry[];
-}
-
-export async function loadCatalog(): Promise<CatalogFile> {
-  const res = await fetch(`${base}data/catalog.json`);
-  if (!res.ok) throw new Error(`catalog: HTTP ${res.status}`);
-  return res.json();
 }
 
 export interface ImpactCompany {
@@ -58,9 +55,14 @@ export interface ImpactCompany {
   source: string;
   lastUpdated: string;
   points: [string, number][];
+  adjustedPoints?: [string, number][];
+  retrievedAt?: string;
+  refreshFailed?: boolean;
+  quality?: { flags: QualityFlag[] };
 }
 
 export interface ImpactCountry {
+  retained?: boolean;
   iso: string;
   name: string;
   role: "exporter" | "importer" | "balanced";
@@ -78,37 +80,19 @@ export interface ImpactFile {
   worldGdp: [string, number][]; // global-cycle control
 }
 
-export async function loadImpact(): Promise<ImpactFile | null> {
-  try {
-    const res = await fetch(`${base}data/impact.json`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
 export interface CotMarket {
   label: string;
   code: string;
   lastUpdated: string;
   points: [string, number, number][]; // [report date, managed-money net, open interest]
+  refreshFailed?: boolean;
+  retrievedAt?: string;
 }
 
 export interface CotFile {
   generated: string;
   source: string;
   markets: Record<string, CotMarket>;
-}
-
-export async function loadCot(): Promise<CotFile | null> {
-  try {
-    const res = await fetch(`${base}data/cot.json`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
 }
 
 export interface QualityFlag {
@@ -139,6 +123,7 @@ export interface BacktestFamily {
 }
 
 export interface BacktestFile {
+  engineVersion?: string;
   generated: string;
   method: {
     frame: string;
@@ -147,46 +132,4 @@ export interface BacktestFile {
   };
   corrPersistenceBaseline: number;
   families: Record<string, BacktestFamily>;
-}
-
-export async function loadBacktest(): Promise<BacktestFile | null> {
-  try {
-    const res = await fetch(`${base}data/backtest.json`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-export async function loadQuality(): Promise<QualityFile | null> {
-  try {
-    const res = await fetch(`${base}data/quality.json`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-export async function loadForecasts(): Promise<ForecastFile | null> {
-  try {
-    const res = await fetch(`${base}data/forecasts.json`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-export function loadSeries(id: string): Promise<Series> {
-  let p = seriesCache.get(id);
-  if (!p) {
-    p = fetch(`${base}data/${id}.json`).then((r) => {
-      if (!r.ok) throw new Error(`${id}: HTTP ${r.status}`);
-      return r.json();
-    });
-    seriesCache.set(id, p);
-  }
-  return p;
 }

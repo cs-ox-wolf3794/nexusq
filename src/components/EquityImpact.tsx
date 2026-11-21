@@ -38,14 +38,14 @@ export function EquityImpact({ companies, seriesMap }: {
     const driver = seriesMap.get(driverId);
     if (!driver) return [];
     return companies
-      .map((c) => ({ company: c, rb: rollingBeta(c.points, driver.points, 90) }))
+      .map((c) => ({ company: c, rb: rollingBeta(c.adjustedPoints ?? c.points, driver.points, 90) }))
       .filter((r): r is { company: ImpactCompany; rb: RollingBeta } => r.rb != null)
       .sort((a, b) => b.rb.current.beta - a.rb.current.beta);
   }, [companies, seriesMap, driverId]);
 
   const driverLabel = DRIVERS.find((d) => d.id === driverId)?.label ?? driverId;
 
-  if (!companies.length) return <p className="sub">Impact universe not loaded.</p>;
+  if (!companies.length) return <p className="sub">Equity estimates withheld: fresh, quality-checked adjusted closing prices are required.</p>;
 
   return (
     <div>
@@ -80,8 +80,8 @@ export function EquityImpact({ companies, seriesMap }: {
             <tr>
               <th>Company</th>
               <th>Sector</th>
-              <th className="num" title="Cov(stock, driver) / Var(driver), 90d daily log-returns"><GlossaryTip term="β" definition="Cov(stock, driver) / Var(driver), estimated on rolling 90-day paired log-returns." /> 90d</th>
-              <th title="Rolling 90d beta, weekly steps, last 12 months"><GlossaryTip term="β" definition="Rolling beta history over the last 12 months; weekly steps." /> trend</th>
+              <th className="num" title="Cov(stock, driver) / Var(driver), 90 obs daily log-returns"><GlossaryTip term="β" definition="Cov(stock, driver) / Var(driver), estimated on rolling 90-observation paired log-returns." /> 90 obs</th>
+              <th title="Rolling 90 obs beta, weekly steps, last 12 months"><GlossaryTip term="β" definition="Rolling beta history over the last 12 months; weekly steps." /> trend</th>
               <th className="num" title="Annualized return not explained by the energy driver">α ann.</th>
               <th className="num" title="Share of daily variance explained by the driver"><GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver." /></th>
               <th className="num" title="First-order: β × shock. Ignores second-order effects.">
@@ -96,10 +96,10 @@ export function EquityImpact({ companies, seriesMap }: {
                 <tr key={company.id}>
                   <td className="beta-name">{company.name}</td>
                   <td data-label="Sector">{company.sector}</td>
-                  <td className="num" data-label="β 90d"><strong>{rb.current.beta.toFixed(2)}</strong></td>
+                  <td className="num" data-label="β 90 obs" title="Approximate 95% Newey–West HAC interval; parameter uncertainty, not a forecast range"><strong>{rb.current.beta.toFixed(2)}</strong><br/><small>[{rb.current.betaCI[0].toFixed(2)}, {rb.current.betaCI[1].toFixed(2)}]</small></td>
                   <td data-label="β trend"><BetaSpark history={rb.history} /></td>
                   <td className="num" data-label="α ann.">{rb.current.alphaAnnual >= 0 ? "+" : ""}{rb.current.alphaAnnual.toFixed(1)}%</td>
-                  <td className="num" data-label="R²">{rb.current.r2.toFixed(2)}</td>
+                  <td className="num" data-label="R²">{rb.current.r2.toFixed(2)}<br/><small>n={rb.current.n} · {rb.current.asOf}</small></td>
                   <td className={`num implied ${implied >= 0 ? "up" : "down"}`} data-label={`Implied @ ${shockPct >= 0 ? "+" : ""}${shockPct}%`}>
                     {implied >= 0 ? "▲ +" : "▼ "}{implied.toFixed(1)}%
                   </td>
@@ -110,8 +110,9 @@ export function EquityImpact({ companies, seriesMap }: {
         </table>
       </div>
       <p className="sub" style={{ marginTop: 8 }}>
-        β = Cov(stock, {driverLabel}) / Var({driverLabel}) on 90 days of paired daily log-returns; α is the
-        annualized residual drift. Implied move is first-order (β × shock) — it ignores earnings pass-through
+        β = Cov(stock, {driverLabel}) / Var({driverLabel}) on 90 matched daily intervals using adjusted stock closes.
+        Brackets show approximate 95% HAC parameter intervals; α is the annualized log-return intercept, not risk-adjusted performance.
+        Implied move is first-order (β × shock) — it ignores earnings pass-through
         lags and second-order effects, and a low R² means the driver explains little of that stock. Model
         output, not investment advice.
       </p>

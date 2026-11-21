@@ -1,201 +1,97 @@
-/**
- * In-app Methodology page ; the public, sanitized specification of every number
- * the platform displays. Source of truth: docs/DOMAIN.md §1–3 (internal), kept in
- * sync manually; the change log below must be updated with any formula change.
- */
+/** Public specification. Formula changes must also advance ENGINE_VERSION. */
 export function Methodology() {
-  return (
-    <div className="methodology">
-      <section className="card">
-        <h2>Methodology</h2>
-        <p className="sub">
-          Every number NexusQ displays is defined on this page and reproducible from public data ;
-          the full source code, data snapshots and their complete history are open at{" "}
-          <a className="cta-link" href="https://github.com/cs-ox-wolf3794/nexusq" target="_blank" rel="noreferrer">
-            github.com/cs-ox-wolf3794/nexusq
-          </a>. The analytics library is covered by automated tests on every change.
-        </p>
-        <h3>Principles</h3>
-        <ul className="method-list">
-          <li><strong>One axis, always.</strong> Mixed units are never dual-axed ; comparisons go through explicit transforms. Dual axes allow arbitrary visual storytelling; we don't use them.</li>
-          <li><strong>Correlations on log-returns, never levels.</strong> Level correlations between trending series are spuriously high.</li>
-          <li><strong>The band is the forecast.</strong> Point forecasts of commodity prices at 90 days are near-random; conditional volatility is genuinely forecastable. Wide bands after volatile periods are the model being right.</li>
-          <li><strong>Every estimate ships its fit quality.</strong> β without R², or a correlation without n, is bait ; we always show both.</li>
-          <li><strong>Data honesty.</strong> Per-widget freshness badges, "data through" vs "refreshed" kept separate, missing data rendered as missing, and shock translators labeled first-order.</li>
-        </ul>
-      </section>
+  return <div className="methodology">
+    <section className="card">
+      <h2>Methodology and data reliability</h2>
+      <p className="sub">NexusQ describes observed market relationships. Statistical association does not identify a causal shock or establish a trading edge. Every result depends on the quality, timing and scope of its inputs.</p>
+      <ul className="method-list">
+        <li><strong>Observation time is separate from retrieval time.</strong> Re-downloading an old observation does not make it current. Each source's cadence and last successful retrieval appear in Data status.</li>
+        <li><strong>Quotes and analytical observations are separate.</strong> Yahoo quotes target checks every 15 minutes on weekdays, 12:00–23:59 UTC. The browser checks for published updates every minute. Provider delays, outages and GitHub scheduling mean this is best effort, not a guaranteed real-time service. Quotes do not enter daily backtests, betas or forecast histories.</li>
+        <li><strong>Unusable current inputs are withheld.</strong> Missing, overdue or flagged QC inputs cannot generate current signals or projections. Historical data remains visible with its status. A quality assessment older than 72 hours also suspends current analysis.</li>
+        <li><strong>One comparable axis.</strong> Mixed units require a transformation. No dual-axis charts. Indexed comparisons need a strictly positive base.</li>
+        <li><strong>No automatic certification.</strong> Range and spike checks are review triggers, not proof of a bad observation. Passing them does not independently verify a provider's accuracy.</li>
+      </ul>
+    </section>
 
-      <section className="card">
-        <h3>Every displayed number, at a glance</h3>
-        <div className="table-wrap">
-          <table className="beta-table">
-            <thead>
-              <tr><th>On-screen number</th><th>Formula</th><th>Window / frequency</th><th>Key caveat</th></tr>
-            </thead>
-            <tbody>
-              <tr><td className="beta-name">Indexed overlay</td><td>vₜ / v₀ × 100</td><td>first visible obs = base</td><td>base changes with the window ; deliberately</td></tr>
-              <tr><td className="beta-name">Z-score overlay</td><td>(vₜ − μ) / σ</td><td>visible window</td><td>window-relative, not all-history</td></tr>
-              <tr><td className="beta-name">% y/y overlay</td><td>vₜ / v₍t−1y₎ − 1</td><td>nearest obs ≥ 340d back</td><td>needs ≥ ~1y of history</td></tr>
-              <tr><td className="beta-name">Correlation ρ</td><td>Pearson on log-returns</td><td>selected window, daily grid, ffill ≤ 40d</td><td>≥ 20 paired returns or blank</td></tr>
-              <tr><td className="beta-name">Dislocation z</td><td>(last − μ) / σ</td><td>252 obs daily / 36 monthly</td><td>assumes rough stationarity</td></tr>
-              <tr><td className="beta-name">Momentum spread</td><td>(MA₅₀ − MA₂₀₀) / |MA₂₀₀|</td><td>daily series only</td><td>lags turns by construction</td></tr>
-              <tr><td className="beta-name">Correlation regime Δρ</td><td>ρ(120d) − ρ(1y)</td><td>log-returns, curated pairs</td><td>diagnostic, not causal</td></tr>
-              <tr><td className="beta-name">Forecast fan</td><td>S₀·exp(μt + z·σ√t)</td><td>~91d daily / ~6m monthly</td><td>jumps land outside the band by construction</td></tr>
-              <tr><td className="beta-name">Equity β / α / R²</td><td>OLS on paired daily log-returns</td><td>rolling 90 obs, weekly steps</td><td>90d = current regime, not "the" beta</td></tr>
-              <tr><td className="beta-name">Sovereign β GDP</td><td>Frisch–Waugh, world-cycle controlled</td><td>annual, 2001+, n≈24</td><td>association, not structural elasticity</td></tr>
-              <tr><td className="beta-name">Shock translators</td><td>β × shock</td><td>;</td><td>first-order only: no lags, no second-order effects</td></tr>
-              <tr><td className="beta-name">Freshness badge</td><td>age of newest / limiting obs</td><td>daily 5/14d · monthly 40/75d · annual = vintage</td><td>overlay uses the stalest selected series</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+    <section className="card">
+      <h3>Sources, observation periods and freshness</h3>
+      <div className="table-wrap"><table className="beta-table">
+        <thead><tr><th>Source / data</th><th>Publication basis</th><th>Operational tolerance</th></tr></thead>
+        <tbody>
+          <tr><td>FRED prices, yields and indices</td><td>Completed daily observations with source-specific publication lags</td><td>7 calendar days since observation</td></tr>
+          <tr><td>Federal Reserve H.10 via FRED: broad dollar and USD/EUR</td><td>Daily observations published in weekly batches; the broad dollar index is not ICE DXY</td><td>12 calendar days</td></tr>
+          <tr><td>IMF commodity benchmarks via FRED</td><td>Monthly period averages, not tradable intraday TTF, coal, copper or wheat quotes</td><td>60 days from month end</td></tr>
+          <tr><td>CPI and industrial production</td><td>Monthly, subject to revision</td><td>45 days from month end</td></tr>
+          <tr><td>EIA inventories and CFTC positioning</td><td>Weekly reporting periods; publication follows the observation date</td><td>14 calendar days</td></tr>
+          <tr><td>World Bank GDP</td><td>Annual observations, subject to revisions</td><td>550 days from year end</td></tr>
+          <tr><td>Yahoo daily stocks and ETFs</td><td>Completed closes for display; adjusted closes for equity return calculations</td><td>7 calendar days; current-day bars excluded until five minutes after the reported close</td></tr>
+          <tr><td>Yahoo intraday quotes</td><td>Reported market timestamp, currency and delay shown separately</td><td>15 minutes during the reported session; an old session cannot prove today's exchange is closed</td></tr>
+        </tbody>
+      </table></div>
+      <p className="sub">Tolerances are explicit operational policies, not release-date guarantees. Monthly FRED observations are dated at the start of their reference month; freshness uses the end of that month. National holidays, suspensions and unexpected releases can require review. Sources can revise historical values.</p>
+      <p className="sub">Source documentation: <a href="https://fred.stlouisfed.org/series/PNGASEUUSDM" target="_blank" rel="noreferrer">IMF monthly benchmarks</a> · <a href="https://fred.stlouisfed.org/series/DTWEXBGS" target="_blank" rel="noreferrer">Federal Reserve broad dollar index</a> · <a href="https://www.eia.gov/opendata/faqs.php" target="_blank" rel="noreferrer">EIA API release delays</a> · <a href="https://help.yahoo.com/kb/finance/article-exchanges-data-delays-sln2310.html" target="_blank" rel="noreferrer">Yahoo coverage and delays</a></p>
+    </section>
 
-      <section className="card">
-        <h3>Signals</h3>
-        <p className="sub">
-          Three families, each with fixed formulas and thresholds. Severity is always icon + label,
-          and every signal links to the series behind it.
-        </p>
-        <div className="table-wrap">
-          <table className="beta-table">
-            <thead>
-              <tr><th>Family</th><th>Definition</th><th>Watch / Elevated / Extreme</th></tr>
-            </thead>
-            <tbody>
-              <tr><td className="beta-name">Dislocation</td><td>z of latest value vs trailing 252 obs (36 monthly)</td><td>|z| ≥ 1.5 / 2.0 / 2.5</td></tr>
-              <tr><td className="beta-name">Momentum</td><td>50-day vs 200-day average spread</td><td>|spread| ≥ 2% / 6% / 12%</td></tr>
-              <tr><td className="beta-name">Correlation regime</td><td>Δρ = ρ(120d) − ρ(1y) on curated energy↔cross-asset pairs</td><td>|Δρ| ≥ 0.15 / 0.30 / 0.45</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="sub">
-          Interpretation note: the <em>sign</em> of the oil↔equity correlation encodes the shock type ;
-          demand shocks push oil and equities together (positive ρ), supply shocks push them apart
-          (negative ρ). The same +10% Brent move is bullish energy equities in one regime and
-          stagflationary in the other, which is why the platform tracks Δρ rather than assuming a
-          constant relationship.
-        </p>
-      </section>
+    <section className="card">
+      <h3>Publication and failure handling</h3>
+      <ul className="method-list">
+        <li>Downloads have timeouts and bounded retries, including response-body parsing. The Yahoo alternate host uses the same instrument and provider; it is transport redundancy, not independent verification.</li>
+        <li>Dates must be real, strictly ordered, unique and not in the future. Values must be finite numbers. Regressing latest dates, material history shrink and missing previously observed dates reject a replacement.</li>
+        <li>Failed instruments keep their last validated observations and explicit failure status. Annual source outages do not stop daily market updates. A refresh with fewer than 80% of core FRED/Yahoo market series fetched, or an incomplete catalog, is rejected.</li>
+        <li>Files are staged and checked before publication. A checksum manifest binds the published set. The browser accepts the complete verified set or keeps its previous verified snapshot; it never combines partially loaded generations.</li>
+        <li>Each source is checked for overdue observations, history gaps, plausible latest-value ranges and large moves against preceding observations. The tested spike is excluded from its volatility reference. Flagged data is retained for inspection.</li>
+        <li>Brent spot exposure is never silently replaced by WTI futures. A source outage cannot change the economic meaning of an instrument.</li>
+      </ul>
+    </section>
 
-      <section className="card">
-        <h3>Market state (percentile conditions)</h3>
-        <p className="sub">
-          Each condition is the current value's percentile within its own trailing ~3-year history:
-          trend (price / 50-day average − 1), volatility (20-day realized, annualized), US dollar
-          backdrop (DXY 60-day change, shared across markets), and futures positioning
-          (CFTC managed-money net position / open interest, percentile vs full weekly history;
-          Brent uses the thin NYMEX Last Day contract as a proxy — the outright ICE Brent COT is
-          not in the CFTC dataset). The composite orients every condition to a common "supportive"
-          direction (uptrend · calm · soft dollar · light positioning) and averages: &lt;35 headwinds,
-          35–65 mixed, &gt;65 constructive. It describes the regime; it does not forecast returns and
-          carries no positions or thresholds tuned to outcomes.
-        </p>
-      </section>
+    <section className="card">
+      <h3>Transforms, signals and market state</h3>
+      <div className="table-wrap"><table className="beta-table">
+        <thead><tr><th>Measure</th><th>Calculation</th><th>Limits</th></tr></thead>
+        <tbody>
+          <tr><td>Indexed overlay</td><td>100 × value / first visible value</td><td>Strictly positive base required</td></tr>
+          <tr><td>Window z-score</td><td>(value − visible-window mean) / population standard deviation</td><td>Descriptive, window-relative</td></tr>
+          <tr><td>Year-on-year change</td><td>100 × (value / prior-year value − 1)</td><td>Calendar anniversary, at most seven days of backward matching; computed before clipping the display window</td></tr>
+          <tr><td>Correlation</td><td>Pearson correlation on matched observation intervals; log returns for prices, differences for rates or nonpositive histories</td><td>No forward-filled returns; same cadence only; at least 20 paired changes; sample size and input date disclosed</td></tr>
+          <tr><td>Dislocation</td><td>Latest value versus trailing 252 observations for daily series, 36 for monthly</td><td>Current observation included in the reference window; |z| thresholds 1.5 / 2 / 2.5; inventories use seasonal normalization instead</td></tr>
+          <tr><td>Momentum</td><td>100 × (50-observation mean − 200-observation mean) / |200-observation mean|</td><td>Daily series only; thresholds 2% / 6% / 12%; describes trend, not its continuation</td></tr>
+          <tr><td>Correlation regime</td><td>Correlation over 120 calendar days minus correlation over one year</td><td>Thresholds |Δρ| 0.15 / 0.30 / 0.45; diagnostic, not causal</td></tr>
+          <tr><td>Inventory divergence</td><td>Weekly inventory z-score versus a ±15-day calendar window in the previous five years, crossed with price dislocation</td><td>Glut z ≥ 1.5 with price z ≥ 1, or tightness z ≤ −1.5 with price z ≤ −1; not yet validated with historical release vintages</td></tr>
+        </tbody>
+      </table></div>
+      <p className="sub">Market state ranks trend, realized volatility, broad-dollar change and managed-money net/open interest against their own histories. The supportive-direction average is a heuristic description: below 35 headwinds, 35–65 mixed, above 65 constructive. Missing conditions change the composition and are omitted, with at least three required. The limiting date includes the dollar input. Brent positioning is the thin NYMEX Last Day proxy, not outright ICE Brent positioning. Neither the condition weights nor the labels establish return predictability.</p>
+    </section>
 
-      <section className="card">
-        <h3>Inventory divergence</h3>
-        <p className="sub">
-          Weekly EIA fundamentals (US crude inventories ex-SPR; Lower-48 natural gas storage) are
-          scored as a <em>seasonal</em> z: the latest level vs same-calendar-window (±15 days)
-          observations from the prior five years — a plain trailing z would flag every summer.
-          A signal fires only when fundamentals and price are in tension: stocks ≥ +1.5σ above
-          seasonal norm while price is rich (z ≥ +1) — oversupply priced richly, bearish tension —
-          or the mirror image. This family is <strong>not yet in the event-study backtest</strong>
-          (weekly data, young history); it validates on the live ledger as history accrues.
-        </p>
-      </section>
+    <section className="card">
+      <h3>Exposure estimates and forecast uncertainty</h3>
+      <ul className="method-list">
+        <li><strong>Equity beta:</strong> OLS of adjusted stock log returns on energy-driver log returns over 90 matched daily intervals. Both endpoints must be consecutive observations in both inputs; intervals longer than seven calendar days are excluded. β = covariance / driver variance; R², n and the final paired date are disclosed. The approximate 95% Newey–West HAC interval uses Bartlett weights and floor(4 × (n/100)^(2/9)) lags. It measures parameter uncertainty, not future outcome coverage.</li>
+        <li><strong>Intercept and shock:</strong> the intercept is annualized by 252 and expressed in log-return percentage units; it is not risk-adjusted investment alpha. β × percentage shock is a first-order sensitivity illustration, not an earnings or price forecast. Large shocks and regime shifts can invalidate it.</li>
+        <li><strong>Sovereign sensitivity:</strong> annual GDP growth and annual Brent percentage changes are residualized on world GDP growth, then regressed using the Frisch–Waugh procedure. The coefficient is scaled to a 10% oil move, with partial correlation and sample size. This is a small-sample conditional association; controlling for one common factor does not identify causality or guarantee exporter/importer signs.</li>
+        <li><strong>Model fans:</strong> Gaussian log-change simulations for positive price series, additive changes for rates/nonpositive series; estimation window 756 daily or 120 monthly observations; EWMA second moment with λ 0.97 daily / 0.90 monthly. Drift is one quarter of the full-window mean plus one quarter of the recent-quarter mean (63 daily or three monthly observations). Quantiles use μt + zσ√t, with z = −1.2816, −0.6745, 0, 0.6745, 1.2816. Time is scaled by the observed sampling frequency; monthly fans start at period end.</li>
+        <li><strong>Coverage is uncalibrated:</strong> P10–P90 is an 80% interval under the model assumptions, not a demonstrated 80% real-world coverage guarantee. Jumps, fat tails, structural breaks, seasonality and parameter uncertainty are not fully modeled. Weekly inventory model fans are withheld.</li>
+        <li><strong>External forecasts:</strong> EIA STEO and IMF WEO replace model fans where available. Retained external forecasts preserve their retrieval timestamp, expire after 45 days, and are distinct from observations. Overdue actuals suspend projections.</li>
+      </ul>
+    </section>
 
-      <section className="card">
-        <h3>Forecasts</h3>
-        <ul className="method-list">
-          <li><strong>Model fans (P10–P90):</strong> estimation window 3y daily / 120 obs monthly; log-returns (first differences for series that can be ≤ 0); EWMA volatility (λ = 0.97 daily, 0.90 monthly); drift = ½ × (½·long-run mean + ½·last-quarter mean) ; deliberately damped so the fan never promises trend continuation; quantiles S₀·exp(μt + z·σ√t), z ∈ {"{−1.28, −0.67, 0, +0.67, +1.28}"}, anchored at the last actual observation.</li>
-          <li><strong>External forecasts replace model fans where an institutional reference exists:</strong> EIA Short-Term Energy Outlook for Brent / WTI / Henry Hub (monthly, ~18 months out); IMF World Economic Outlook for GDP (annual, +3 years).</li>
-          <li><strong>The track record is public and tamper-evident:</strong> every day the pipeline commits the full forecast set and active signals to the repository. Git history ; timestamped by GitHub, not by us ; is the ledger. A calibration scoreboard (did realized prices land inside the P10–P90 band ~80% of the time?) will be computed from it once sufficient history accumulates.</li>
-        </ul>
-      </section>
+    <section className="card">
+      <h3>Validation and the daily record</h3>
+      <p className="sub">The event study replays unchanged production thresholds on latest revised histories. Availability proxies are three calendar days for FRED, ten for weekly-batched H.10 FX and one for Yahoo, followed by one additional day before outcome entry. These are conservative approximations, not historical release timestamps or point-in-time data vintages. The study cannot establish an executable trading edge.</p>
+      <p className="sub">Same-direction firings collapse to episodes with a 15-day cooldown. Direction changes are distinct episodes. Directional baselines use completed historical outcomes strictly before entry. Yield/breakeven dislocations are excluded from percentage-return aggregation; monthly and weekly primary signals are excluded. Correlation persistence uses the same matched-interval definition as production. Intervals use a seeded chronological moving-block bootstrap (block five, 1,000 resamples); overlapping horizons, common shocks, multiple comparisons and universe selection remain limitations. No position sizing or transaction costs are modeled.</p>
+      <p className="sub">Results are displayed only when their engine version matches the current implementation. Written summaries are generated from the results, not fixed conclusions. Each day's first-issued signal/forecast digest is preserved on subsequent refreshes and records the engine version and input snapshot. The repository history is auditable but is not an independent, immutable third-party performance record. Older records predate these safeguards.</p>
+    </section>
 
-      <section className="card">
-        <h3>Energy Beta (equities)</h3>
-        <p className="sub">
-          β = Cov(r_stock, r_driver) / Var(r_driver) on 90 days of paired daily log-returns
-          (dates both series observe, gaps ≤ 7 days), re-estimated weekly for the trend sparkline.
-          α = annualized residual drift (×252). R² is always displayed ; a low R² means the energy
-          driver explains little of that stock, and the β should be discounted accordingly.
-          Implied shock moves are first-order (β × shock): no earnings pass-through lags, no
-          second-order effects.
-        </p>
-      </section>
-
-      <section className="card">
-        <h3>Sovereign GDP sensitivity</h3>
-        <p className="sub">
-          Annual real-GDP growth (World Bank) regressed on same-year average oil % change,{" "}
-          <strong>controlling for world GDP growth</strong> via Frisch–Waugh: both sides are
-          residualized on the global cycle, then the residuals are regressed. The control is not
-          optional ; oil is procyclical (global booms lift oil <em>and</em> every GDP; 2020 crashed
-          both), so the naive regression shows positive betas for every economy including importers.
-          Partialling out the cycle recovers the economic structure: exporters positive, importers
-          negative. Reported as percentage points of GDP growth per +10% oil, with the partial
-          correlation and sample size (n≈24 ; annual data, small samples, disclosed). This remains an
-          association conditioned on one control, not a structural supply-shock elasticity.
-        </p>
-      </section>
-
-      <section className="card">
-        <h3>Signal validation (event-study backtest)</h3>
-        <ul className="method-list">
-          <li><strong>Frame:</strong> the production signal engine is replayed as-of each trading day since 2015 and asked whether what each signal describes actually happened afterwards. This is an event study, <em>not</em> a strategy backtest — no positions, sizing or transaction costs are simulated.</li>
-          <li><strong>Honesty constraints:</strong> outcomes are measured from the first observation after a publication lag (live signals fire on data that is already 1–3 days old); consecutive firings collapse into single episodes (cooldown 15 days); baselines are each series' own unconditional same-sign move probability, so trend drift cannot masquerade as signal skill; confidence intervals come from a moving-block bootstrap over episodes; daily series only (monthly series mix horizons and carry revision risk).</li>
-          <li><strong>Hypotheses tested:</strong> dislocations → mean reversion; momentum crossings → continuation; correlation-regime shifts → persistence of the new regime.</li>
-          <li><strong>Findings are published as measured — including the nulls</strong> (see the Validation section of the dashboard). Thresholds were set a priori and are not tuned on backtest results; any future change will appear in the change log below with pre-change results preserved in the public git history.</li>
-          <li><strong>Two-track validation:</strong> the backtest is the hypothesis; the daily signal ledger (committed to the public repository since 2026-08-02) re-verifies it out-of-sample as history accumulates, with no possibility of retrofitting.</li>
-        </ul>
-      </section>
-
-      <section className="card">
-        <h3>Data sources & quality control</h3>
-        <div className="table-wrap">
-          <table className="beta-table">
-            <thead><tr><th>Source</th><th>Series</th><th>Access</th></tr></thead>
-            <tbody>
-              <tr><td className="beta-name">FRED</td><td>crudes, gas, coal, metals, grains, rates, inflation, indices, FX</td><td>keyless CSV</td></tr>
-              <tr><td className="beta-name">Yahoo Finance</td><td>ETFs and single stocks (daily closes)</td><td>public chart API</td></tr>
-              <tr><td className="beta-name">World Bank</td><td>GDP growth, fuel-trade intensity</td><td>public API</td></tr>
-              <tr><td className="beta-name">IMF WEO</td><td>GDP projections</td><td>public API</td></tr>
-              <tr><td className="beta-name">EIA STEO</td><td>Brent / WTI / Henry Hub forecasts</td><td>free API key</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="sub">
-          Every refresh runs automated QC on every series ; staleness vs its publication cadence,
-          gap detection, 5σ spike detection, plausible-range checks, and history-shrink detection ;
-          published as <code>quality.json</code> and surfaced in the header ("QC: n/n series clean")
-          and on flagged series chips. A refresh where most sources fail aborts without overwriting
-          good data. Snapshots update weekdays ~06:20 UTC; sources publish with 1–3 day lags, which
-          is why "data through" and "refreshed" are shown separately.
-        </p>
-      </section>
-
-      <section className="card">
-        <h3>Methodology change log</h3>
-        <div className="table-wrap">
-          <table className="beta-table">
-            <thead><tr><th>Date</th><th>Change</th><th>Reason</th></tr></thead>
-            <tbody>
-              <tr><td className="beta-name">2026-07-31</td><td>Initial methodology: transforms, log-return correlations, three signal families, damped-drift + EWMA fans, EIA STEO / IMF WEO external forecasts.</td><td>MVP release.</td></tr>
-              <tr><td className="beta-name">2026-07-31</td><td>Equity Energy Beta board and sovereign GDP betas added.</td><td>Impact layer.</td></tr>
-              <tr><td className="beta-name">2026-07-31</td><td>Sovereign β respecified: naive OLS → Frisch–Waugh with world-cycle control; oil driver extended to full-history annual averages.</td><td>Naive version was spuriously positive for all economies (common shocks + oil procyclicality).</td></tr>
-              <tr><td className="beta-name">2026-08-02</td><td>Automated per-series QC (quality.json); daily public snapshots of signals and forecast digests (history/); analytics library under CI tests.</td><td>Trust roadmap Phase 1.</td></tr>
-              <tr><td className="beta-name">2026-08-02</td><td>Event-study backtest of all signal families published (backtest.json + Validation section), including null results. No thresholds changed.</td><td>Signal validation: backtest = hypothesis, live ledger = accumulating proof.</td></tr>
-              <tr><td className="beta-name">2026-08-02</td><td>Market state board (percentile conditions incl. CFTC COT positioning) and Inventory divergence signal family (EIA weekly fundamentals, seasonal z × price tension) added. Inventory family ships unvalidated, outside the backtest.</td><td>Intelligence layer: regime description + fundamentals-vs-price cross-signals.</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="sub">
-          A methodology that changes silently cannot be trusted ; every revision is recorded here
-          and in the public git history. Model output, not investment advice.
-        </p>
-      </section>
-    </div>
-  );
+    <section className="card">
+      <h3>Methodology change log</h3>
+      <div className="table-wrap"><table className="beta-table">
+        <thead><tr><th>Date</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>2026-11-21</td><td>Engine 2026-11-21.1: source-aware QC; staged publication and checksum verification; current-analysis gating; separate timestamped quotes; matched-interval correlations; calendar-year matching before display clipping; source-lag-aware replay and pre-entry baselines; adjusted equity returns and HAC beta intervals; first-issued daily ledger; monthly forecast timing/drift corrections. Signal thresholds unchanged. Previous results remain in git history.</td></tr>
+          <tr><td>2026-08-02</td><td>QC, daily ledger, event studies, market-state conditions and inventory divergence introduced.</td></tr>
+          <tr><td>2026-07-31</td><td>Initial transforms, signals, forecast fans, equity beta and cycle-controlled GDP sensitivity.</td></tr>
+        </tbody>
+      </table></div>
+      <p className="sub">Model output, not investment advice.</p>
+    </section>
+  </div>;
 }

@@ -15,11 +15,17 @@
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
-import { computeSignals } from "../src/lib/signals";
-import type { Series } from "../src/lib/data";
+import { ENGINE_VERSION, computeSignals } from "../src/lib/signals";
+import { analysisEligibility } from "../src/lib/quality";
+import type { QualityFile, Series } from "../src/lib/data";
 
-const DATA = path.resolve(process.cwd(), "public/data");
+const DATA = path.resolve(process.env.NEXUSQ_DATA_DIR ?? "public/data");
 const HIST = path.join(DATA, "history");
+const today = new Date().toISOString().slice(0, 10);
+if (existsSync(path.join(HIST, `${today}.json`))) {
+  console.log(`Preserving first-issued daily record for ${today}.`);
+  process.exit(0);
+}
 
 const read = (f: string) => JSON.parse(readFileSync(path.join(DATA, f), "utf8"));
 
@@ -33,7 +39,10 @@ for (const { id } of catalog.series) {
   }
 }
 
-const signals = computeSignals(map).map((s) => ({
+const quality = read("quality.json") as QualityFile;
+const eligible = new Map([...map].filter(([, series]) => analysisEligibility(series, quality).eligible));
+const signals = computeSignals(eligible).map((s) => ({
+  asOf: s.asOf,
   kind: s.kind,
   subject: s.subject,
   value: s.value,
@@ -47,7 +56,6 @@ type ExtPoint = [string, number];
 const forecasts = read("forecasts.json") as {
   series: Record<string, { kind: string; source?: string; points: (FanPoint | ExtPoint)[] }>;
 };
-const today = new Date().toISOString().slice(0, 10);
 const addDays = (d: string, n: number) => {
   const t = new Date(`${d}T00:00:00Z`);
   t.setUTCDate(t.getUTCDate() + n);
@@ -57,6 +65,7 @@ const HORIZONS = [7, 30, 90];
 
 const digest: Record<string, unknown> = {};
 for (const [id, fc] of Object.entries(forecasts.series)) {
+  if (!eligible.has(id)) continue;
   const byHorizon: Record<string, unknown> = {};
   for (const h of HORIZONS) {
     const target = addDays(today, h);
@@ -85,8 +94,8 @@ for (const [id, s] of map) {
 }
 
 mkdirSync(HIST, { recursive: true });
-const record = { date: today, generated: new Date().toISOString(), signals, forecastDigest: digest, spot };
-writeFileSync(path.join(HIST, `${today}.json`), JSON.stringify(record));
+const record = { engineVersion: ENGINE_VERSION, inputSnapshot: read("catalog.json").generated, date: today, generated: new Date().toISOString(), signals, forecastDigest: digest, spot };
+writeFileSync(path.join(HIST, `${today}.json`), JSON.stringify(record), { flag: "wx" });
 
 const indexFile = path.join(HIST, "index.json");
 const index: string[] = existsSync(indexFile) ? JSON.parse(readFileSync(indexFile, "utf8")) : [];

@@ -3,7 +3,7 @@ import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
 import { readTokens } from "./useTheme";
 import type { Series } from "../lib/data";
-import { alignSeries, returnCorrelation } from "../lib/transform";
+import { observedCorrelation } from "../lib/transform";
 
 /** Width as state so the option rebuilds on resize/rotation (a render-time
  *  window.innerWidth read goes stale — learned the hard way on the overlay). */
@@ -23,20 +23,23 @@ export function CorrelationMatrix({ list, from, themeMode }: {
   themeMode: string;
 }) {
   const compact = useCompact(480);
-  const { names, cells } = useMemo(() => {
+  const { names, cells, details } = useMemo(() => {
     const names = list.map((s) => s.name);
-    const grid = alignSeries(list, from);
+    const details = new Map<string, { n: number; asOf: string; basis: string }>();
     const cells: [number, number, number][] = [];
     for (let i = 0; i < list.length; i++) {
       for (let j = 0; j <= i; j++) {
-        const c = i === j ? 1 : returnCorrelation(grid.values[i], grid.values[j]);
+        const stats = observedCorrelation(list[i], list[j], from);
+        const c = stats?.rho;
         if (c != null) {
+          details.set(`${j},${i}`, stats!);
+          details.set(`${i},${j}`, stats!);
           cells.push([j, i, Math.round(c * 100) / 100]);
           if (i !== j) cells.push([i, j, Math.round(c * 100) / 100]);
         }
       }
     }
-    return { names, cells };
+    return { names, cells, details };
   }, [list, from]);
 
   const option = useMemo<EChartsOption>(() => {
@@ -56,7 +59,8 @@ export function CorrelationMatrix({ list, from, themeMode }: {
         textStyle: { color: t["--text-primary"], fontSize: 12 },
         formatter: (p) => {
           const v = (p as unknown as { value: [number, number, number] }).value;
-          return `${names[v[1]]} × ${names[v[0]]}<br/>ρ (log-return) = <b>${v[2].toFixed(2)}</b>`;
+          const stats = details.get(`${v[0]},${v[1]}`)!;
+          return `${names[v[1]]} × ${names[v[0]]}<br/>ρ = <b>${v[2].toFixed(2)}</b><br/>n = ${stats.n}; through ${stats.asOf}<br/>${stats.basis}`;
         },
       },
       xAxis: {
@@ -93,8 +97,8 @@ export function CorrelationMatrix({ list, from, themeMode }: {
         emphasis: { itemStyle: { borderColor: t["--baseline"] } },
       }],
     };
-  }, [names, cells, themeMode, compact]);
+  }, [names, cells, details, themeMode, compact]);
 
   if (list.length < 2) return <p className="sub">Select at least two series to correlate.</p>;
-  return <EChart option={option} height={Math.max(260, 66 * list.length + 130)} />;
+  return <><EChart option={option} height={Math.max(260, 66 * list.length + 130)} /><p className="sub">Blank cells: incompatible frequencies or fewer than 20 paired changes. Hover or tap a cell for sample size and observation date. Correlation is association, not causation.</p></>;
 }

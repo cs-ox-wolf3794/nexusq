@@ -8,7 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "refresh": "node --import tsx scripts/refresh-data.mjs",
+    "refresh:quotes": "node --import tsx scripts/refresh-quotes.mjs",
+    "data:validate": "node --import tsx scripts/validate-data.mjs",
+    "backtest": "tsx scripts/backtest-signals.ts"
   },
   "dependencies": {
     "echarts": "^6.1.0",

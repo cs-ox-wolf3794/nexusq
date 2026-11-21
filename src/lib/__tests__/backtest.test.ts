@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_OPTIONS, evaluateEpisodes, replayEpisodes } from "../backtest";
+import { DEFAULT_OPTIONS, evaluateEpisodes, publicationLagDays, replayEpisodes } from "../backtest";
 import type { Series } from "../data";
 
 function dailySeries(id: string, values: number[], startDate = "2014-01-01"): Series {
@@ -52,7 +52,22 @@ describe("evaluateEpisodes", () => {
     expect(h20).not.toBeNull();
     expect(h20!.hit).toBe(true); // z>0 → expected reversion down; price fell 112→100
     expect(h20!.move).toBeGreaterThan(0); // signed move in hypothesis direction
-    expect(h20!.baselineHit).toBeGreaterThan(0);
+    // The alternating pre-entry fixture has no downward 20-observation moves.
+    // The later reversion must not leak into its historical baseline.
+    expect(h20!.baselineHit).toBe(0);
     expect(h20!.baselineHit).toBeLessThan(1);
+  });
+});
+
+describe("publication availability", () => {
+  it("uses a longer availability lag for weekly-batched H.10 observations", () => {
+    expect(publicationLagDays(dailySeries("EURUSD", [1, 2]))).toBe(10);
+    expect(publicationLagDays(dailySeries("BRENT", [1, 2]))).toBe(3);
+  });
+  it("cannot fire on the observation date before publication", () => {
+    const s = dailySeries("BRENT", [...Array.from({ length: 700 }, (_, i) => 100 + Math.sin(i)), ...Array.from({ length: 12 }, () => 125)]);
+    const episodes = replayEpisodes(new Map([[s.id, s]]));
+    const first = episodes.find((e) => e.family === "Dislocation")!;
+    expect(Date.parse(first.onset) - Date.parse(s.points[700][0])).toBeGreaterThanOrEqual(3 * 86400000);
   });
 });

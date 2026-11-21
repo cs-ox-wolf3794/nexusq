@@ -19,5 +19,7 @@ jobs:
         run: npx tsc -b
       - name: Unit tests (analytics library)
         run: npx vitest run
+      - name: Validate published data contracts
+        run: npm run data:validate
       - name: Production build
         run: npm run build

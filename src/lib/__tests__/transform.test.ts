@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  alignSeries, applyTransform, clampRange, pearson, returnCorrelation, toIndex, toYoY, toZScore,
+  alignSeries, applyTransform, clampRange, pearson, returnCorrelation, toIndex, toYoY, toZScore, observedCorrelation,
 } from "../transform";
 import type { Series } from "../data";
 
@@ -25,6 +25,12 @@ describe("toZScore", () => {
 });
 
 describe("toYoY", () => {
+  it("refuses to label a two-year gap as year-on-year growth", () => {
+    expect(toYoY([["2022-01-01", 50], ["2024-01-01", 100]])).toEqual([]);
+  });
+  it("matches leap-day anniversaries without looking forward", () => {
+    expect(toYoY([["2023-02-28", 80], ["2024-02-29", 100]])).toEqual([["2024-02-29", 25]]);
+  });
   it("computes % change vs the observation ~1 year earlier", () => {
     const out = toYoY([["2023-01-15", 80], ["2024-01-15", 100]]);
     expect(out).toHaveLength(1);
@@ -43,6 +49,10 @@ describe("clampRange", () => {
 });
 
 describe("pearson", () => {
+  it("rejects mismatched and nonfinite samples", () => {
+    expect(pearson([1, 2, 3], [1, 2])).toBeNull();
+    expect(pearson([1, 2, 3], [1, NaN, 3])).toBeNull();
+  });
   it("is 1 for perfectly linear data and −1 for inverse", () => {
     expect(pearson([1, 2, 3, 4], [2, 4, 6, 8])).toBeCloseTo(1, 10);
     expect(pearson([1, 2, 3, 4], [8, 6, 4, 2])).toBeCloseTo(-1, 10);
@@ -53,6 +63,27 @@ describe("pearson", () => {
   });
   it("returns null for degenerate input", () => {
     expect(pearson([1, 1, 1], [1, 2, 3])).toBeNull();
+  });
+});
+
+describe("observed correlations", () => {
+  const dates = Array.from({ length: 60 }, (_, i) => new Date(Date.parse("2024-01-01") + i * 86400000).toISOString().slice(0, 10));
+  it("uses common endpoints without inserting artificial zero returns", () => {
+    const a = mkSeries(dates.map((date, i) => [date, 100 + Math.sin(i) + i]));
+    const b = mkSeries(a.points.filter((_, i) => i % 2 === 0));
+    const result = observedCorrelation(a, b, "2024-01-01")!;
+    expect(result.rho).toBeCloseTo(1, 10);
+    expect(result.n).toBe(29);
+    expect(result.asOf).toBe(b.lastUpdated);
+  });
+  it("withholds mixed daily/monthly inference", () => {
+    const a = mkSeries(dates.map((date, i) => [date, 100 + i]));
+    const b = { ...a, cadence: "monthly" as const };
+    expect(observedCorrelation(a, b, "2024-01-01")).toBeNull();
+  });
+  it("uses differences consistently for rates, even when positive", () => {
+    const a = { ...mkSeries(dates.map((date, i) => [date, 2 + Math.sin(i) / 10])), id: "UST10Y" };
+    expect(observedCorrelation(a, a, "2024-01-01")?.basis).toBe("differences / differences");
   });
 });
 

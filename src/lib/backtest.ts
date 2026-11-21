@@ -4,29 +4,29 @@
  * Replays the production signal engine (src/lib/signals) over history as-of
  * each trading day and asks: after a signal fired, did what it describes
  * actually happen? Non-negotiables implemented here:
- *   - publication-lag honesty: outcomes are evaluated from the first observation
- *     ON/AFTER onset + visibilityLagDays (the date a live user could have acted),
+ *   - source-specific availability proxies are imposed before signal formation;
+ *     outcomes start ON/AFTER onset + visibilityLagDays (additional entry delay),
  *   - episode collapsing: a signal firing daily for two weeks is ONE event
  *     (absent → present transition, with a cooldown guard),
  *   - drift-honest baselines: each episode's hit is compared against the
- *     unconditional probability of the same-sign move in that same series,
+ *     probability of the same-sign move using completed outcomes before entry,
  *   - moving-block bootstrap CIs over chronologically ordered episodes,
  *   - v1 scope: daily series only (monthly excluded — kills CPI/INDPRO
  *     revision bias and keeps horizons comparable).
  *
- * Thresholds are the production ones, chosen a priori. Tuning them after
+ * Thresholds are unchanged production values. Tuning them after
  * seeing these results is data snooping — any change goes through the
  * Methodology change log with pre-change results preserved.
  */
 import type { Series } from "./data";
 import { computeSignals } from "./signals";
-import { alignSeries, daysBetween, returnCorrelation } from "./transform";
+import { observedCorrelation, daysBetween } from "./transform";
 
 export interface Episode {
   family: string; // Dislocation | Momentum | Correlation regime
   subject: string;
   seriesIds: string[];
-  onset: string; // data date on which the signal first appeared
+  onset: string; // decision date after the source-specific availability lag
   severity: string;
   metric: number;
   cShort?: number;
@@ -42,7 +42,7 @@ export interface EpisodeOutcome extends Episode {
 
 export interface ReplayOptions {
   start: string;
-  visibilityLagDays: number; // calendar days from data date to actionable date
+  visibilityLagDays: number; // additional calendar days from signal formation to outcome entry
   cooldownDays: number; // min calendar days between episodes of the same key
   horizons: number[]; // forward windows in trading observations
   corrEvalObs: number; // trading obs after entry at which ρ persistence is judged
@@ -50,11 +50,16 @@ export interface ReplayOptions {
 
 export const DEFAULT_OPTIONS: ReplayOptions = {
   start: "2015-01-01",
-  visibilityLagDays: 3,
+  visibilityLagDays: 1,
   cooldownDays: 15,
   horizons: [5, 20, 60],
   corrEvalObs: 60,
 };
+
+export function publicationLagDays(s: Series): number {
+  if (["DXY", "EURUSD"].includes(s.id)) return 10;
+  return s.source === "Yahoo Finance" ? 1 : 3;
+}
 
 function isDaily(s: Series): boolean {
   const n = s.points.length;
@@ -73,7 +78,8 @@ function signedMove(points: [string, number][], entryIdx: number, h: number, dir
   if (entryIdx + h >= points.length) return null;
   const a = points[entryIdx][1];
   const b = points[entryIdx + h][1];
-  const move = a > 0 && b > 0 ? (Math.log(b / a)) * 100 : b - a;
+  if (a <= 0 || b <= 0) return null; // percent returns are undefined across nonpositive prices
+  const move = (b / a - 1) * 100;
   return move * dir;
 }
 
@@ -109,17 +115,18 @@ export function replayEpisodes(all: Map<string, Series>, opts: ReplayOptions = D
     const truncated = new Map<string, Series>();
     for (const [id, s] of all) {
       let i = ptr.get(id)!;
-      while (i < s.points.length && s.points[i][0] <= day) i++;
+      const visibleThrough = addDays(day, -publicationLagDays(s));
+      while (i < s.points.length && s.points[i][0] <= visibleThrough) i++;
       ptr.set(id, i);
-      if (i >= 40) truncated.set(id, { ...s, points: s.points.slice(0, i) });
+      if (i >= 40) truncated.set(id, { ...s, points: s.points.slice(0, i), lastUpdated: s.points[i - 1][0], adjustedPoints: s.adjustedPoints?.filter(([d]) => d <= visibleThrough) });
     }
 
     const signals = computeSignals(truncated, day);
     const todayKeys = new Set<string>();
     for (const sig of signals) {
       // v1: only episodes whose primary series is daily (corr pairs always are)
-      if (sig.kind !== "Correlation regime" && !daily.has(sig.seriesIds[0])) continue;
-      const key = `${sig.kind}|${sig.subject}`;
+      if (sig.kind !== "Correlation regime" && (!daily.has(sig.seriesIds[0]) || ["UST10Y", "BREAKEVEN10Y"].includes(sig.seriesIds[0]))) continue;
+      const key = `${sig.kind}|${sig.subject}|${Math.sign(sig.metric)}`;
       todayKeys.add(key);
       if (activeKeys.has(key)) continue;
       const prev = lastOnset.get(key);
@@ -150,11 +157,11 @@ export function evaluateEpisodes(
 ): EpisodeOutcome[] {
   // cache baseline hit rates per (series, horizon, dir)
   const baseCache = new Map<string, number>();
-  const baseline = (s: Series, h: number, dir: 1 | -1) => {
-    const k = `${s.id}|${h}|${dir}`;
+  const baseline = (s: Series, h: number, dir: 1 | -1, before: string) => {
+    const k = `${s.id}|${h}|${dir}|${before}`;
     let v = baseCache.get(k);
     if (v === undefined) {
-      v = baselineHitRate(s.points, h, dir);
+      v = baselineHitRate((s.adjustedPoints ?? s.points).filter(([date]) => date < before), h, dir);
       baseCache.set(k, v);
     }
     return v;
@@ -178,9 +185,9 @@ export function evaluateEpisodes(
         const trunc = (s: Series): Series => ({
           ...s,
           points: s.points.filter(([d]) => d <= evalDate),
+          adjustedPoints: s.adjustedPoints?.filter(([d]) => d <= evalDate),
         });
-        const g = alignSeries([trunc(a), trunc(b)], from);
-        const rhoLater = returnCorrelation(g.values[0], g.values[1]);
+        const rhoLater = observedCorrelation(trunc(a), trunc(b), from)?.rho;
         if (rhoLater == null) {
           outcomes[String(opts.corrEvalObs)] = null;
         } else {
@@ -206,11 +213,11 @@ export function evaluateEpisodes(
         outcomes[String(h)] = null;
         continue;
       }
-      const m = signedMove(s.points, entryIdx, h, dir);
+      const m = signedMove(s.adjustedPoints ?? s.points, entryIdx, h, dir);
       outcomes[String(h)] = m == null ? null : {
         move: Math.round(m * 100) / 100,
         hit: m > 0,
-        baselineHit: Math.round(baseline(s, h, dir) * 1000) / 1000,
+        baselineHit: Math.round(baseline(s, h, dir, entryDate!) * 1000) / 1000,
       };
     }
     return { ...ep, entryDate, outcomes };
@@ -236,13 +243,11 @@ export function corrPersistenceBaseline(
     for (let i = 0; i + opts.corrEvalObs < dates.length; i += 21) {
       const d0 = dates[i];
       const dEval = dates[i + opts.corrEvalObs];
-      const truncTo = (s: Series, cut: string): Series => ({ ...s, points: s.points.filter(([d]) => d <= cut) });
-      const g1 = alignSeries([truncTo(a, d0), truncTo(b, d0)], addDays(d0, -120));
-      const gY = alignSeries([truncTo(a, d0), truncTo(b, d0)], addDays(d0, -365));
-      const gL = alignSeries([truncTo(a, dEval), truncTo(b, dEval)], addDays(dEval, -120));
-      const c0 = returnCorrelation(g1.values[0], g1.values[1]);
-      const cY = returnCorrelation(gY.values[0], gY.values[1]);
-      const cL = returnCorrelation(gL.values[0], gL.values[1]);
+      const truncTo = (s: Series, cut: string): Series => ({ ...s, points: s.points.filter(([d]) => d <= cut), adjustedPoints: s.adjustedPoints?.filter(([d]) => d <= cut) });
+      const available = (s: Series) => truncTo(s, addDays(d0, -publicationLagDays(s)));
+      const c0 = observedCorrelation(available(a), available(b), addDays(d0, -120))?.rho;
+      const cY = observedCorrelation(available(a), available(b), addDays(d0, -365))?.rho;
+      const cL = observedCorrelation(truncTo(a, dEval), truncTo(b, dEval), addDays(dEval, -120))?.rho;
       if (c0 == null || cY == null || cL == null) continue;
       n++;
       if (Math.abs(cL - c0) < Math.abs(cL - cY)) hits++;
@@ -310,6 +315,7 @@ export function aggregate(
 ): HorizonStats | null {
   const rows = outcomes
     .filter(filter)
+    .sort((a, b) => a.onset.localeCompare(b.onset))
     .map((e) => e.outcomes[horizon])
     .filter((o): o is NonNullable<typeof o> => o != null);
   if (rows.length < 3) return null;

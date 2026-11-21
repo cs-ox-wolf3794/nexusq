@@ -19,7 +19,7 @@ export function clampRange(points: Points, from: string): Points {
 export function toIndex(points: Points): Points {
   if (!points.length) return points;
   const base = points[0][1];
-  if (base === 0) return points.map(([d]) => [d, 0]);
+  if (base <= 0) return []; // a zero/negative base cannot support a conventional price index
   return points.map(([d, v]) => [d, (v / base) * 100]);
 }
 
@@ -31,14 +31,18 @@ export function toZScore(points: Points): Points {
   return points.map(([d, v]) => [d, (v - mean) / sd]);
 }
 
-/** Year-over-year % change, matched to the closest observation ≥ ~340 days back. */
+/** Calendar-year change, with at most seven days of backward matching tolerance. */
 export function toYoY(points: Points): Points {
   const out: Points = [];
   let j = 0;
   for (let i = 0; i < points.length; i++) {
-    const target = shiftDays(points[i][0], -365);
+    const date = new Date(`${points[i][0]}T00:00:00Z`);
+    const year = date.getUTCFullYear() - 1;
+    const month = date.getUTCMonth();
+    const day = Math.min(date.getUTCDate(), new Date(Date.UTC(year, month + 1, 0)).getUTCDate());
+    const target = new Date(Date.UTC(year, month, day)).toISOString().slice(0, 10);
     while (j + 1 < points.length && points[j + 1][0] <= target) j++;
-    if (points[j][0] <= target && daysBetween(points[j][0], points[i][0]) >= 340 && points[j][1] !== 0) {
+    if (points[j][0] <= target && daysBetween(points[j][0], target) <= 7 && points[j][1] > 0) {
       out.push([points[i][0], (points[i][1] / points[j][1] - 1) * 100]);
     }
   }
@@ -52,12 +56,6 @@ export function applyTransform(points: Points, t: Transform): Points {
     case "yoy": return toYoY(points);
     case "raw": return points;
   }
-}
-
-function shiftDays(iso: string, days: number): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
 }
 
 export function daysBetween(a: string, b: string): number {
@@ -90,19 +88,17 @@ export function alignSeries(list: Series[], from: string, maxGapDays = 40): { da
 
 /** Pearson correlation of log-returns between two aligned value arrays. */
 export function returnCorrelation(a: (number | null)[], b: (number | null)[]): number | null {
+  if (a.length !== b.length) return null;
+  const logA = a.every((v) => v == null || v > 0);
+  const logB = b.every((v) => v == null || v > 0);
   const ra: number[] = [];
   const rb: number[] = [];
   for (let i = 1; i < a.length; i++) {
     const a0 = a[i - 1], a1 = a[i], b0 = b[i - 1], b1 = b[i];
     if (a0 == null || a1 == null || b0 == null || b1 == null) continue;
-    if (a0 <= 0 || a1 <= 0 || b0 <= 0 || b1 <= 0) {
-      // yields/rates can be ≤ 0 — fall back to differences
-      ra.push(a1 - a0);
-      rb.push(b1 - b0);
-    } else {
-      ra.push(Math.log(a1 / a0));
-      rb.push(Math.log(b1 / b0));
-    }
+    if (![a0, a1, b0, b1].every(Number.isFinite)) continue;
+    ra.push(logA ? Math.log(a1 / a0) : a1 - a0);
+    rb.push(logB ? Math.log(b1 / b0) : b1 - b0);
   }
   if (ra.length < 20) return null;
   return pearson(ra, rb);
@@ -110,7 +106,7 @@ export function returnCorrelation(a: (number | null)[], b: (number | null)[]): n
 
 export function pearson(x: number[], y: number[]): number | null {
   const n = x.length;
-  if (n < 3) return null;
+  if (n < 3 || y.length !== n || !x.every(Number.isFinite) || !y.every(Number.isFinite)) return null;
   const mx = x.reduce((a, b) => a + b, 0) / n;
   const my = y.reduce((a, b) => a + b, 0) / n;
   let sxy = 0, sxx = 0, syy = 0;
@@ -119,5 +115,39 @@ export function pearson(x: number[], y: number[]): number | null {
     sxy += dx * dy; sxx += dx * dx; syy += dy * dy;
   }
   if (sxx === 0 || syy === 0) return null;
-  return sxy / Math.sqrt(sxx * syy);
+  return Math.max(-1, Math.min(1, sxy / Math.sqrt(sxx * syy)));
+}
+
+export function seriesCadence(s: Series): "daily" | "weekly" | "monthly" | "annual" {
+  if (s.cadence) return s.cadence;
+  const recent = s.points.slice(-30);
+  const gaps = recent.slice(1).map((p, i) => daysBetween(recent[i][0], p[0])).sort((a, b) => a - b);
+  const median = gaps[Math.floor(gaps.length / 2)] ?? Infinity;
+  return median < 4 ? "daily" : median < 10 ? "weekly" : median < 45 ? "monthly" : "annual";
+}
+
+/** Pairwise common endpoints, no forward filling and no mixed-frequency inference. */
+export function observedCorrelation(a: Series, b: Series, from: string): { rho: number; n: number; asOf: string; basis: string } | null {
+  const cadence = seriesCadence(a);
+  if (cadence !== seriesCadence(b)) return null;
+  const aPoints = (a.adjustedPoints ?? a.points).filter(([d]) => d >= from);
+  const bMap = new Map((b.adjustedPoints ?? b.points).filter(([d]) => d >= from));
+  const matched = aPoints.filter(([d]) => bMap.has(d));
+  const usesLog = (s: Series, values: number[]) => !["UST10Y", "BREAKEVEN10Y"].includes(s.id) && !s.id.startsWith("GDP_") && values.every((v) => v > 0);
+  const logA = usesLog(a, matched.map((p) => p[1]));
+  const logB = usesLog(b, matched.map(([d]) => bMap.get(d)!));
+  const maxGap = { daily: 7, weekly: 10, monthly: 35, annual: 370 }[cadence];
+  const ra: number[] = [], rb: number[] = [];
+  let asOf = "";
+  for (let i = 1; i < matched.length; i++) {
+    const [d0, a0] = matched[i - 1], [d1, a1] = matched[i];
+    if (daysBetween(d0, d1) > maxGap) continue;
+    const b0 = bMap.get(d0)!, b1 = bMap.get(d1)!;
+    if (![a0, a1, b0, b1].every(Number.isFinite)) continue;
+    ra.push(logA ? Math.log(a1 / a0) : a1 - a0);
+    rb.push(logB ? Math.log(b1 / b0) : b1 - b0);
+    asOf = d1;
+  }
+  const rho = ra.length >= 20 ? pearson(ra, rb) : null;
+  return rho == null ? null : { rho, n: ra.length, asOf, basis: `${logA ? "log returns" : "differences"} / ${logB ? "log returns" : "differences"}` };
 }

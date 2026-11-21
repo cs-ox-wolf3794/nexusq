@@ -1,4 +1,5 @@
-import type { Series } from "../lib/data";
+import type { QualityFile, Series } from "../lib/data";
+import { analysisEligibility } from "../lib/quality";
 
 const KPI_IDS = ["BRENT", "WTI", "HENRYHUB", "SP500", "GOLD", "EURUSD"];
 const SPARK_POINTS = 30;
@@ -25,10 +26,12 @@ function Sparkline({ values }: { values: number[] }) {
   );
 }
 
-export function KpiStrip({ seriesMap, selected, onToggle }: {
+export function KpiStrip({ seriesMap, selected, onToggle, quality, now }: {
   seriesMap: Map<string, Series>;
   selected: string[];
   onToggle: (id: string) => void;
+  quality: QualityFile | null;
+  now: number;
 }) {
   const tiles = KPI_IDS.map((id) => seriesMap.get(id)).filter((s): s is Series => !!s);
   if (!tiles.length) return null;
@@ -48,6 +51,7 @@ export function KpiStrip({ seriesMap, selected, onToggle }: {
             title={`${s.name} — ${on ? "remove from" : "add to"} overlay`}
           >
             <span className="kpi-name">{s.name}</span>
+            <small>{analysisEligibility(s, quality, now).eligible ? "Daily observation" : "⚠ Review required"} · {s.lastUpdated}</small>
             <span className="kpi-value">
               {fmtValue(last)} <span className="kpi-unit">{s.unit}</span>
             </span>

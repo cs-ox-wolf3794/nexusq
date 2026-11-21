@@ -10,6 +10,8 @@ import { daysBetween } from "./transform";
  */
 
 export interface BetaStats {
+  asOf?: string;
+  betaCI: [number, number]; // approximate 95% Newey-West HAC interval, not predictive coverage
   beta: number;
   alphaAnnual: number; // annualized, %
   r2: number;
@@ -23,22 +25,20 @@ export interface RollingBeta {
 
 /** Pair up daily log-returns on dates both series observe. */
 function pairedReturns(asset: Points, driver: Points): { dates: string[]; ra: number[]; rd: number[] } {
-  const dm = new Map(driver.map(([d, v]) => [d, v]));
+  const dm = new Map(driver.map(([d, v], i) => [d, { v, prior: driver[i - 1] }]));
   const dates: string[] = [];
   const ra: number[] = [];
   const rd: number[] = [];
   let prevA: [string, number] | null = null;
-  let prevD: number | null = null;
   for (const [d, v] of asset) {
-    const dv = dm.get(d);
-    if (dv == null) continue;
-    if (prevA && prevD != null && v > 0 && prevA[1] > 0 && dv > 0 && prevD > 0 && daysBetween(prevA[0], d) <= 7) {
+    const observation = dm.get(d);
+    const dv = observation?.v, prior = observation?.prior;
+    if (prevA && prior && prior[0] === prevA[0] && dv != null && v > 0 && prevA[1] > 0 && dv > 0 && prior[1] > 0 && daysBetween(prevA[0], d) <= 7) {
       dates.push(d);
       ra.push(Math.log(v / prevA[1]));
-      rd.push(Math.log(dv / prevD));
+      rd.push(Math.log(dv / prior[1]));
     }
     prevA = [d, v];
-    prevD = dv;
   }
   return { dates, ra, rd };
 }
@@ -57,10 +57,21 @@ function olsStats(ra: number[], rd: number[]): BetaStats | null {
   const beta = sad / sdd;
   const r = sad / Math.sqrt(saa * sdd);
   const alphaDaily = ma - beta * md;
+  // HAC sandwich variance for the slope: heteroskedasticity and short-run serial correlation.
+  const scores = ra.map((r, i) => (rd[i] - md) * (r - alphaDaily - beta * rd[i]));
+  let meat = scores.reduce((sum, value) => sum + value * value, 0);
+  const lags = Math.floor(4 * (n / 100) ** (2 / 9));
+  for (let lag = 1; lag <= lags; lag++) {
+    let covariance = 0;
+    for (let i = lag; i < n; i++) covariance += scores[i] * scores[i - lag];
+    meat += 2 * (1 - lag / (lags + 1)) * covariance;
+  }
+  const se = Math.sqrt(Math.max(0, (n / (n - 2)) * meat / (sdd * sdd)));
   return {
-    beta: Math.round(beta * 100) / 100,
-    alphaAnnual: Math.round(alphaDaily * 252 * 1000) / 10, // %
-    r2: Math.round(r * r * 100) / 100,
+    beta,
+    betaCI: [beta - 1.96 * se, beta + 1.96 * se],
+    alphaAnnual: alphaDaily * 252 * 100, // annualized log-return intercept, %; not risk-adjusted alpha
+    r2: r * r,
     n,
   };
 }
@@ -71,6 +82,7 @@ export function rollingBeta(asset: Points, driver: Points, window = 90): Rolling
   if (ra.length < window) return null;
   const current = olsStats(ra.slice(-window), rd.slice(-window));
   if (!current) return null;
+  current.asOf = dates.at(-1);
   const history: [string, number][] = [];
   for (let end = window; end <= ra.length; end += 5) {
     const s = olsStats(ra.slice(end - window, end), rd.slice(end - window, end));

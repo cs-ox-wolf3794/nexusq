@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-20T15:29:10.909Z",
+  "generated": "2026-11-21T07:26:27.612Z",
   "series": [
     {
       "id": "BRENT",
@@ -7,7 +7,11 @@
       "unit": "USD/bbl",
       "category": "energy",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/DCOILBRENTEU",
+      "cadence": "daily",
       "lastUpdated": "2026-11-17",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 3521
     },
     {
@@ -16,7 +20,11 @@
       "unit": "USD/bbl",
       "category": "energy",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/DCOILWTICO",
+      "cadence": "daily",
       "lastUpdated": "2026-11-17",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 3464
     },
     {
@@ -25,25 +33,37 @@
       "unit": "USD/MMBtu",
       "category": "energy",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/DHHNGSP",
+      "cadence": "daily",
       "lastUpdated": "2026-11-17",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 3499
     },
     {
       "id": "EUGAS",
-      "name": "European natural gas (TTF)",
+      "name": "European natural gas (monthly IMF benchmark)",
       "unit": "USD/MMBtu",
       "category": "energy",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/PNGASEUUSDM",
+      "cadence": "monthly",
       "lastUpdated": "2026-09-01",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 321
     },
     {
       "id": "COAL",
-      "name": "Coal (Newcastle)",
+      "name": "Australian coal (monthly IMF benchmark)",
       "unit": "USD/tonne",
       "category": "energy",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/PCOALAUUSDM",
+      "cadence": "monthly",
       "lastUpdated": "2026-09-01",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 321
     },
     {
@@ -52,7 +72,11 @@
       "unit": "USD/tonne",
       "category": "commodity",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/PCOPPUSDM",
+      "cadence": "monthly",
       "lastUpdated": "2026-09-01",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 321
     },
     {
@@ -61,7 +85,11 @@
       "unit": "USD/tonne",
       "category": "commodity",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/PWHEAMTUSDM",
+      "cadence": "monthly",
       "lastUpdated": "2026-09-01",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 321
     },
     {
@@ -70,8 +98,12 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
-      "lastUpdated": "2026-11-18",
-      "count": 2512
+      "sourceUrl": "https://fred.stlouisfed.org/series/SP500",
+      "cadence": "daily",
+      "lastUpdated": "2026-11-19",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
+      "count": 2513
     },
     {
       "id": "NASDAQ",
@@ -79,7 +111,11 @@
       "unit": "index",
       "category": "equity",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/NASDAQCOM",
+      "cadence": "daily",
       "lastUpdated": "2026-11-19",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 3494
     },
     {
@@ -88,7 +124,11 @@
       "unit": "pts",
       "category": "macro",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/VIXCLS",
+      "cadence": "daily",
       "lastUpdated": "2026-11-19",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 3526
     },
     {
@@ -97,8 +137,12 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-11-18",
-      "count": 3471
+      "sourceUrl": "https://fred.stlouisfed.org/series/DGS10",
+      "cadence": "daily",
+      "lastUpdated": "2026-11-19",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
+      "count": 3472
     },
     {
       "id": "BREAKEVEN10Y",
@@ -106,8 +150,12 @@
       "unit": "%",
       "category": "macro",
       "source": "FRED",
-      "lastUpdated": "2026-11-19",
-      "count": 3472
+      "sourceUrl": "https://fred.stlouisfed.org/series/T10YIE",
+      "cadence": "daily",
+      "lastUpdated": "2026-11-20",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
+      "count": 3473
     },
     {
       "id": "CPI",
@@ -115,7 +163,11 @@
       "unit": "index",
       "category": "macro",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/CPIAUCSL",
+      "cadence": "monthly",
       "lastUpdated": "2026-10-01",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 321
     },
     {
@@ -124,7 +176,11 @@
       "unit": "index",
       "category": "macro",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/INDPRO",
+      "cadence": "monthly",
       "lastUpdated": "2026-10-01",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 322
     },
     {
@@ -133,7 +189,11 @@
       "unit": "index",
       "category": "fx",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/DTWEXBGS",
+      "cadence": "daily",
       "lastUpdated": "2026-11-13",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 3454
     },
     {
@@ -142,7 +202,11 @@
       "unit": "USD/EUR",
       "category": "fx",
       "source": "FRED",
+      "sourceUrl": "https://fred.stlouisfed.org/series/DEXUSEU",
+      "cadence": "daily",
       "lastUpdated": "2026-11-13",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 3467
     },
     {
@@ -151,7 +215,13 @@
       "unit": "USD/share",
       "category": "equity",
       "source": "Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/XLE/",
+      "cadence": "daily",
       "lastUpdated": "2026-11-20",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
+      "priceBasis": "close",
+      "returnBasis": "Yahoo adjusted close (splits and distributions)",
       "count": 2514
     },
     {
@@ -160,7 +230,13 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/ICLN/",
+      "cadence": "daily",
       "lastUpdated": "2026-11-20",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
+      "priceBasis": "close",
+      "returnBasis": "Yahoo adjusted close (splits and distributions)",
       "count": 2514
     },
     {
@@ -169,7 +245,13 @@
       "unit": "USD/share",
       "category": "renewables",
       "source": "Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/TAN/",
+      "cadence": "daily",
       "lastUpdated": "2026-11-20",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
+      "priceBasis": "close",
+      "returnBasis": "Yahoo adjusted close (splits and distributions)",
       "count": 2514
     },
     {
@@ -178,7 +260,13 @@
       "unit": "USD/share",
       "category": "commodity",
       "source": "Yahoo Finance",
+      "sourceUrl": "https://finance.yahoo.com/quote/GLD/",
+      "cadence": "daily",
       "lastUpdated": "2026-11-20",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
+      "priceBasis": "close",
+      "returnBasis": "Yahoo adjusted close (splits and distributions)",
       "count": 2514
     },
     {
@@ -187,7 +275,11 @@
       "unit": "% y/y",
       "category": "macro",
       "source": "World Bank",
+      "sourceUrl": "https://api.worldbank.org/v2/country/USA/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=5000",
+      "cadence": "annual",
       "lastUpdated": "2025-12-31",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 26
     },
     {
@@ -196,7 +288,11 @@
       "unit": "% y/y",
       "category": "macro",
       "source": "World Bank",
+      "sourceUrl": "https://api.worldbank.org/v2/country/CHN/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=5000",
+      "cadence": "annual",
       "lastUpdated": "2025-12-31",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 26
     },
     {
@@ -205,7 +301,11 @@
       "unit": "% y/y",
       "category": "macro",
       "source": "World Bank",
+      "sourceUrl": "https://api.worldbank.org/v2/country/IND/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=5000",
+      "cadence": "annual",
       "lastUpdated": "2025-12-31",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 26
     },
     {
@@ -214,7 +314,11 @@
       "unit": "% y/y",
       "category": "macro",
       "source": "World Bank",
+      "sourceUrl": "https://api.worldbank.org/v2/country/DEU/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=5000",
+      "cadence": "annual",
       "lastUpdated": "2025-12-31",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
+      "retrievedAt": "2026-11-21T07:26:27.612Z",
       "count": 26
     },
     {
@@ -224,6 +328,7 @@
       "category": "fundamentals",
       "source": "EIA",
       "lastUpdated": "2026-11-13",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
       "count": 672
     },
     {
@@ -233,6 +338,7 @@
       "category": "fundamentals",
       "source": "EIA",
       "lastUpdated": "2026-11-13",
+      "checkedAt": "2026-11-21T07:26:27.612Z",
       "count": 672
     }
   ]

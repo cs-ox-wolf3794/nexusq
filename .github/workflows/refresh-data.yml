@@ -2,47 +2,102 @@ name: Refresh data snapshots
 
 on:
   schedule:
-    - cron: "20 6 * * 1-5" # weekdays 06:20 UTC, after US close data settles
+    # Best effort, deliberately off the hour. Covers US sessions across DST.
+    - cron: "7,22,37,52 12-23 * * 1-5"
+    # Official daily/weekly releases and a Saturday close catch-up.
+    - cron: "17 6,16,18,22 * * 1-5"
+    - cron: "17 6 * * 6"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Refresh scope"
+        type: choice
+        options: [full, quotes]
+        default: full
 
 permissions:
   contents: write
-  actions: write # to dispatch the deploy workflow after committing data
+  actions: write
+
+concurrency:
+  group: nexusq-data-main
+  cancel-in-progress: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node scripts/refresh-data.mjs
+      - name: Select refresh scope
+        id: scope
+        env:
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$REQUESTED_MODE" = "quotes" ] || [ "$EVENT_SCHEDULE" = "7,22,37,52 12-23 * * 1-5" ]; then
+            echo "mode=quotes" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify analytical code
+        if: steps.scope.outputs.mode == 'full'
+        run: npm test && npx tsc -b
+      - name: Refresh validated analytical snapshot
+        id: data
+        if: steps.scope.outputs.mode == 'full'
+        continue-on-error: true
+        run: npm run refresh
         env:
           EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
-      # Daily trust snapshot: signals + forecast digest + spot anchors → history/
-      # (the tamper-evident track record the calibration scoreboard reads)
-      - run: npx tsx scripts/snapshot-signals.ts
-      - name: Commit updated snapshots
+      - name: Refresh timestamped quotes
+        id: quotes
+        continue-on-error: true
+        run: npm run refresh:quotes
+      - name: Record analytical refresh outcome
+        if: steps.scope.outputs.mode == 'full'
+        run: node scripts/record-refresh-status.mjs
+        env:
+          REFRESH_OUTCOME: ${{ steps.data.outcome }}
+          REFRESH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      - name: Append immutable daily ledger
+        if: steps.data.outcome == 'success'
+        run: npx tsx scripts/snapshot-signals.ts
+      - name: Validate complete publication
+        run: npm run data:validate -- --manifest
+      - name: Commit verified update
         id: commit
         run: |
           git config user.name "nexusq-data-bot"
           git config user.email "actions@users.noreply.github.com"
           git add public/data
           if git diff --cached --quiet; then
-            echo "No data changes"
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "data: refresh snapshots $(date -u +%F)"
-            git push
+            git commit -m "data: refresh ${{ steps.scope.outputs.mode }} $(date -u +%FT%TZ)"
+            # Never force push. A conflicting concurrent edit stops publication.
+            git pull --rebase origin main
+            npm run data:validate -- --manifest
+            git add public/data/manifest.json
+            if ! git diff --cached --quiet; then git commit -m "data: reconcile publication manifest"; fi
+            git push origin HEAD:main
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      # Pushes made with GITHUB_TOKEN do not trigger `on: push` workflows
-      # (recursion prevention), so the deploy must be dispatched explicitly.
-      - name: Trigger site deploy
+      - name: Deploy verified snapshots
         if: steps.commit.outputs.changed == 'true'
         run: gh workflow run deploy.yml --ref main
         env:
           GH_TOKEN: ${{ github.token }}
+      - name: Surface refresh failure
+        if: steps.data.outcome == 'failure' || steps.quotes.outcome == 'failure'
+        run: |
+          echo "::error::Refresh failed. Previous analytical snapshot retained; see public refresh status and source health."
+          exit 1

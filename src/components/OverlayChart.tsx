@@ -172,7 +172,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
             : "Select at least one series."}
         {projections.length > 0 && (
           <>
-            {" "}· Dashed = projection beyond the today line; shaded fan = <GlossaryTip term="P10-P90" definition="Projected 10th-to-90th percentile range at each horizon." /> from damped-drift + EWMA volatility; GDP projections from IMF WEO. Model output, not investment advice.
+            {" "}· Dashed = projection from the observation anchor; shaded fan = <GlossaryTip term="P10-P90" definition="Projected 10th-to-90th percentile range at each horizon." /> under damped-drift + EWMA assumptions, with uncalibrated coverage; GDP projections from IMF WEO. Model output, not investment advice.
           </>
         )}
       </p>

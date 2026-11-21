@@ -1,9 +1,13 @@
 import type { Series } from "./data";
-import { alignSeries, returnCorrelation, daysBetween } from "./transform";
+import { observationEnd } from "./quality";
+import { observedCorrelation, daysBetween, seriesCadence } from "./transform";
+
+export const ENGINE_VERSION = "2026-11-21.1";
 
 export type Severity = "info" | "watch" | "elevated" | "extreme";
 
 export interface Signal {
+  asOf: string;
   kind: string;
   subject: string;
   detail: string;
@@ -98,15 +102,21 @@ export function seasonalZ(points: [string, number][], yearsBack = 5): { z: numbe
  */
 export function computeSignals(all: Map<string, Series>, asOf?: string): Signal[] {
   const signals: Signal[] = [];
+  if (asOf) all = new Map([...all].map(([id, s]) => {
+    const points = s.points.filter(([d]) => d <= asOf);
+    return [id, { ...s, points, adjustedPoints: s.adjustedPoints?.filter(([d]) => d <= asOf), lastUpdated: points.at(-1)?.[0] ?? "" }];
+  }));
 
   for (const s of all.values()) {
+    if (s.category === "fundamentals") continue; // inventories require seasonal, not generic level, normalization
     if (s.category === "macro" && s.id.startsWith("GDP_")) continue; // annual, too sparse
     const z = latestZ(s);
     if (z && Math.abs(z.z) >= 1.5) {
       signals.push({
+        asOf: observationEnd(s.id, s.points.at(-1)![0]),
         kind: "Dislocation",
         subject: s.name,
-        detail: `${z.z > 0 ? "Rich" : "Cheap"} vs trailing-year norm (latest ${s.unit === "index" ? `index level ${fmt(z.last)}` : `${fmt(z.last)} ${s.unit}`})`,
+        detail: `${z.z > 0 ? "Above" : "Below"} trailing ${seriesCadence(s) === "daily" ? "252-observation" : "36-observation"} norm (latest ${s.unit === "index" ? `index level ${fmt(z.last)}` : `${fmt(z.last)} ${s.unit}`})`,
         value: `z = ${z.z >= 0 ? "+" : ""}${z.z.toFixed(1)}σ`,
         severity: sevFromAbs(Math.abs(z.z), 1.5, 2, 2.5),
         score: Math.abs(z.z),
@@ -117,6 +127,7 @@ export function computeSignals(all: Map<string, Series>, asOf?: string): Signal[
     const m = momentum(s);
     if (m && Math.abs(m.spreadPct) >= 2) {
       signals.push({
+        asOf: observationEnd(s.id, s.points.at(-1)![0]),
         kind: "Momentum",
         subject: s.name,
         detail: `50-day average ${m.spreadPct > 0 ? "above" : "below"} 200-day (${fmt(m.fast)} vs ${fmt(m.slow)})`,
@@ -147,17 +158,18 @@ export function computeSignals(all: Map<string, Series>, asOf?: string): Signal[
   for (const [aId, bId, label] of PAIRS) {
     const a = all.get(aId), b = all.get(bId);
     if (!a || !b) continue;
-    const grid1y = alignSeries([a, b], shift(365));
-    const short = alignSeries([a, b], shift(120));
-    const cLong = returnCorrelation(grid1y.values[0], grid1y.values[1]);
-    const cShort = returnCorrelation(short.values[0], short.values[1]);
+    const long = observedCorrelation(a, b, shift(365));
+    const short = observedCorrelation(a, b, shift(120));
+    const cLong = long?.rho;
+    const cShort = short?.rho;
     if (cLong == null || cShort == null) continue;
     const delta = cShort - cLong;
     if (Math.abs(delta) >= 0.15) {
       signals.push({
+        asOf: short!.asOf,
         kind: "Correlation regime",
         subject: label,
-        detail: `${a.name} vs ${b.name}: 120d correlation ${cShort.toFixed(2)} vs 1y ${cLong.toFixed(2)} (as of ${today})`,
+        detail: `${a.name} vs ${b.name}: 120d correlation ${cShort.toFixed(2)} (n=${short!.n}) vs 1y ${cLong.toFixed(2)} (n=${long!.n}); matched observations through ${short!.asOf}`,
         value: `Δρ = ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`,
         severity: sevFromAbs(Math.abs(delta), 0.15, 0.3, 0.45),
         score: Math.abs(delta) * 6,
@@ -188,6 +200,7 @@ export function computeSignals(all: Map<string, Series>, asOf?: string): Signal[
     const bullTension = sz.z <= -1.5 && pz.z <= -1; // tightness + cheap price
     if (!bearTension && !bullTension) continue;
     signals.push({
+      asOf: [inv.lastUpdated, px.lastUpdated].sort()[0],
       kind: "Inventory divergence",
       subject: label,
       detail: `${inv.name} ${sz.z >= 0 ? "+" : ""}${sz.z.toFixed(1)}σ vs 5y seasonal norm (${fmt(sz.last)} ${inv.unit}) while ${px.name} is ${pz.z > 0 ? "rich" : "cheap"} (z ${pz.z >= 0 ? "+" : ""}${pz.z.toFixed(1)}) — ${bearTension ? "oversupply priced richly: bearish tension" : "tight supply priced cheaply: bullish tension"}`,

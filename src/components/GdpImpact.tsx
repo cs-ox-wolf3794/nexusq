@@ -67,7 +67,7 @@ export function GdpImpact({ impact }: { impact: ImpactFile }) {
                   : ROLE_LABEL.balanced;
               return (
                 <tr key={country.iso}>
-                  <td className="beta-name">{country.name}</td>
+                  <td className="beta-name">{country.name}{country.retained && <><br/><small>◔ Prior annual data retained</small></>}</td>
                   <td className="gdp-profile">{profile}</td>
                   <td className="num" data-label="β GDP"><strong>{gb.betaPer10Pct >= 0 ? "+" : ""}{gb.betaPer10Pct.toFixed(2)}</strong><span className="gdp-unit">pp/+10%</span></td>
                   <td data-label="Sensitivity">

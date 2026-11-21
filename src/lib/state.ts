@@ -139,13 +139,14 @@ export function computeMarketState(
   if (dxy) {
     const usd = lastPercentile(changeHistory(dxy.points));
     if (usd) {
+      dates.push(dxy.lastUpdated);
       conditions.push({
         key: "dollar",
         label: "US dollar",
         percentile: usd.pct,
         supportive: 100 - usd.pct, // strong dollar = headwind for USD commodities
-        reading: `DXY ${usd.value >= 0 ? "+" : ""}${r1(usd.value)}% over 60d — ${usd.pct >= 70 ? "dollar strength" : usd.pct <= 30 ? "dollar weakness" : "neutral"}`,
-        detail: "DXY 60-obs % change, percentile vs ~3y; dollar weakness scores supportive",
+        reading: `Broad USD ${usd.value >= 0 ? "+" : ""}${r1(usd.value)}% over 60d — ${usd.pct >= 70 ? "dollar strength" : usd.pct <= 30 ? "dollar weakness" : "neutral"}`,
+        detail: "Federal Reserve broad dollar index, 60-obs % change, percentile vs ~3y; dollar weakness scores supportive",
       });
     }
   }

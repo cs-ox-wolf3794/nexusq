@@ -5,7 +5,7 @@ export function SignalPanel({ signals, onView }: {
   signals: Signal[];
   onView: (seriesIds: string[]) => void;
 }) {
-  if (!signals.length) return <p className="sub">No active signals at current thresholds.</p>;
+  if (!signals.length) return <p className="sub">No active signals among the inputs currently eligible for analysis.</p>;
   return (
     <div className="sig-list">
       {signals.map((s, i) => {
@@ -14,7 +14,7 @@ export function SignalPanel({ signals, onView }: {
           <div className="sig-row" key={i}>
             <span className="sig-subject">{s.subject}</span>
             <span className="sig-type">{s.kind}</span>
-            <span className="sig-detail">{s.detail}</span>
+            <span className="sig-detail">{s.detail}<br/><small>Inputs through {s.asOf}</small></span>
             <span className="num sig-value">{s.value}</span>
             <span className="sig-actions">
               <span

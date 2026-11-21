@@ -21,7 +21,7 @@ describe("computeSignals", () => {
     expect(dis).toBeDefined();
     expect(dis!.severity).toBe("extreme");
     expect(dis!.seriesIds).toEqual(["X"]);
-    expect(dis!.detail).toContain("Rich");
+    expect(dis!.detail).toContain("Above trailing");
   });
 
   it("flags a momentum regime when the 50d average is far from the 200d", () => {

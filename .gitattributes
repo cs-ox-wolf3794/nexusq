@@ -1,0 +1,2 @@
+# Manifests hash exact published bytes; platform newline conversion must not alter JSON.
+public/data/** -text
