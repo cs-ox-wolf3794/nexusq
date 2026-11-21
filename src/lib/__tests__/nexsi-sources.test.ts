@@ -32,6 +32,8 @@ describe("NexSI public source contracts", () => {
     const row = { stateid: "TX", sectorid: "COM", period: "2026-08", price: "9.5", "price-units": "cents per kilowatthour" };
     const json = { response: { frequency: "monthly", total: "3", data: [row, { ...row, period: "2026-09", price: "10.1" }, { ...row, stateid: "ENC" }] } };
     expect(parsePowerRates(json, now)).toEqual([expect.objectContaining({ state: "TX", period: "2026-09", usdMwh: 101 })]);
+    const liveSpelling = { response: { frequency: "monthly", total: "1", data: [{ ...row, stateid: "AK", price: "23.9", "price-units": "cents per kilowatt-hour" }] } };
+    expect(parsePowerRates(liveSpelling, now)).toEqual([expect.objectContaining({ state: "AK", usdMwh: 239 })]);
     expect(() => parsePowerRates({ response: { ...json.response, total: "4" } }, now)).toThrow("Incomplete");
     expect(() => parsePowerRates({ response: { frequency: "monthly", total: "1", data: [{ ...row, "price-units": "dollars per megawatthour" }] } }, now)).toThrow("unit");
     expect(() => parsePowerRates({ response: { frequency: "monthly", total: "1", data: [{ ...row, period: "2026-12" }] } }, now)).toThrow("overdue");

@@ -36,13 +36,18 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
     const old = previousPrices?.series[symbol];
     try {
       let points, adjustedPoints;
-      await yahooChart(symbol, "1d", "5y", raw => {
+      const validate = raw => {
         const result = parseYahooDaily(raw, now, symbol);
         points = result.points.slice(-850); adjustedPoints = result.adjustedPoints.slice(-850);
+        if (old?.points?.length && points.at(-1)?.[0] < old.points.at(-1)[0]) throw new Error(`Latest observation regressed: ${points.at(-1)?.[0]} versus retained ${old.points.at(-1)[0]}`);
         validatePoints(points, { now, previous: old?.points, minPoints: 2 });
         validateAdjustedAlignment(points, adjustedPoints);
         if (now - Date.parse(points.at(-1)[0]) > 7 * DAY) throw new Error("Completed daily close is overdue");
-      });
+      };
+      try { await yahooChart(symbol, "1d", "5y", validate); }
+      catch { // Yahoo range caches can disagree; validate a longer history of the same instrument.
+        await yahooChart(symbol, "1d", "10y", validate);
+      }
       prices.series[symbol] = { points, adjustedPoints, retrievedAt: generated, issue: null };
     } catch (error) {
       failures.push(`${symbol}: ${error.message}`);
