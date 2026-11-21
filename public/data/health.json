@@ -1,1 +1,1 @@
-{"generated":"2026-11-21T07:43:24.855Z","status":"degraded","coreFailures":[],"enrichmentIssues":[{"source":"IMF WEO","detail":"HTTP 503"}],"note":"Source freshness is assessed separately from successful retrieval. No guarantee of real-time prices."}
+{"generated":"2026-11-21T07:59:46.194Z","status":"ok","coreFailures":[],"enrichmentIssues":[],"note":"Source freshness is assessed separately from successful retrieval. No guarantee of real-time prices."}
