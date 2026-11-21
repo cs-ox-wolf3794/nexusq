@@ -12,7 +12,7 @@ describe("NexSI public source contracts", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ chart: { result: [{ value: "current" }] } }) });
     vi.stubGlobal("fetch", fetcher);
     try {
-      const result = await yahooChart("SNDK", "1d", "5y", (r: { value: string }) => { if (r.value !== "current") throw new Error("latest observation regressed"); });
+      const result = await yahooChart("SNDK", "1d", "5y", r => { if (!("value" in r) || r.value !== "current") throw new Error("latest observation regressed"); });
       expect(result.value).toBe("current");
       expect(fetcher.mock.calls[1][0]).toContain("query2.finance.yahoo.com");
     } finally { vi.unstubAllGlobals(); }
