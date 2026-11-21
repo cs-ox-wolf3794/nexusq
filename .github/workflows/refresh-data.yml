@@ -43,6 +43,7 @@ jobs:
           EVENT_SCHEDULE: ${{ github.event.schedule }}
           REQUESTED_MODE: ${{ inputs.mode }}
         run: |
+          echo "REFRESH_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
           if [ "$REQUESTED_MODE" = "quotes" ] || [ "$EVENT_SCHEDULE" = "7,22,37,52 12-23 * * 1-5" ]; then
             echo "mode=quotes" >> "$GITHUB_OUTPUT"
           else
@@ -61,6 +62,10 @@ jobs:
         run: npm run refresh
         env:
           EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+      - name: Report NexSI source verification
+        if: steps.scope.outputs.mode == 'full'
+        continue-on-error: true
+        run: node --import tsx scripts/report-nexsi-refresh.mjs
       - name: Refresh timestamped quotes
         id: quotes
         continue-on-error: true

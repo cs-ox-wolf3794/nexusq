@@ -26,6 +26,7 @@ export async function validateSnapshot(directory) {
     for (const company of nexsi.companies) {
       const input = inputs.series[company.symbol];
       if (!input || (input.points.at(-1)?.[0] ?? null) !== company.asOf || (input.points.at(-1)?.[1] ?? null) !== company.price
+        || JSON.stringify(input.provenance) !== JSON.stringify(company.provenance)
         || JSON.stringify(input.adjustedPoints.slice(-252)) !== JSON.stringify(company.history)) throw new Error(`NexSI company/input mismatch: ${company.symbol}`);
       const rows = factorRows(input.adjustedPoints, factorData);
       for (const a of [...Object.values(company.moves), ...company.largestDrops].filter(Boolean)) {

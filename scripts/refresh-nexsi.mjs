@@ -3,9 +3,8 @@ import { writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { readJson, buildManifest } from "./lib/snapshot.mjs";
 import { mapLimit } from "./lib/http.mjs";
-import { yahooChart, parseYahooDaily } from "./lib/yahoo.mjs";
+import { companyPriceHistory } from "./lib/nexsi-prices.mjs";
 import { nasdaqUniverse, secDirectory, companyFilings, companyHeadlines, electricityRates } from "./lib/nexsi-sources.mjs";
-import { validatePoints, validateAdjustedAlignment } from "../src/lib/quality.ts";
 import { NEXSI_VERSION, factorRows, attributeMove, validateFactors } from "../src/lib/nexsi-model.ts";
 import { computeSignals } from "../src/lib/signals.ts";
 import { validateNexsi } from "../src/lib/nexsi-quality.ts";
@@ -35,26 +34,10 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
   await mapLimit(symbols, 3, async symbol => {
     const old = previousPrices?.series[symbol];
     try {
-      let points, adjustedPoints;
-      const validate = raw => {
-        const result = parseYahooDaily(raw, now, symbol);
-        points = result.points.slice(-850); adjustedPoints = result.adjustedPoints.slice(-850);
-        if (old?.points?.length && points.at(-1)?.[0] < old.points.at(-1)[0]) throw new Error(`Latest observation regressed: ${points.at(-1)?.[0]} versus retained ${old.points.at(-1)[0]}`);
-        validatePoints(points, { now, previous: old?.points, minPoints: 2 });
-        validateAdjustedAlignment(points, adjustedPoints);
-        if (now - Date.parse(points.at(-1)[0]) > 7 * DAY) throw new Error("Completed daily close is overdue");
-      };
-      try { await yahooChart(symbol, "1d", "5y", validate); }
-      catch { // Yahoo range caches can disagree; validate a longer history of the same instrument.
-        try { await yahooChart(symbol, "1d", "10y", validate); }
-        catch {
-          await yahooChart(symbol, "1d", "5y", validate, { start: Math.floor((now - 5 * 366 * DAY) / 1000), end: Math.floor(now / 1000) });
-        }
-      }
-      prices.series[symbol] = { points, adjustedPoints, retrievedAt: generated, issue: null };
+      prices.series[symbol] = { ...await companyPriceHistory(symbol, old, now), retrievedAt: generated, issue: null };
     } catch (error) {
       failures.push(`${symbol}: ${error.message}`);
-      prices.series[symbol] = { points: old?.points ?? [], adjustedPoints: old?.adjustedPoints ?? [], retrievedAt: old?.retrievedAt ?? null, issue: error.message };
+      prices.series[symbol] = { points: old?.points ?? [], adjustedPoints: old?.adjustedPoints ?? [], provenance: old?.provenance ?? null, retrievedAt: old?.retrievedAt ?? null, issue: error.message };
     }
   });
   const factorProblem = FACTORS.find(([s]) => prices.series[s].issue || prices.series[s].adjustedPoints.length < 127);
@@ -101,10 +84,10 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
       events = events.filter(e => now - Date.parse(e.publishedAt) <= 100 * DAY).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
       eventCheckedAt = generated;
     }
-    const s = { id: symbol, name: member.name, category: "equity", unit: "USD", source: "Yahoo Finance", cadence: "daily", lastUpdated: asOf, points: source.points, adjustedPoints: p };
+    const s = { id: symbol, name: member.name, category: "equity", unit: "USD", source: source.provenance?.provider ?? "Unavailable", cadence: "daily", lastUpdated: asOf, points: source.points, adjustedPoints: p };
     const signals = issue ? [] : computeSignals(new Map([[symbol, s]]), asOf).map(s => ({ label: s.subject, detail: s.detail, severity: s.severity }));
     console.log(`NexSI ${symbol}: ${p.length} closes; ${moves[1] ? "attribution ready" : "attribution withheld"}; ${events.length} evidence links`);
-    return { ...member, asOf, price: source.points.at(-1)?.[1] ?? null, retrievedAt: source.retrievedAt, issue,
+    return { ...member, asOf, price: source.points.at(-1)?.[1] ?? null, retrievedAt: source.retrievedAt, provenance: source.provenance, issue,
       history: p.slice(-252), observedReturns, moves, drawdown: p.length ? (p.at(-1)[1] / Math.max(...p.slice(-252).map(x => x[1])) - 1) * 100 : null,
       largestDrops, validation: rows.length ? validateFactors(rows) : null, signals, events, eventCheckedAt, eventIssues };
   });

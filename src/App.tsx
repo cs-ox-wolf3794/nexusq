@@ -593,7 +593,7 @@ export default function App() {
           <a className="cta-link" href="https://github.com/cs-ox-wolf3794/nexusq" target="_blank" rel="noreferrer">
             Source &amp; data on GitHub
           </a>
-          <span>Data: FRED · Yahoo Finance · World Bank · IMF · EIA</span>
+          <span>Data: FRED · Yahoo Finance · Nasdaq · World Bank · IMF · EIA</span>
         </div>
         <div className="footer-fine">
           Nexus Signal preview · model output, not investment advice · © 2026 Gygante Quantitative Systems

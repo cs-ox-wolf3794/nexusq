@@ -330,7 +330,7 @@ body {
   cursor: pointer; text-align: left; font: inherit; color: var(--text-secondary);
   transition: border-color 0.15s, background 0.15s;
 }
-.kpi-tile:hover { background: var(--chip-wash); }
+button.kpi-tile:hover { background: var(--chip-wash); }
 .kpi-tile.on { border-color: var(--accent); }
 .kpi-name { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi-value { font-size: 17px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
@@ -471,7 +471,7 @@ body {
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .kpi-tile { transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease; }
-  .kpi-tile:hover { transform: translateY(-1px); }
+  button.kpi-tile:hover { transform: translateY(-1px); }
 }
 
 /* ---- brand rule: full-width gradient hairline at the very top ---- */
@@ -490,88 +490,81 @@ body::before {
 @media (max-width: 400px) { .quote-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* NexSI: readable company analysis at phone, tablet and desktop widths. */
-.nexsi { display: grid; gap: 18px; min-width: 0; }
-.nexsi h1 { font-size: clamp(24px, 3.2vw, 38px); line-height: 1.15; margin: 10px 0 12px; letter-spacing: -0.7px; }
+.nexsi { display: grid; gap: 16px; min-width: 0; }
 .nexsi h2, .nexsi h3, .nexsi h4 { overflow-wrap: anywhere; }
-.nexsi h4 { margin: 9px 0; font-size: 16px; }
-.nexsi p { line-height: 1.6; }
+.nexsi h3, .nexsi h4 { margin: 12px 0 8px; font-size: 14px; }
+.nexsi p { line-height: 1.5; }
 .nexsi .card { margin: 0; min-width: 0; }
-.nexsi-eyebrow { color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; }
-.nexsi-hero { background: linear-gradient(120deg, var(--chip-wash), var(--surface-1) 70%); }
-.nexsi-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 24px 0 16px; }
-.nexsi-stats div { border-left: 2px solid var(--accent); padding-left: 12px; display: grid; gap: 4px; }
-.nexsi-stats strong { font-size: 26px; font-variant-numeric: tabular-nums; }
-.nexsi-stats span, .nexsi-foot { font-size: 12px; color: var(--text-muted); }
-.nexsi-callout { padding: 12px 14px; border-radius: 8px; background: var(--chip-wash); border-left: 3px solid var(--accent); }
-.nexsi-alert { padding: 10px 12px; border: 1px solid var(--status-warning); border-radius: 8px; font-size: 13px; }
-.nexsi details { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 16px; font-size: 13px; }
-.nexsi summary { cursor: pointer; font-weight: 600; color: var(--text-primary); line-height: 1.6; }
-.nexsi-workspace { display: grid; grid-template-columns: minmax(270px, 0.8fr) minmax(0, 2fr); align-items: start; gap: 18px; }
-.nexsi-board { position: sticky; top: 12px; }
-.nexsi input:not([type="checkbox"]), .nexsi select { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px; font: inherit; font-size: 14px; }
+.nexsi a { color: var(--accent); }
+.nexsi .howto { margin: 10px 0; }
+.nexsi-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 12px 0; }
+.nexsi .kpi-tile { cursor: default; }
+.nexsi .kpi-name { white-space: normal; }
+.nexsi .kpi-tile small, .nexsi-foot { font-size: 11.5px; color: var(--text-muted); }
+.nexsi-callout { padding: 10px 12px; border-radius: 8px; background: var(--chip-wash); border: 1px solid var(--gridline); font-size: 12.5px; }
+.nexsi-alert { padding: 10px 12px; border: 1px solid var(--status-warning); border-radius: 8px; font-size: 12.5px; }
+.nexsi-workspace { display: grid; grid-template-columns: minmax(270px, 0.8fr) minmax(0, 2fr); align-items: start; gap: 16px; }
+.nexsi-board { position: sticky; top: 56px; }
+.nexsi input:not([type="checkbox"]), .nexsi select { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font: inherit; font-size: 12.5px; }
 .nexsi input:focus-visible, .nexsi select:focus-visible, .nexsi button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.nexsi-label, .nexsi-inputs label, .nexsi-event-picker label { display: grid; gap: 6px; font-size: 12px; color: var(--text-secondary); min-width: 0; }
+.nexsi-label, .nexsi-inputs label, .nexsi-event-picker label { display: grid; gap: 5px; font-size: 11px; color: var(--text-muted); min-width: 0; }
 .nexsi-label { margin-bottom: 12px; }
-.nexsi-checkbox { display: flex; align-items: center; gap: 8px; font-size: 12px; margin: 12px 0; }
+.nexsi-checkbox { display: flex; align-items: center; gap: 8px; font-size: 12px; margin: 12px 0; color: var(--text-secondary); }
 .nexsi-checkbox input { width: 17px; height: 17px; accent-color: var(--accent); flex: 0 0 auto; }
-.nexsi-company-list { max-height: 680px; overflow-y: auto; scrollbar-width: thin; padding: 3px; }
-.nexsi-company { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 12px; padding: 12px 10px; margin-bottom: 7px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.nexsi-company-list { max-height: 600px; overflow-y: auto; scrollbar-width: thin; padding: 3px; }
+.nexsi-company { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; padding: 10px 8px; margin-bottom: 4px; background: var(--surface-1); border: 1px solid transparent; border-bottom-color: var(--gridline); border-radius: 8px; color: var(--text-primary); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .nexsi-company.selected { border-color: var(--accent); background: var(--chip-wash); }
 .nexsi-company:hover { background: var(--chip-wash); }
-.nexsi-company small { display: block; font-size: 11px; line-height: 1.5; color: var(--text-muted); white-space: normal; overflow-wrap: anywhere; }
+.nexsi-company small { display: block; font-size: 11px; line-height: 1.45; color: var(--text-muted); white-space: normal; overflow-wrap: anywhere; }
 .nexsi-company-energy, .nexsi-company-date { grid-column: 1 / -1; }
-.nexsi-company-heading { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
+.nexsi-company-heading { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
 .nexsi-company-heading > div { min-width: 0; }
 .nexsi-company-heading > div:last-child { text-align: right; flex: 0 0 auto; }
-.nexsi-company-heading strong { font-size: 23px; }
-.nexsi-company-heading small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 5px; }
-.nexsi-event-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: end; margin-top: 20px; }
-.nexsi-event-picker small { color: var(--text-muted); font-size: 11px; line-height: 1.6; }
-.nexsi-period { color: var(--text-muted); font-size: 12px; }
-.nexsi-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 16px 0; }
-.nexsi-metrics > div { display: grid; gap: 7px; padding: 14px; border-radius: 8px; border: 1px solid var(--border); }
-.nexsi-metrics span { font-size: 12px; color: var(--text-secondary); }
-.nexsi-metrics strong { font-size: 26px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.nexsi-metrics small { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+.nexsi-company-heading strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+.nexsi-company-heading small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.nexsi-event-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: end; margin-top: 14px; }
+.nexsi-event-picker small { color: var(--text-muted); font-size: 11px; line-height: 1.45; }
+.nexsi-period { color: var(--text-muted); font-size: 11px; }
+.nexsi-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 12px 0; }
+.nexsi-metrics strong { font-size: 17px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .nexsi-negative { color: var(--status-critical); }
 .nexsi-positive { color: var(--delta-up); }
-.nexsi-reading { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; }
+.nexsi-reading { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; }
 .nexsi-reading h3 { margin-top: 6px; }
-.nexsi-reading p { font-size: 14px; }
+.nexsi-reading p { font-size: 12.5px; color: var(--text-secondary); }
 .nexsi-contributions { display: grid; gap: 8px; }
 .nexsi-contributions > div { display: flex; justify-content: space-between; gap: 12px; }
 .nexsi-contributions dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.nexsi-evidence { margin-top: 24px; }
+.nexsi-evidence { margin-top: 16px; }
 .nexsi-sources { list-style: none; padding: 0; display: grid; gap: 12px; }
-.nexsi-sources li { display: grid; gap: 4px; overflow-wrap: anywhere; line-height: 1.6; }
+.nexsi-sources li { display: grid; gap: 4px; overflow-wrap: anywhere; line-height: 1.45; font-size: 12.5px; }
 .nexsi-sources small { color: var(--text-muted); font-size: 11px; }
-.nexsi-section-heading { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.nexsi-section-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .nexsi-section-heading .nexsi-checkbox { flex: 0 0 auto; }
 .nexsi-project-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.nexsi-project { padding: 16px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; }
+.nexsi-project { padding: 12px 14px; border: 1px solid var(--gridline); border-radius: 10px; min-width: 0; }
 .nexsi-project p { font-size: 12px; color: var(--text-secondary); }
-.nexsi-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
-.nexsi-scenario-result { display: grid; gap: 8px; padding: 16px; background: var(--chip-wash); border-radius: 8px; }
-.nexsi-scenario-result strong { font-size: clamp(22px, 3vw, 30px); overflow-wrap: anywhere; }
+.nexsi-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 16px 0; }
+.nexsi-scenario-result { display: grid; gap: 5px; padding: 10px 12px; background: var(--chip-wash); border: 1px solid var(--gridline); border-radius: 8px; }
+.nexsi-scenario-result strong { font-size: 17px; overflow-wrap: anywhere; }
 .nexsi-scenario-result span { font-size: 12px; color: var(--text-secondary); }
-.nexsi-factor-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; font-size: 12px; }
+.nexsi-factor-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 12px 0; font-size: 12px; }
 .nexsi-factor-grid p { color: var(--text-secondary); }
 @media (max-width: 1100px) {
   .nexsi-workspace { grid-template-columns: minmax(0, 1fr); }
   .nexsi-board { position: static; }
-  .nexsi-company-list { max-height: 320px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .nexsi-company-list { max-height: 300px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .nexsi-company { margin: 0; align-content: start; }
   .nexsi-project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nexsi-factor-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
-  .nexsi-stats { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .nexsi-stats div { grid-template-columns: 48px minmax(0, 1fr); align-items: center; }
+  .nexsi input:not([type="checkbox"]), .nexsi select { font-size: 16px; }
+  .nexsi-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nexsi-stats .kpi-tile:last-child { grid-column: 1 / -1; }
   .nexsi-company-list, .nexsi-project-grid, .nexsi-inputs, .nexsi-event-picker { grid-template-columns: minmax(0, 1fr); }
   .nexsi-company-heading, .nexsi-section-heading { flex-direction: column; gap: 6px; }
   .nexsi-company-heading > div:last-child { text-align: left; }
   .nexsi-metrics { gap: 8px; }
-  .nexsi-metrics > div { padding: 10px; }
-  .nexsi-metrics strong { font-size: 22px; }
   .nexsi-factor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

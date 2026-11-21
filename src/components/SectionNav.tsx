@@ -9,11 +9,15 @@ const SECTIONS = [
   { id: "sovereign-impact", label: "Sovereign impact" },
 ];
 
-export function SectionNav() {
+export function SectionNav({ sections = SECTIONS, preserveView = false }: {
+  sections?: { id: string; label: string }[]; preserveView?: boolean;
+}) {
   return (
     <nav className="section-nav" aria-label="Page sections">
-      {SECTIONS.map((s) => (
-        <a key={s.id} href={`#${s.id}`}>{s.label}</a>
+      {sections.map((s) => (
+        <a key={s.id} href={`#${s.id}`} onClick={event => {
+          if (preserveView) { event.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ block: "start" }); }
+        }}>{s.label}</a>
       ))}
     </nav>
   );

@@ -25,6 +25,7 @@ export function validateNexsi(file: NexsiFile) {
     || file.companies.length !== symbols.length || new Set(file.companies.map(c => c.symbol)).size !== symbols.length
     || file.companies.some(c => !symbols.includes(c.symbol))) throw new Error("NexSI universe/coverage mismatch");
   for (const c of file.companies) {
+    if (c.provenance && (!/^https:\/\//.test(c.provenance.url) || !c.provenance.provider || !c.provenance.returnBasis)) throw new Error(`Invalid NexSI price provenance: ${c.symbol}`);
     for (const a of [...Object.values(c.moves), ...c.largestDrops].filter(a => a != null)) {
       if (![a.actual, a.energy, ...a.energyCI, ...Object.values(a.components)].every(Number.isFinite)
         || a.energyCI[0] > a.energy || a.energyCI[1] < a.energy || a.fit.through !== a.start || a.fit.n < 126

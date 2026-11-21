@@ -4,8 +4,13 @@ import type { Points } from "./transform";
 export interface NexsiMember { symbol: string; name: string; technology: boolean; group: string; included: boolean }
 export interface NexsiUniverse { asOf: string; retrievedAt: string; sources: string[]; members: NexsiMember[]; retained?: boolean }
 export interface NexsiEvent { title: string; url: string; publishedAt: string; source: string; kind: "filing" | "headline"; items?: string }
+export interface NexsiPriceSource {
+  provider: string; url: string; returnBasis: string; note?: string;
+  continuity?: { comparedThrough: string; observations: number };
+}
 export interface NexsiCompany extends NexsiMember {
   asOf: string | null; price: number | null; retrievedAt: string | null; issue: string | null;
+  provenance?: NexsiPriceSource | null;
   history: Points; moves: Record<string, Attribution | null>;
   observedReturns: Record<string, number | null>;
   drawdown: number | null; largestDrops: Attribution[];
