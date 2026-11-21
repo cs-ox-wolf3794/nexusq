@@ -84,7 +84,7 @@ function signedMove(points: [string, number][], entryIdx: number, h: number, dir
 }
 
 /** Unconditional P(sign(h-obs move) matches dir) across the whole series. */
-function baselineHitRate(points: [string, number][], h: number, dir: 1 | -1): number {
+function baselineHitRate(points: [string, number][], h: number, dir: 1 | -1): number | null {
   let hits = 0, n = 0;
   for (let i = 0; i + h < points.length; i++) {
     const m = signedMove(points, i, h, dir);
@@ -92,7 +92,7 @@ function baselineHitRate(points: [string, number][], h: number, dir: 1 | -1): nu
     n++;
     if (m > 0) hits++;
   }
-  return n ? hits / n : 0.5;
+  return n >= 20 ? hits / n : null;
 }
 
 /**
@@ -156,12 +156,14 @@ export function evaluateEpisodes(
   opts: ReplayOptions = DEFAULT_OPTIONS,
 ): EpisodeOutcome[] {
   // cache baseline hit rates per (series, horizon, dir)
-  const baseCache = new Map<string, number>();
+  const baseCache = new Map<string, number | null>();
+  const corrCache = new Map<string, CorrelationReference[]>();
   const baseline = (s: Series, h: number, dir: 1 | -1, before: string) => {
     const k = `${s.id}|${h}|${dir}|${before}`;
     let v = baseCache.get(k);
     if (v === undefined) {
-      v = baselineHitRate((s.adjustedPoints ?? s.points).filter(([date]) => date < before), h, dir);
+      const visibleThrough = addDays(before, -publicationLagDays(s));
+      v = baselineHitRate((s.adjustedPoints ?? s.points).filter(([date]) => date < visibleThrough), h, dir);
       baseCache.set(k, v);
     }
     return v;
@@ -173,9 +175,11 @@ export function evaluateEpisodes(
       // persistence: is ρ120 at entry+corrEvalObs closer to the NEW regime than the old?
       const [aId, bId] = ep.seriesIds;
       const a = all.get(aId)!, b = all.get(bId)!;
+      if (!a || !b) return { ...ep, entryDate: null, outcomes };
       const visible = addDays(ep.onset, opts.visibilityLagDays);
       const gridDates = a.points.map((p) => p[0]);
       const entryIdx = gridDates.findIndex((d) => d >= visible);
+      const entryDate = entryIdx >= 0 ? gridDates[entryIdx] : null;
       const evalIdx = entryIdx >= 0 ? entryIdx + opts.corrEvalObs : -1;
       if (entryIdx < 0 || evalIdx >= gridDates.length || ep.cShort == null || ep.cLong == null) {
         outcomes[String(opts.corrEvalObs)] = null;
@@ -192,14 +196,17 @@ export function evaluateEpisodes(
           outcomes[String(opts.corrEvalObs)] = null;
         } else {
           const hit = Math.abs(rhoLater - ep.cShort) < Math.abs(rhoLater - ep.cLong);
-          outcomes[String(opts.corrEvalObs)] = {
+          const key = `${aId}|${bId}`;
+          if (!corrCache.has(key)) corrCache.set(key, correlationReferences(a, b, opts));
+          const prior = corrCache.get(key)!.filter((r) => r.availableOn < ep.onset);
+          outcomes[String(opts.corrEvalObs)] = prior.length < 20 ? null : {
             move: Math.round((rhoLater - ep.cShort) * 100) / 100,
             hit,
-            baselineHit: 0.5, // replaced by the family-level random-date baseline
+            baselineHit: prior.filter((r) => r.hit).length / prior.length,
           };
         }
       }
-      return { ...ep, entryDate: null, outcomes };
+      return { ...ep, entryDate, outcomes };
     }
 
     // dislocation: expect reversion (-sign z); momentum: expect continuation (+sign spread)
@@ -214,10 +221,11 @@ export function evaluateEpisodes(
         continue;
       }
       const m = signedMove(s.adjustedPoints ?? s.points, entryIdx, h, dir);
-      outcomes[String(h)] = m == null ? null : {
+      const reference = entryDate ? baseline(s, h, dir, entryDate) : null;
+      outcomes[String(h)] = m == null || reference == null ? null : {
         move: Math.round(m * 100) / 100,
         hit: m > 0,
-        baselineHit: Math.round(baseline(s, h, dir, entryDate!) * 1000) / 1000,
+        baselineHit: reference,
       };
     }
     return { ...ep, entryDate, outcomes };
@@ -227,33 +235,27 @@ export function evaluateEpisodes(
 /**
  * Random-date baseline for correlation persistence: at monthly-stepped dates,
  * how often is ρ120 sixty obs later closer to the then-current ρ120 than to
- * the then-current ρ(1y)? Correlations are sticky — this baseline is high,
- * and the signal must beat it to mean anything.
+ * the then-current ρ(1y)? Store when the comparison becomes observable, so
+ * later information never enters an earlier episode's reference probability.
  */
-export function corrPersistenceBaseline(
-  all: Map<string, Series>,
-  pairs: [string, string][],
-  opts: ReplayOptions = DEFAULT_OPTIONS,
-): number {
-  let hits = 0, n = 0;
-  for (const [aId, bId] of pairs) {
-    const a = all.get(aId), b = all.get(bId);
-    if (!a || !b) continue;
-    const dates = a.points.map((p) => p[0]).filter((d) => d >= opts.start);
-    for (let i = 0; i + opts.corrEvalObs < dates.length; i += 21) {
+interface CorrelationReference { availableOn: string; hit: boolean }
+function correlationReferences(a: Series, b: Series, opts: ReplayOptions): CorrelationReference[] {
+    const out: CorrelationReference[] = [];
+    const dates = a.points.map((p) => p[0]);
+    for (let i = 0; i < dates.length; i += 21) {
       const d0 = dates[i];
-      const dEval = dates[i + opts.corrEvalObs];
+      const entryIdx = dates.findIndex((d) => d >= addDays(d0, opts.visibilityLagDays));
+      if (entryIdx < 0 || entryIdx + opts.corrEvalObs >= dates.length) continue;
+      const dEval = dates[entryIdx + opts.corrEvalObs];
       const truncTo = (s: Series, cut: string): Series => ({ ...s, points: s.points.filter(([d]) => d <= cut), adjustedPoints: s.adjustedPoints?.filter(([d]) => d <= cut) });
       const available = (s: Series) => truncTo(s, addDays(d0, -publicationLagDays(s)));
       const c0 = observedCorrelation(available(a), available(b), addDays(d0, -120))?.rho;
       const cY = observedCorrelation(available(a), available(b), addDays(d0, -365))?.rho;
       const cL = observedCorrelation(truncTo(a, dEval), truncTo(b, dEval), addDays(dEval, -120))?.rho;
-      if (c0 == null || cY == null || cL == null) continue;
-      n++;
-      if (Math.abs(cL - c0) < Math.abs(cL - cY)) hits++;
+      if (c0 == null || cY == null || cL == null || Math.abs(c0 - cY) < 1e-12) continue;
+      out.push({ availableOn: addDays(dEval, Math.max(publicationLagDays(a), publicationLagDays(b))), hit: Math.abs(cL - c0) < Math.abs(cL - cY) });
     }
-  }
-  return n ? hits / n : 0.5;
+    return out;
 }
 
 // ---- aggregation with block-bootstrap CIs -----------------------------------
@@ -261,9 +263,9 @@ export function corrPersistenceBaseline(
 interface HorizonStats {
   n: number;
   hitRate: number;
-  hitCI: [number, number];
+  hitCI: [number, number] | null;
   meanMove: number;
-  moveCI: [number, number];
+  moveCI: [number, number] | null;
   baselineHit: number;
 }
 
@@ -277,11 +279,13 @@ function makeRng(seed: number): () => number {
 }
 
 function blockBootstrap(values: { hit: boolean; move: number }[], B = 1000, blockSize = 5): {
-  hitCI: [number, number];
-  moveCI: [number, number];
+  hitCI: [number, number] | null;
+  moveCI: [number, number] | null;
 } {
   const n = values.length;
-  if (n < 3) return { hitCI: [0, 1], moveCI: [0, 0] };
+  // With a block as large as the sample, every draw has the same mean. Small
+  // event cuts and all-hit/all-miss cuts do not support bootstrap coverage.
+  if (n < 20 || values.every((v) => v.hit === values[0].hit)) return { hitCI: null, moveCI: null };
   const rng = makeRng(42);
   const hitRates: number[] = [];
   const moves: number[] = [];

@@ -68,6 +68,11 @@ jobs:
         env:
           REFRESH_OUTCOME: ${{ steps.data.outcome }}
           REFRESH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      - name: Recompute event-study evidence
+        if: steps.data.outcome == 'success'
+        run: |
+          npm run backtest
+          node --import tsx --input-type=module -e "import { buildManifest } from './scripts/lib/snapshot.mjs'; await buildManifest('public/data');"
       - name: Append immutable daily ledger
         if: steps.data.outcome == 'success'
         run: npx tsx scripts/snapshot-signals.ts

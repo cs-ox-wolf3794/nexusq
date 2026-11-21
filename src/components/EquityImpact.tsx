@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { ImpactCompany, Series } from "../lib/data";
 import type { RollingBeta } from "../lib/beta";
-import { rollingBeta } from "../lib/beta";
+import { rollingBeta, associatedMove } from "../lib/beta";
 import { GlossaryTip, HowToRead } from "./Guidance";
 
 const DRIVERS = [
@@ -81,24 +81,24 @@ export function EquityImpact({ companies, seriesMap }: {
               <th>Company</th>
               <th>Sector</th>
               <th className="num" title="Cov(stock, driver) / Var(driver), 90 obs daily log-returns"><GlossaryTip term="β" definition="Cov(stock, driver) / Var(driver), estimated on rolling 90-observation paired log-returns." /> 90 obs</th>
-              <th title="Rolling 90 obs beta, weekly steps, last 12 months"><GlossaryTip term="β" definition="Rolling beta history over the last 12 months; weekly steps." /> trend</th>
-              <th className="num" title="Annualized return not explained by the energy driver">α ann.</th>
+              <th title="Rolling 90 obs beta, five-observation steps, last 52 estimates"><GlossaryTip term="β" definition="Last 52 rolling beta estimates, stepped every five paired observations." /> trend</th>
+              <th className="num" title="Annualized log-return intercept, in log-percentage units; not a simple return or investment alpha">Intercept (log %/yr)</th>
               <th className="num" title="Share of daily variance explained by the driver"><GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver." /></th>
-              <th className="num" title="First-order: β × shock. Ignores second-order effects.">
-                Implied @ {shockPct >= 0 ? "+" : ""}{shockPct}%
+              <th className="num" title="100 × ((1 + driver move/100)^β − 1); fitted association, not a causal forecast.">
+                Associated @ {shockPct >= 0 ? "+" : ""}{shockPct}%
               </th>
             </tr>
           </thead>
           <tbody>
             {rows.map(({ company, rb }) => {
-              const implied = rb.current.beta * shockPct;
+              const implied = associatedMove(rb.current.beta, shockPct)!;
               return (
                 <tr key={company.id}>
                   <td className="beta-name">{company.name}</td>
                   <td data-label="Sector">{company.sector}</td>
                   <td className="num" data-label="β 90 obs" title="Approximate 95% Newey–West HAC interval; parameter uncertainty, not a forecast range"><strong>{rb.current.beta.toFixed(2)}</strong><br/><small>[{rb.current.betaCI[0].toFixed(2)}, {rb.current.betaCI[1].toFixed(2)}]</small></td>
                   <td data-label="β trend"><BetaSpark history={rb.history} /></td>
-                  <td className="num" data-label="α ann.">{rb.current.alphaAnnual >= 0 ? "+" : ""}{rb.current.alphaAnnual.toFixed(1)}%</td>
+                  <td className="num" data-label="Intercept (log %/yr)">{rb.current.alphaAnnual >= 0 ? "+" : ""}{rb.current.alphaAnnual.toFixed(1)}</td>
                   <td className="num" data-label="R²">{rb.current.r2.toFixed(2)}<br/><small>n={rb.current.n} · {rb.current.asOf}</small></td>
                   <td className={`num implied ${implied >= 0 ? "up" : "down"}`} data-label={`Implied @ ${shockPct >= 0 ? "+" : ""}${shockPct}%`}>
                     {implied >= 0 ? "▲ +" : "▼ "}{implied.toFixed(1)}%
@@ -109,11 +109,12 @@ export function EquityImpact({ companies, seriesMap }: {
           </tbody>
         </table>
       </div>
+      {!rows.length && <p className="sub">Estimates withheld: the selected driver needs 90 recent, compatible paired observations.</p>}
       <p className="sub" style={{ marginTop: 8 }}>
         β = Cov(stock, {driverLabel}) / Var({driverLabel}) on 90 matched daily intervals using adjusted stock closes.
         Brackets show approximate 95% HAC parameter intervals; α is the annualized log-return intercept, not risk-adjusted performance.
-        Implied move is first-order (β × shock) — it ignores earnings pass-through
-        lags and second-order effects, and a low R² means the driver explains little of that stock. Model
+        Associated move = 100 × ((1 + driver move/100)^β − 1), consistent with the log-return model and excluding the intercept.
+        This is an association scenario, not an identified causal shock; a low R² means the driver explains little of that stock. Model
         output, not investment advice.
       </p>
     </div>

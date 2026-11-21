@@ -12,6 +12,23 @@ function dailySeries(id: string, values: number[], category: Series["category"] 
 }
 
 describe("computeSignals", () => {
+  it("does not turn a distribution-only price drop into an adjusted-return dislocation", () => {
+    const s = dailySeries("XLE", [...Array.from({ length: 299 }, () => 100), 90]);
+    s.adjustedPoints = s.points.map(([d]) => [d, 90]);
+    expect(computeSignals(new Map([[s.id, s]]))).toHaveLength(0);
+  });
+  it("does not call an incomplete warmup a full-year dislocation reference", () => {
+    const s = dailySeries("X", [...Array.from({ length: 99 }, (_, i) => 100 + Math.sin(i)), 130]);
+    expect(computeSignals(new Map([[s.id, s]])).filter((s) => s.kind === "Dislocation")).toHaveLength(0);
+  });
+  it("does not flag steady macro index growth as an abnormal level dislocation", () => {
+    const points: [string, number][] = Array.from({ length: 80 }, (_, i) => [new Date(Date.UTC(2018, i, 1)).toISOString().slice(0, 10), 100 * 1.003 ** i]);
+    const s: Series = { ...dailySeries("CPI", [100], "macro"), cadence: "monthly", points, lastUpdated: points.at(-1)![0] };
+    expect(computeSignals(new Map([[s.id, s]])).filter((s) => s.kind === "Dislocation")).toHaveLength(0);
+    s.points[s.points.length - 1][1] *= 1.1;
+    const signal = computeSignals(new Map([[s.id, s]])).find((s) => s.kind === "Dislocation")!;
+    expect(signal.detail).toContain("year-on-year growth");
+  });
   it("flags a dislocation when the last value is far from its trailing norm", () => {
     // 300 obs oscillating tightly around 100, then a final value far outside
     const vals = Array.from({ length: 299 }, (_, i) => 100 + (i % 2 === 0 ? 0.5 : -0.5));

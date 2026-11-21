@@ -27,7 +27,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run data:validate -- --manifest
+      - run: npm run data:validate
       - run: npm run build
         # Served at the custom domain nexus.gygante.com, so the base path stays "/"
         # (public/CNAME rides along into dist/).

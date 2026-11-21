@@ -23,7 +23,7 @@ function weeklySeries(id: string, values: number[], startDate = "2015-01-07"): S
 
 describe("percentileOf", () => {
   it("ranks within history", () => {
-    expect(percentileOf([1, 2, 3, 4, 5, 6, 7, 8, 9], 5)).toBeCloseTo(55.6, 0);
+    expect(percentileOf([1, 2, 3, 4, 5, 6, 7, 8, 9], 5)).toBeCloseTo(50, 0);
     expect(percentileOf([1, 2, 3], 0)).toBe(0);
     expect(percentileOf([1, 2, 3], 99)).toBe(100);
   });
@@ -96,7 +96,7 @@ describe("Inventory divergence signal", () => {
     const sigs = computeSignals(new Map([["USCRUDESTOCKS", inv], ["WTI", richPx]]));
     const div = sigs.find((s) => s.kind === "Inventory divergence");
     expect(div).toBeDefined();
-    expect(div!.detail).toContain("bearish tension");
+    expect(div!.detail).toContain("High inventories and high price");
     expect(div!.seriesIds).toEqual(["USCRUDESTOCKS", "WTI"]);
 
     // same glut but CHEAP price → no divergence signal (fundamentals agree with price)

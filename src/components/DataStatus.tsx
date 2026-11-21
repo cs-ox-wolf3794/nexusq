@@ -10,11 +10,12 @@ export function DataStatus({ snapshot, now, error }: { snapshot: Snapshot | null
   const { catalog, seriesMap, quality, health } = snapshot;
   const withheld = [...seriesMap.values()].filter((s) => !analysisEligibility(s, quality, now).eligible);
   const overdue = now - Date.parse(catalog.generated) > 72 * 3600000;
+  const review = withheld.length || error || overdue || health?.enrichmentIssues.length || snapshot.refreshStatus?.outcome === "failure";
   return <section className="card data-status" aria-label="Data reliability">
     <div className="card-head">
       <h2>Data status</h2>
-      <span className={`qc-chip ${withheld.length || error || overdue ? "qc-warn" : "qc-ok"}`}>
-        {withheld.length || error || overdue ? "⚠ Review required" : "✓ Within source tolerances"}
+      <span className={`qc-chip ${review ? "qc-warn" : "qc-ok"}`}>
+        {review ? "⚠ Review required" : "✓ Within source tolerances"}
       </span>
     </div>
     <p className="sub">Analytical snapshot checked {stamp(catalog.generated)}. Official series follow their publication schedules;
@@ -48,6 +49,7 @@ export function DataStatus({ snapshot, now, error }: { snapshot: Snapshot | null
       <ul>{Object.entries(snapshot.forecasts?.series ?? {}).filter(([, forecast]) => forecast.kind === "external").map(([id, forecast]) => forecast.kind === "external" && <li key={id}>
         <strong>{catalog.series.find((s) => s.id === id)?.name ?? id}</strong>: {forecast.sourceUrl ? <a href={forecast.sourceUrl} target="_blank" rel="noreferrer">{forecast.source}</a> : forecast.source}.
         {forecast.sourceVintage && <> Source version {forecast.sourceVintage}.</>} Retrieved {stamp(forecast.retrievedAt)}.
+        {forecast.contentUpdatedAt && <> Content last changed/first seen {stamp(forecast.contentUpdatedAt)}; this is not an official release date.</>}
         {forecast.deliveryUrl && <> <a href={forecast.deliveryUrl} target="_blank" rel="noreferrer">Delivery source</a>.</>}
         {forecast.retained && <> Retained from the last successful retrieval.</>}
         {!externalForecastCurrent(forecast, now) && <> ⚠ Expired; withheld from projections.</>}

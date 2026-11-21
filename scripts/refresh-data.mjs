@@ -14,6 +14,7 @@ import { externalForecastCurrent } from "../src/lib/forecast.ts";
 import { yahooChart, parseYahooDaily } from "./lib/yahoo.mjs";
 import { assessSeries, validatePoints, sourcePolicy } from "../src/lib/quality.ts";
 import path from "node:path";
+import { parseFred, parseWorldBank, parseEiaWeekly, parseSteo, steoContentUpdatedAt, annualBrent, sourceNumber } from "./lib/source-data.mjs";
 
 const LIVE_DIR = path.resolve(process.env.NEXUSQ_DATA_DIR ?? "public/data");
 const OUT_DIR = await mkdtemp(path.join(tmpdir(), "nexusq-refresh-"));
@@ -110,24 +111,14 @@ const COUNTRIES = [
 // ---- fetchers --------------------------------------------------------------
 async function fetchFred(s) {
   const csv = await get(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${s.fred}`, false);
-  const lines = csv.trim().split("\n").slice(1);
-  const points = [];
-  for (const line of lines) {
-    const [date, raw] = line.split(",");
-    const v = raw?.trim() === "." || raw?.trim() === "" ? NaN : Number(raw);
-    if (!Number.isFinite(v)) {
-      if (raw?.trim() === "." || raw?.trim() === "") continue;
-      throw new Error("FRED returned a nonnumeric observation");
-    }
-    points.push([date, v]);
-  }
+  const points = parseFred(csv, s.fred);
   // trim long daily histories; keep monthly/weekly from 2000
   const cutoff = points.length > 4000 ? DAILY_START : "2000-01-01";
   return points.filter(([d]) => d >= cutoff);
 }
 
 async function fetchYahoo(s) {
-  return parseYahooDaily(await yahooChart(s.sym));
+  return parseYahooDaily(await yahooChart(s.sym), Date.now(), s.sym);
 }
 
 function buildWorldBankUrl(countryOrIso, indicator) {
@@ -148,10 +139,9 @@ let worldBankCore;
 async function fetchWorldBank(s) {
   worldBankCore ??= get(buildWorldBankUrl(WORLDBANK.map((item) => item.iso).join(";"), "NY.GDP.MKTP.KD.ZG"), true, { retries: 2, timeout: 15000 });
   const j = await worldBankCore;
-  return (j[1] ?? [])
-    .filter((row) => row.countryiso3code === s.iso && row.value != null && row.date >= "2000")
-    .map((row) => [`${row.date}-12-31`, Math.round(row.value * 100) / 100])
-    .sort((a, b) => (a[0] < b[0] ? -1 : 1));
+  return parseWorldBank(j, WORLDBANK.map((item) => item.iso), "NY.GDP.MKTP.KD.ZG")
+    .filter((row) => row.countryiso3code === s.iso)
+    .map((row) => [`${row.date}-12-31`, row.value]);
 }
 
 // ---- EIA weekly fundamentals (requires EIA_API_KEY, like STEO) ---------------
@@ -160,12 +150,12 @@ const EIA_WEEKLY = [
   {
     id: "USCRUDESTOCKS", name: "US crude inventories (ex-SPR)", unit: "million bbl",
     category: "fundamentals",
-    route: "petroleum/stoc/wstk", series: "WCESTUS1", scale: 1 / 1000, // kbbl → million bbl
+    route: "petroleum/stoc/wstk", series: "WCESTUS1", sourceUnit: "MBBL", scale: 1 / 1000, // kbbl → million bbl
   },
   {
     id: "USGASSTORAGE", name: "US natural gas storage (Lower 48)", unit: "Bcf",
     category: "fundamentals",
-    route: "natural-gas/stor/wkly", series: "NW2_EPG0_SWO_R48_BCF", scale: 1,
+    route: "natural-gas/stor/wkly", series: "NW2_EPG0_SWO_R48_BCF", sourceUnit: "BCF", scale: 1,
   },
 ];
 
@@ -176,9 +166,7 @@ async function fetchEiaWeekly(s) {
     `&start=2014-01-01&sort[0][column]=period&sort[0][direction]=asc&length=5000`,
     true
   );
-  return (j.response?.data ?? [])
-    .filter((r) => r.value != null && Number.isFinite(Number(r.value)))
-    .map((r) => [r.period, Math.round(Number(r.value) * s.scale * 10) / 10]);
+  return parseEiaWeekly(j, s.series, s.sourceUnit, s.scale);
 }
 
 // ---- main ------------------------------------------------------------------
@@ -227,6 +215,7 @@ for (const job of jobs) {
     continue;
   }
   const assessment = assessSeries(job.id, series.points);
+  if (series.adjustedPoints) assessment.flags.push(...assessSeries(job.id, series.adjustedPoints).flags.map((flag) => ({ code: `adjusted-${flag.code}`, detail: `Adjusted closes: ${flag.detail}` })));
   if (errorMessage) assessment.flags.push({ code: "refresh-failed", detail: errorMessage });
   quality.series[job.id] = assessment;
   if (assessment.flags.length) quality.summary.flagged++; else quality.summary.ok++;
@@ -286,23 +275,25 @@ try {
 // Brent / WTI / Henry Hub. Needs a free key: https://www.eia.gov/opendata/register.php
 if (process.env.EIA_API_KEY) {
   const STEO = [
-    ["BRENT", "BREPUUS", "USD/bbl"],
-    ["WTI", "WTIPUUS", "USD/bbl"],
-    ["HENRYHUB", "NGHHUUS", "USD/MMBtu"],
+    ["BRENT", "BREPUUS", "dollars per barrel"],
+    ["WTI", "WTIPUUS", "dollars per barrel"],
+    ["HENRYHUB", "NGHHUUS", "dollars per million btu"],
   ];
   const today = new Date().toISOString().slice(0, 7);
-  for (const [id, sid] of STEO) {
+  for (const [id, sid, unit] of STEO) {
     if (quality.series[id]?.flags.length) continue;
     try {
       const j = await get(
         `https://api.eia.gov/v2/steo/data/?api_key=${process.env.EIA_API_KEY}&frequency=monthly&data[0]=value&facets[seriesId][]=${sid}&start=${today}&sort[0][column]=period&sort[0][direction]=asc`,
         true
       );
-      const pts = (j.response?.data ?? [])
-        .filter((row) => row.value != null)
-        .map((row) => [`${row.period}-15`, Math.round(row.value * 100) / 100]);
-      validateForecastPoints(pts);
-      forecasts[id] = { kind: "external", source: "EIA STEO", retrievedAt: GENERATED, points: pts };
+      const pts = parseSteo(j, sid, unit, Date.parse(GENERATED));
+      const forecast = { kind: "external", source: "EIA STEO", retrievedAt: GENERATED,
+        contentUpdatedAt: steoContentUpdatedAt(pts, previousForecasts?.series[id], GENERATED),
+        sourceUrl: "https://www.eia.gov/outlooks/steo/", points: pts,
+        periodBasis: "Monthly average spot-price forecasts for complete future months, plotted at month end. Not end-of-month or intraday price targets. The API does not supply a release vintage; unchanged content expires after 45 days." };
+      if (!externalForecastCurrent(forecast, Date.parse(GENERATED))) throw new Error("STEO content unchanged for over 45 days; model fallback retained");
+      forecasts[id] = forecast;
     } catch (err) {
       enrichmentIssues.push({ source: `EIA STEO ${id}`, detail: err.message });
       console.error(`FAIL EIA STEO ${id}: ${err.message}`);
@@ -332,9 +323,7 @@ async function fetchWorldBankIndicator(iso, indicator) {
     true,
     { retries: 2, timeout: 15000 }
   );
-  return (j[1] ?? [])
-    .filter((row) => row.value != null && row.date >= "2000")
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  return parseWorldBank(j, iso.split(";"), indicator);
 }
 
 const previousImpact = await readJson(OUT_DIR, "impact.json");
@@ -350,7 +339,8 @@ for (const c of COMPANIES) {
     if (points.length < 200) throw new Error(`only ${points.length} points`);
     impact.companies.push({
       id: c.id, name: c.name, sector: c.sector, unit: "USD/share",
-      source: "Yahoo Finance", lastUpdated: points[points.length - 1][0], checkedAt: GENERATED, retrievedAt: GENERATED, ...fetched, quality: assessSeries(c.id, points),
+      source: "Yahoo Finance", lastUpdated: points[points.length - 1][0], checkedAt: GENERATED, retrievedAt: GENERATED, ...fetched,
+      quality: { ...assessSeries(c.id, points), flags: [...assessSeries(c.id, points).flags, ...assessSeries(c.id, adjustedPoints).flags.map((flag) => ({ code: `adjusted-${flag.code}`, detail: `Adjusted closes: ${flag.detail}` }))] },
     });
     console.log(`ok   impact ${c.id.padEnd(6)} ${String(points.length).padStart(5)} pts`);
   } catch (err) {
@@ -403,29 +393,24 @@ try {
   // the trimmed daily snapshots can't provide). Use full-history FRED Brent only; an outage must never substitute a different instrument.
   try {
     const csv = await get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU", false);
-    const sums = new Map();
-    for (const line of csv.trim().split("\n").slice(1)) {
-      const [date, raw] = line.split(",");
-      const v = raw?.trim() === "." || raw?.trim() === "" ? NaN : Number(raw);
-      if (!Number.isFinite(v) || date < "2000" || date.slice(0, 4) >= GENERATED.slice(0, 4)) continue;
-      const y = date.slice(0, 4);
-      const e = sums.get(y) ?? { s: 0, c: 0 };
-      e.s += v; e.c++;
-      sums.set(y, e);
-    }
-    impact.oilAnnual = [...sums].filter(([, e]) => e.c >= 120)
-      .map(([y, e]) => [y, Math.round((e.s / e.c) * 100) / 100]).sort();
+    const dailyOil = parseFred(csv, "DCOILBRENTEU");
+    impact.oilAnnual = annualBrent(dailyOil, Date.parse(GENERATED));
+    const validYears = new Set(impact.oilAnnual.map(([year]) => year));
+    impact.oilAnnualExcludedYears = [...new Set(dailyOil.map(([date]) => date.slice(0, 4)))].filter((year) => year >= "2000" && year < GENERATED.slice(0, 4) && !validYears.has(year));
+    impact.oilAnnualValidated = true;
     impact.oilAnnualSource = "Brent (FRED), annual averages";
   } catch {
-    if (!previousImpact?.oilAnnualSource?.startsWith("Brent (FRED)")) throw new Error("Brent annual history unavailable; no instrument substitution permitted");
+    if (!previousImpact?.oilAnnualSource?.startsWith("Brent (FRED)") || !previousImpact.oilAnnualValidated) throw new Error("Brent annual coverage unavailable; unverified annual averages withheld");
     impact.oilAnnual = previousImpact.oilAnnual;
     impact.oilAnnualSource = previousImpact.oilAnnualSource;
+    impact.oilAnnualValidated = true;
+    impact.oilAnnualExcludedYears = previousImpact.oilAnnualExcludedYears;
     enrichmentIssues.push({ source: "Brent annual history", detail: "retained prior Brent observations" });
   }
   // World GDP growth: the global-cycle control for the sovereign oil-beta regression.
   const wldRows = await fetchWorldBankIndicator("WLD", "NY.GDP.MKTP.KD.ZG");
   if (!wldRows.length) throw new Error("world GDP control unavailable");
-  impact.worldGdp = wldRows.map((r) => [`${r.date}-12-31`, Math.round(r.value * 100) / 100]);
+  impact.worldGdp = wldRows.map((r) => [`${r.date}-12-31`, r.value]);
   validatePoints(impact.worldGdp, { previous: previousImpact?.worldGdp, minPoints: 12 });
 
   await writeFile(path.join(OUT_DIR, "impact.json"), JSON.stringify(impact));
@@ -440,15 +425,16 @@ async function fetchCot(code) {
   const rows = await get(
     "https://publicreporting.cftc.gov/resource/72hh-3qpy.json?" +
     `cftc_contract_market_code=${encodeURIComponent(code)}` +
-    "&%24select=report_date_as_yyyy_mm_dd,open_interest_all,m_money_positions_long_all,m_money_positions_short_all" +
+    "&%24select=cftc_contract_market_code,report_date_as_yyyy_mm_dd,open_interest_all,m_money_positions_long_all,m_money_positions_short_all" +
     "&%24order=report_date_as_yyyy_mm_dd%20ASC&%24limit=3000",
     true
   );
+  if (!Array.isArray(rows) || rows.some((r) => r.cftc_contract_market_code !== code || sourceNumber(r.m_money_positions_long_all) < 0 || sourceNumber(r.m_money_positions_short_all) < 0 || sourceNumber(r.m_money_positions_long_all) > sourceNumber(r.open_interest_all) || sourceNumber(r.m_money_positions_short_all) > sourceNumber(r.open_interest_all))) throw new Error("CFTC contract identity/position mismatch");
   return rows
     .map((r) => [
       r.report_date_as_yyyy_mm_dd.slice(0, 10),
-      Number(r.m_money_positions_long_all) - Number(r.m_money_positions_short_all),
-      Number(r.open_interest_all),
+      sourceNumber(r.m_money_positions_long_all) - sourceNumber(r.m_money_positions_short_all),
+      sourceNumber(r.open_interest_all),
     ])
     .filter((p) => p[0] >= "2010-01-01" && Number.isFinite(p[1]) && Number.isFinite(p[2]) && p[2] > 0);
 }

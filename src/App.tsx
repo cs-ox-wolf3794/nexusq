@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Series } from "./lib/data";
 import { loadSnapshot, type Snapshot } from "./lib/snapshot";
-import { analysisEligibility, freshness } from "./lib/quality";
+import { analysisEligibility, freshness, observationEnd, qualityCurrent, companyEligible, recentTimestamp } from "./lib/quality";
 import { externalForecastCurrent } from "./lib/forecast";
 import { DataStatus, QuotePanel } from "./components/DataStatus";
 import type { Transform } from "./lib/transform";
-import { TRANSFORM_LABELS, applyTransform, clampRange } from "./lib/transform";
+import { TRANSFORM_LABELS, comparableTransform, isRateSeries, overlayPoints } from "./lib/transform";
 import { ENGINE_VERSION, computeSignals } from "./lib/signals";
 import { useTheme } from "./components/useTheme";
 import { SeriesPicker } from "./components/SeriesPicker";
@@ -50,8 +50,8 @@ interface Preset {
 }
 const PRESETS: Preset[] = [
   { key: "clean-energy", label: "Is clean energy an energy trade?", ids: ["ICLN", "HENRYHUB", "UST10Y"], t: "zscore", w: 3, p: false },
-  { key: "oil-fx", label: "How does oil hit FX?", ids: ["BRENT", "EURUSD", "DXY"], t: "index", w: 3, p: false },
-  { key: "inflation", label: "Do commodities lead inflation?", ids: ["BRENT", "WHEAT", "CPI"], t: "yoy", w: 10, p: false },
+  { key: "oil-fx", label: "How do oil and FX move together?", ids: ["BRENT", "EURUSD", "DXY"], t: "index", w: 3, p: false },
+  { key: "inflation", label: "How do commodities compare with inflation?", ids: ["BRENT", "WHEAT", "CPI"], t: "yoy", w: 10, p: false },
   { key: "energy-beta", label: "Energy equities vs the market", ids: ["BRENT", "XLE", "SP500"], t: "index", w: 3, p: true },
   { key: "gas-divergence", label: "Global gas divergence", ids: ["HENRYHUB", "EUGAS", "COAL"], t: "index", w: 5, p: true },
 ];
@@ -92,7 +92,7 @@ export default function App() {
   const quality = snapshot?.quality ?? null;
   const forecasts = snapshot?.forecasts ?? null;
   const impact = snapshot ? snapshot.impact : undefined;
-  const backtest = snapshot ? (snapshot.backtest?.engineVersion === ENGINE_VERSION ? snapshot.backtest : null) : undefined;
+  const backtest = snapshot ? (snapshot.backtest?.engineVersion === ENGINE_VERSION && snapshot.backtest.inputSnapshot === snapshot.catalog.generated ? snapshot.backtest : null) : undefined;
   const cot = useMemo(() => snapshot?.cot ? { ...snapshot.cot, markets: Object.fromEntries(
     Object.entries(snapshot.cot.markets).filter(([id, market]) => !market.refreshFailed && !freshness(`COT_${id}`, market.lastUpdated, now).stale)
   ) } : null, [snapshot, now]);
@@ -214,6 +214,7 @@ export default function App() {
     slotMap.current.clear();
     valid.forEach((id, i) => slotMap.current.set(id, SLOT_VARS[i]));
     setSelected(valid);
+    if (valid.length === 1 && ["CPI", "INDPRO"].includes(valid[0])) setTransform("yoy");
     document.getElementById("overlay")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -233,12 +234,13 @@ export default function App() {
   const from = rangeStart(rangeYears);
   const selectedSeries = useMemo(() => selected.map((id) => seriesMap.get(id)).filter((s): s is Series => !!s), [selected, seriesMap]);
   const sameUnit = new Set(selectedSeries.map((s) => s.unit)).size <= 1;
-  const effectiveTransform: Transform = transform === "raw" && !sameUnit ? "index" : transform;
+  const effectiveTransform = comparableTransform(selectedSeries, transform);
+  const containsRates = selectedSeries.some(isRateSeries);
 
   const overlayItems: OverlaySeries[] = useMemo(
     () => selectedSeries.map((s) => ({
       series: s,
-      points: effectiveTransform === "yoy" ? clampRange(applyTransform(s.points, "yoy"), from) : applyTransform(clampRange(s.points, from), effectiveTransform),
+      points: overlayPoints(s, effectiveTransform, from),
       color: slotMap.current.get(s.id) ?? SLOT_VARS[0],
     })),
     [selectedSeries, from, effectiveTransform],
@@ -252,9 +254,9 @@ export default function App() {
     for (const s of selectedSeries) {
       const fc = forecasts.series[s.id];
       if (!fc || !analyticalMap.has(s.id)) continue;
-      if (fc.kind === "model" && (fc.asOf !== s.lastUpdated || !fc.issuedAt || now - Date.parse(fc.issuedAt) > 72 * 3600000)) continue;
+      if (fc.kind === "model" && (fc.asOf !== s.lastUpdated || !recentTimestamp(fc.issuedAt, 72 * 3600000, now))) continue;
       if (fc.kind === "external" && !externalForecastCurrent(fc, now)) continue;
-      const base = clampRange(s.points, from)[0]?.[1];
+      const base = overlayPoints(s, "raw", from)[0]?.[1];
       if (effectiveTransform === "index" && !(base > 0)) continue;
       const scale = (v: number) => (effectiveTransform === "index" ? (v / base) * 100 : v);
       const color = slotMap.current.get(s.id) ?? SLOT_VARS[0];
@@ -264,12 +266,12 @@ export default function App() {
           fan: fc.points.map((p) => [p[0], scale(p[1]), scale(p[2]), scale(p[3]), scale(p[4]), scale(p[5])]),
         });
       } else {
-        // anchor the dashed external line to the last actual observation
+        // Period-average external forecasts are not a continuation of the latest daily spot.
         const last = s.points[s.points.length - 1];
         out.push({
           name: s.name, color, sourceLabel: `${fc.retained ? "retained " : ""}${fc.source.split(" (")[0]}`,
-          note: fc.sourceVintage ? `${s.name}: ${fc.source}, source version ${fc.sourceVintage}. ${fc.periodBasis ?? ""}` : undefined,
-          external: [[last[0], scale(last[1])], ...fc.points.filter((p) => p[0] > last[0]).map((p) => [p[0], scale(p[1])] as [string, number])],
+          note: `${s.name}: ${fc.source}${fc.sourceVintage ? `, source version ${fc.sourceVintage}` : ""}. ${fc.periodBasis ?? ""}`,
+          external: fc.points.filter((p) => p[0] > observationEnd(s.id, last[0])).map((p) => [p[0], scale(p[1])] as [string, number]),
         });
       }
     }
@@ -286,7 +288,7 @@ export default function App() {
         </div>
         <div className="spacer" />
         <span className="tagline">
-          Causal intelligence for capital markets: energy, commodity and macro data turned into
+          Market intelligence for capital markets: energy, commodity and macro data turned into
           signals, scenarios and decisions.
         </span>
         <button className="theme-toggle" onClick={toggle}>
@@ -387,8 +389,8 @@ export default function App() {
                 <button
                   key={t}
                   className={effectiveTransform === t ? "active" : ""}
-                  disabled={t === "raw" && !sameUnit}
-                  title={t === "raw" && !sameUnit ? "Raw values need identical units across selected series" : undefined}
+                  disabled={(t === "raw" && !sameUnit) || (containsRates && (t === "index" || t === "yoy"))}
+                  title={containsRates && (t === "index" || t === "yoy") ? "Rates and GDP growth use raw percentage units or z-scores, not percentage growth of a rate" : t === "raw" && !sameUnit ? "Raw values need identical units across selected series" : undefined}
                   onClick={() => setTransform(t)}
                 >
                   {TRANSFORM_LABELS[t]}
@@ -471,7 +473,7 @@ export default function App() {
             <a className="cta-link" href="#validation">How reliable are these? See the backtest ↗</a>
           </p>
           <HowToRead>
-            Dislocation signals are standardized moves using a trailing <GlossaryTip term="z-score" definition="Distance from trailing mean measured in standard deviations; +2 means two sigmas above average." />. Bigger absolute z-score means a more unusual move relative to that series' own history.
+            Dislocation signals compare levels (year-on-year growth for CPI and industrial production) using a trailing <GlossaryTip term="z-score" definition="Distance from trailing mean measured in standard deviations; +2 means two sigmas above average." />. Bigger absolute z-score means a more unusual reading relative to that series' own history.
           </HowToRead>
           {signals === null ? <SkeletonRows rows={6} /> : <SignalPanel signals={signals} onView={viewInOverlay} />}
         </section>
@@ -526,10 +528,10 @@ export default function App() {
           <a className="cta-link" href="#sovereign-impact">Country-level view ↗</a>
         </p>
         <HowToRead>
-          <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> is slope sensitivity, while <GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver in the same regression window." /> is explanatory fit. Treat implied move as first-order context only.
+          <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> is slope sensitivity, while <GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver in the same regression window." /> is explanatory fit. Scenario moves follow the fitted log-return relationship; they do not identify a causal effect.
         </HowToRead>
         {impact && seriesMap.size ? (
-          <EquityImpact companies={impact.companies.filter((c) => !c.refreshFailed && c.adjustedPoints && !c.quality?.flags.length && !freshness(c.id, c.lastUpdated, now).stale && now - Date.parse(c.retrievedAt ?? "") <= 72 * 3600000)} seriesMap={analyticalMap} />
+          <EquityImpact companies={qualityCurrent(quality, now) ? impact.companies.filter((c) => companyEligible(c, now)) : []} seriesMap={analyticalMap} />
         ) : impact === null ? (
           <p className="sub">Impact data unavailable.</p>
         ) : (
@@ -539,7 +541,7 @@ export default function App() {
 
       <section id="sovereign-impact" className="card anchor-target">
         <div className="card-head">
-          <h2>Sovereign impact — GDP sensitivity to oil</h2>
+          <h2>Sovereign analysis — GDP–oil association</h2>
           <Freshness
             date={impact?.countries.length
               ? impact.countries.reduce((m, c) => {
@@ -552,14 +554,14 @@ export default function App() {
         </div>
         <p className="sub">
           Major energy exporters vs importers: how annual GDP growth has historically moved with Brent,
-          and the first-order impact of a sustained price shock.{" "}
+          and the fitted association under an annual oil-change scenario.{" "}
           <a className="cta-link" href="#overlay">GDP paths with institutional projections on the overlay ↗</a>
         </p>
         <HowToRead>
           Sovereign <GlossaryTip term="β" definition="Cycle-controlled GDP sensitivity: percentage-point change in GDP growth per +10% oil move." /> is estimated on annual data with world-cycle control; use it as regime context, not a precise near-term forecast.
         </HowToRead>
         {impact && seriesMap.size ? (
-          <GdpImpact impact={impact} />
+          qualityCurrent(quality, now) ? <GdpImpact impact={impact} now={now} /> : <p className="sub">GDP association estimates withheld until the quality assessment is renewed.</p>
         ) : impact === null ? (
           <p className="sub">Impact data unavailable.</p>
         ) : (

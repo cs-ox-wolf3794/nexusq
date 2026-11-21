@@ -1,5 +1,5 @@
 import type { BacktestFile, CatalogFile, CotFile, ForecastFile, ImpactFile, QualityFile, Series } from "./data";
-import { validatePoints } from "./quality";
+import { validatePoints, validateAdjustedAlignment } from "./quality";
 
 export interface Quote {
   id: string; symbol: string; name: string; price: number; currency: string;
@@ -34,6 +34,9 @@ async function request(name: string, revision = ""): Promise<string> {
 export async function loadSnapshot(previous?: Snapshot): Promise<Snapshot> {
   const manifest: Manifest = JSON.parse(await request("manifest.json"));
   if (manifest.schemaVersion !== 1 || !/^[a-f0-9]{64}$/.test(manifest.revision) || !manifest.files) throw new Error("Unsupported data manifest");
+  const revisionDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(manifest.files)));
+  const revision = [...new Uint8Array(revisionDigest)].map((n) => n.toString(16).padStart(2, "0")).join("");
+  if (revision !== manifest.revision) throw new Error("Manifest revision integrity check failed");
   if (previous?.revision === manifest.revision) return previous;
   const file = async <T,>(name: string, required = false): Promise<T | null> => {
     const expected = manifest.files[name];
@@ -58,7 +61,8 @@ export async function loadSnapshot(previous?: Snapshot): Promise<Snapshot> {
     if (!s || s.id !== entry.id || s.lastUpdated !== entry.lastUpdated || s.points?.length !== entry.count || !quality.series[entry.id]) throw new Error(`Inconsistent series: ${entry.id}`);
     validatePoints(s.points);
     if (s.points.at(-1)?.[0] !== s.lastUpdated) throw new Error(`Incorrect observation date: ${entry.id}`);
-    if (s.adjustedPoints) validatePoints(s.adjustedPoints);
+    if (s.adjustedPoints) validateAdjustedAlignment(s.points, s.adjustedPoints);
+    if (s.source === "Yahoo Finance" && !s.adjustedPoints) throw new Error(`Adjusted closes unavailable: ${s.id}`);
     return s;
   }));
   if (new Set(series.map((s) => s.id)).size !== series.length) throw new Error("Duplicate catalog identifiers");

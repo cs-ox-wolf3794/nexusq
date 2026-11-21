@@ -3,7 +3,7 @@
 [![CI](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml)
 [![Data refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml)
 
-**The Causal Intelligence Platform for Capital Markets** — by Gygante Quantitative Systems.
+**The Market Intelligence Platform for Capital Markets** — by Gygante Quantitative Systems.
 
 NexusQ transforms energy, commodity and macro-economic data into continuously updated
 financial models, institutional-grade signals, scenario forecasts and decision intelligence.
@@ -36,18 +36,17 @@ A responsive static web app (browser / tablet / mobile) with:
   and shareable view links.
 - **Correlation structure** — Pearson ρ of log-returns over the selected window,
   matched on common observation intervals without forward filling; incompatible frequencies are withheld.
-- **Snapshot signals** — dislocation z-scores, 50/200-day momentum regimes,
+- **Snapshot signals** — dislocation z-scores, 50/200-observation momentum regimes,
   correlation-regime shifts on curated energy↔cross-asset pairs, and inventory-divergence
   flags (EIA weekly fundamentals vs price, seasonal z × dislocation tension).
 - **Market state** — trend / volatility / dollar / CFTC managed-money-positioning
   percentile conditions per energy market, with a supportive-oriented composite. A regime
   description, not a trading signal.
-- **Signal validation** — an event-study backtest of every signal family since 2015,
-  source-lag-aware and episode-collapsed, using revised histories rather than point-in-time vintages, with null results published alongside the
-  real structure.
+- **Signal validation** — an event study of the supported daily signal families since 2015 (weekly inventory divergence is excluded),
+  source-lag-aware and episode-collapsed, using revised histories rather than point-in-time vintages. Historical comparisons and their limitations are published without claiming a trading edge.
 - **Equity impact (Energy Beta board)** — rolling 90-observation β / α / R² of ~15 energy-exposed
   stocks (majors, services, steel, chemicals, airlines, transition names) against
-  Brent / WTI / Henry Hub, with a first-order shock translator.
+  Brent / WTI / Henry Hub, with a scenario translator consistent with the fitted log-return slope.
 - **Sovereign impact** — GDP sensitivity of major energy exporters vs importers to oil
   (cycle-controlled Frisch–Waugh betas with r and n disclosed), grounded in World Bank
   fuel-trade intensity.
@@ -148,3 +147,11 @@ The local regression suite covers malformed/future/duplicate observations, sourc
 The legacy IMF DataMapper endpoint is replaced by [World Bank Data360](https://data360.worldbank.org/en/api), indicator `IMF_WEO_NGDP_RPCH`. Forecast authorship remains the [IMF World Economic Outlook](https://data.imf.org/en/datasets/IMF.RES:WEO); this is alternative distribution, not an independent forecast. Four small country queries cover the US, China, India and Germany. If any API response fails or has invalid coverage, all four forecasts are read from the official World Bank bulk file as one coherent batch. No credentials or new infrastructure are required.
 
 The source metadata version is checked before and after retrieval, cannot regress and must be no older than 225 days. The entire requested annual horizon, units, country identifiers and latest-version dimensions must validate. Retained forecasts keep their original retrieval time and expire after 45 days; the client also enforces source-version expiry. India is explicitly labeled on an April-start fiscal-year basis. Forecasts are separate from revised World Bank actual histories. Source, delivery URL, version and retrieval time appear under Data status. Attribution: International Monetary Fund, World Economic Outlook (WEO), delivered by World Bank Data360; access dates are recorded per forecast.
+
+### Methodology audit — engine 2026-11-21.2
+
+Correlation-reference outcomes must have become available before each episode; entry delays and horizons match the evaluated event. Directional baselines also respect source publication lags. Comparisons require 20 historical reference outcomes; bootstrap intervals are withheld below 20 episodes or for all-hit/all-miss samples. Full refreshes regenerate the evidence, and the UI requires matching engine and input-snapshot versions. Thresholds were not tuned to improve the results.
+
+Rate/growth-rate indexing and percentage-of-rate growth are disabled. Monthly observations use period-end plot dates; EIA forecasts cover complete future monthly averages, not daily or month-end price targets. Unchanged EIA content expires after 45 days because the query API supplies no release vintage. Forecast fan shading handles negative lower bounds; daily forecast digests contain only future points and record actual horizons. Source parsers validate identity, units and complete responses, and adjusted closes receive separate QC.
+
+State-direction labels follow the actual change, tied percentile values receive half weight, and seasonal inventory comparisons use a consistent leap-year calendar. Scenario values describe statistical association, not identified causal effects. The in-app Methodology page contains formulas, source references and remaining limits. Passing QC or tests does not establish calibrated forecast accuracy, causal identification or a tradable edge.

@@ -11,13 +11,13 @@ import path from "node:path";
 import { ENGINE_VERSION } from "../src/lib/signals";
 import type { Series } from "../src/lib/data";
 import {
-  DEFAULT_OPTIONS, aggregate, corrPersistenceBaseline, evaluateEpisodes, replayEpisodes,
+  DEFAULT_OPTIONS, aggregate, evaluateEpisodes, replayEpisodes,
 } from "../src/lib/backtest";
 
 const DATA = path.resolve(process.env.NEXUSQ_DATA_DIR ?? "public/data");
 const read = (f: string) => JSON.parse(readFileSync(path.join(DATA, f), "utf8"));
 
-const catalog = read("catalog.json") as { series: { id: string }[] };
+const catalog = read("catalog.json") as { generated: string; series: { id: string }[] };
 const all = new Map<string, Series>();
 for (const { id } of catalog.series) all.set(id, read(`${id}.json`));
 
@@ -27,13 +27,6 @@ const episodes = replayEpisodes(all, DEFAULT_OPTIONS);
 console.log(`  ${episodes.length} episodes in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 
 const outcomes = evaluateEpisodes(episodes, all, DEFAULT_OPTIONS);
-
-const PAIRS: [string, string][] = [
-  ["BRENT", "XLE"], ["BRENT", "SP500"], ["BRENT", "EURUSD"],
-  ["BRENT", "BREAKEVEN10Y"], ["HENRYHUB", "ICLN"], ["BRENT", "GOLD"],
-];
-console.log("computing correlation-persistence baseline…");
-const corrBase = Math.round(corrPersistenceBaseline(all, PAIRS, DEFAULT_OPTIONS) * 1000) / 1000;
 
 const SEVERITIES = ["watch", "elevated", "extreme"];
 const PERIOD_SPLIT = "2020-01-01";
@@ -59,6 +52,7 @@ const corrH = String(DEFAULT_OPTIONS.corrEvalObs);
 
 const result = {
   engineVersion: ENGINE_VERSION,
+  inputSnapshot: catalog.generated,
   generated: new Date().toISOString(),
   method: {
     frame: "event-study (NOT a strategy backtest: no positions, sizing or costs)",
@@ -69,15 +63,14 @@ const result = {
       "Correlation regime": `persistence: ρ120 after ${corrH} obs is closer to the new regime than the old`,
     },
     baselines: {
-      directional: "per-episode P(same-sign move) from completed outcomes strictly before entry",
-      corrPersistence: "random monthly-stepped dates on the same pairs",
+      directional: "per-episode P(same-sign move) from outcomes available strictly before entry after source lags; minimum 20 reference outcomes",
+      corrPersistence: "per-episode, same-pair monthly-stepped reference dates with identical entry delay/horizon; only outcomes available strictly before onset; minimum 20 reference outcomes",
     },
     scope: "daily price series only; yield/breakeven dislocations excluded from percent-return aggregation. Latest revised histories, not point-in-time vintages.",
     thresholds: "unchanged production thresholds; no tuning during this methodology correction",
-    ci: "chronological moving-block bootstrap (block 5, B=1000, seeded); overlapping episodes/cross-asset dependence and multiple comparisons limit inference",
+    ci: "chronological moving-block bootstrap (block 5, B=1000, seeded); withheld for fewer than 20 episodes or all-hit/all-miss cuts; overlapping episodes/cross-asset dependence and multiple comparisons limit inference",
     publicationLags: "FRED 3 calendar days; H.10 FX 10; Yahoo 1; then entry after 1 additional day. Conservative proxies, not historical release timestamps.",
   },
-  corrPersistenceBaseline: corrBase,
   families: {
     Dislocation: familyBlock("Dislocation", "20", H),
     Momentum: familyBlock("Momentum", "20", H),
@@ -93,6 +86,6 @@ for (const [fam, blk] of Object.entries(result.families)) {
   const st = b.horizons[main];
   console.log(
     `  ${fam.padEnd(20)} ${String(b.episodes).padStart(4)} episodes | h=${main}: ` +
-    (st ? `hit ${(st.hitRate * 100).toFixed(1)}% vs baseline ${( (fam === "Correlation regime" ? corrBase : st.baselineHit) * 100).toFixed(1)}% (n=${st.n})` : "n/a"),
+    (st ? `hit ${(st.hitRate * 100).toFixed(1)}% vs baseline ${(st.baselineHit * 100).toFixed(1)}% (n=${st.n})` : "n/a"),
   );
 }

@@ -1,8 +1,8 @@
 import type { Series } from "./data";
 import { observationEnd } from "./quality";
-import { observedCorrelation, daysBetween, seriesCadence } from "./transform";
+import { observedCorrelation, daysBetween, seriesCadence, isRateSeries, toYoY } from "./transform";
 
-export const ENGINE_VERSION = "2026-11-21.1";
+export const ENGINE_VERSION = "2026-11-21.2";
 
 export type Severity = "info" | "watch" | "elevated" | "extreme";
 
@@ -36,19 +36,21 @@ function sevFromAbs(x: number, t1: number, t2: number, t3: number): Severity {
 /** Z-score of the latest value vs the trailing window (~1 trading year for dailies). */
 function latestZ(s: Series): { z: number; last: number } | null {
   const n = s.points.length;
-  if (n < 40) return null;
-  const isDailyish = daysBetween(s.points[n - 30][0], s.points[n - 1][0]) < 60;
-  const win = Math.min(n, isDailyish ? 252 : 36);
+  const cadence = seriesCadence(s);
+  if (cadence !== "daily" && cadence !== "monthly") return null;
+  const win = cadence === "daily" ? 252 : 36;
+  if (n < win) return null;
   const vals = s.points.slice(n - win).map((p) => p[1]);
   const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
   const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
-  if (!sd) return null;
+  if (sd <= 1e-10 * Math.max(1, Math.abs(mean))) return null;
   return { z: (vals[vals.length - 1] - mean) / sd, last: vals[vals.length - 1] };
 }
 
 /** Moving-average momentum state for daily series. */
 function momentum(s: Series): { fast: number; slow: number; spreadPct: number } | null {
   const n = s.points.length;
+  if (isRateSeries(s) || seriesCadence(s) !== "daily") return null;
   if (n < 220) return null;
   if (daysBetween(s.points[n - 200][0], s.points[n - 1][0]) > 400) return null; // not daily
   const avg = (k: number) => s.points.slice(n - k).reduce((a, p) => a + p[1], 0) / k;
@@ -63,7 +65,8 @@ function fmt(v: number, digits = 2): string {
 
 function dayOfYear(iso: string): number {
   const d = new Date(`${iso}T00:00:00Z`);
-  return Math.floor((d.getTime() - Date.UTC(d.getUTCFullYear(), 0, 0)) / 86400000);
+  // Use one leap-year calendar for all comparisons; March dates must not shift in leap years.
+  return Math.floor((Date.UTC(2000, d.getUTCMonth(), d.getUTCDate()) - Date.UTC(2000, 0, 1)) / 86400000);
 }
 
 /**
@@ -82,7 +85,7 @@ export function seasonalZ(points: [string, number][], yearsBack = 5): { z: numbe
     const yearDiff = lastYear - Number(points[i][0].slice(0, 4));
     if (yearDiff < 1 || yearDiff > yearsBack) continue;
     let dd = Math.abs(dayOfYear(points[i][0]) - doy);
-    if (dd > 182) dd = 365 - dd; // wrap across year end
+    if (dd > 183) dd = 366 - dd; // wrap across year end
     if (dd <= 15) peers.push(points[i][1]);
   }
   if (peers.length < 10) return null;
@@ -110,13 +113,15 @@ export function computeSignals(all: Map<string, Series>, asOf?: string): Signal[
   for (const s of all.values()) {
     if (s.category === "fundamentals") continue; // inventories require seasonal, not generic level, normalization
     if (s.category === "macro" && s.id.startsWith("GDP_")) continue; // annual, too sparse
-    const z = latestZ(s);
+    const analytical = s.adjustedPoints ? { ...s, points: s.adjustedPoints } : s;
+    const growthBasis = ["CPI", "INDPRO"].includes(s.id);
+    const z = latestZ(growthBasis ? { ...s, points: toYoY(s.points) } : analytical);
     if (z && Math.abs(z.z) >= 1.5) {
       signals.push({
         asOf: observationEnd(s.id, s.points.at(-1)![0]),
         kind: "Dislocation",
         subject: s.name,
-        detail: `${z.z > 0 ? "Above" : "Below"} trailing ${seriesCadence(s) === "daily" ? "252-observation" : "36-observation"} norm (latest ${s.unit === "index" ? `index level ${fmt(z.last)}` : `${fmt(z.last)} ${s.unit}`})`,
+        detail: `${z.z > 0 ? "Above" : "Below"} trailing ${seriesCadence(s) === "daily" ? "252-observation" : "36-observation"} norm (latest ${growthBasis ? `${fmt(z.last)}% year-on-year growth` : s.unit === "index" ? `index level ${fmt(z.last)}` : `${fmt(z.last)} ${s.unit}`}${s.adjustedPoints ? "; adjusted-close basis" : ""})`,
         value: `z = ${z.z >= 0 ? "+" : ""}${z.z.toFixed(1)}σ`,
         severity: sevFromAbs(Math.abs(z.z), 1.5, 2, 2.5),
         score: Math.abs(z.z),
@@ -124,13 +129,13 @@ export function computeSignals(all: Map<string, Series>, asOf?: string): Signal[
         metric: z.z,
       });
     }
-    const m = momentum(s);
+    const m = momentum(analytical);
     if (m && Math.abs(m.spreadPct) >= 2) {
       signals.push({
         asOf: observationEnd(s.id, s.points.at(-1)![0]),
         kind: "Momentum",
         subject: s.name,
-        detail: `50-day average ${m.spreadPct > 0 ? "above" : "below"} 200-day (${fmt(m.fast)} vs ${fmt(m.slow)})`,
+        detail: `50-observation average ${m.spreadPct > 0 ? "above" : "below"} 200-observation (${fmt(m.fast)} vs ${fmt(m.slow)})${s.adjustedPoints ? "; adjusted-close basis" : ""}`,
         value: `${m.spreadPct >= 0 ? "+" : ""}${m.spreadPct.toFixed(1)}%`,
         severity: sevFromAbs(Math.abs(m.spreadPct), 2, 6, 12),
         score: Math.abs(m.spreadPct) / 4,
@@ -203,7 +208,7 @@ export function computeSignals(all: Map<string, Series>, asOf?: string): Signal[
       asOf: [inv.lastUpdated, px.lastUpdated].sort()[0],
       kind: "Inventory divergence",
       subject: label,
-      detail: `${inv.name} ${sz.z >= 0 ? "+" : ""}${sz.z.toFixed(1)}σ vs 5y seasonal norm (${fmt(sz.last)} ${inv.unit}) while ${px.name} is ${pz.z > 0 ? "rich" : "cheap"} (z ${pz.z >= 0 ? "+" : ""}${pz.z.toFixed(1)}) — ${bearTension ? "oversupply priced richly: bearish tension" : "tight supply priced cheaply: bullish tension"}`,
+      detail: `${inv.name} ${sz.z >= 0 ? "+" : ""}${sz.z.toFixed(1)}σ vs prior-five-year seasonal sample (${fmt(sz.last)} ${inv.unit}, n=${sz.n}, period ${inv.lastUpdated}); ${px.name} is ${pz.z > 0 ? "above" : "below"} its trailing norm (z ${pz.z >= 0 ? "+" : ""}${pz.z.toFixed(1)}, ${px.lastUpdated}). ${bearTension ? "High inventories and high price" : "Low inventories and low price"}; supply balance and price direction are not established by this comparison.`,
       value: `inv z = ${sz.z >= 0 ? "+" : ""}${sz.z.toFixed(1)}σ`,
       severity: sevFromAbs(Math.abs(sz.z), 1.5, 2, 2.5),
       score: Math.abs(sz.z) + Math.abs(pz.z) / 2,

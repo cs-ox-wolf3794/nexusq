@@ -39,11 +39,11 @@ export interface MarketState {
   asOf: string; // oldest condition observation date (honesty: the limiting input)
 }
 
-/** Percent of history values ≤ v (0–100). */
+/** Midrank percentile: half weight for ties, so an unchanged series ranks neutral. */
 export function percentileOf(history: number[], v: number): number {
   if (!history.length) return 50;
   let below = 0;
-  for (const h of history) if (h <= v) below++;
+  for (const h of history) below += h < v ? 1 : h === v ? 0.5 : 0;
   return Math.round((below / history.length) * 1000) / 10;
 }
 
@@ -66,15 +66,17 @@ function trendSpreadHistory(points: [string, number][], n = 50): number[] {
 
 /** Rolling 20-obs realized volatility (annualized %, log-returns). */
 function realizedVolHistory(points: [string, number][], win = 20): number[] {
-  const rets: number[] = [];
+  const rets: (number | null)[] = [];
   for (let i = 1; i < points.length; i++) {
-    if (points[i][1] > 0 && points[i - 1][1] > 0) rets.push(Math.log(points[i][1] / points[i - 1][1]));
+    rets.push(points[i][1] > 0 && points[i - 1][1] > 0 && daysBetween(points[i - 1][0], points[i][0]) <= 7 ? Math.log(points[i][1] / points[i - 1][1]) : null);
   }
   const out: number[] = [];
   for (let i = win; i <= rets.length; i++) {
     const w = rets.slice(i - win, i);
-    const mean = w.reduce((a, b) => a + b, 0) / win;
-    const sd = Math.sqrt(w.reduce((a, b) => a + (b - mean) ** 2, 0) / win);
+    if (w.some((v) => v == null)) { out.push(NaN); continue; }
+    const values = w as number[];
+    const mean = values.reduce((a, b) => a + b, 0) / win;
+    const sd = Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / (win - 1));
     out.push(sd * Math.sqrt(252) * 100);
   }
   return out;
@@ -95,7 +97,9 @@ function lastPercentile(history: number[]): { pct: number; value: number } | nul
   if (history.length < 120) return null;
   const window = history.slice(-LOOKBACK_OBS);
   const value = window[window.length - 1];
-  return { pct: percentileOf(window.slice(0, -1), value), value };
+  const historyValues = window.slice(0, -1).filter(Number.isFinite);
+  if (!Number.isFinite(value) || historyValues.length < 119) return null;
+  return { pct: percentileOf(historyValues, value), value };
 }
 
 export function computeMarketState(
@@ -105,7 +109,7 @@ export function computeMarketState(
   cot: CotMarket | undefined,
 ): MarketState | null {
   const n = price.points.length;
-  if (n < 300) return null;
+  if (n < 300 || price.points.at(-1)![1] <= 0) return null;
   // daily series only — weekly/monthly cadences would distort the vol/trend windows
   if (daysBetween(price.points[n - 21][0], price.points[n - 1][0]) / 20 >= 4) return null;
 
@@ -119,8 +123,8 @@ export function computeMarketState(
       label: "Trend",
       percentile: trend.pct,
       supportive: trend.pct,
-      reading: `price ${trend.value >= 0 ? "+" : ""}${r1(trend.value * 100)}% vs 50d avg — ${trend.pct >= 55 ? "uptrend" : trend.pct <= 45 ? "downtrend" : "flat"}`,
-      detail: "price / 50-day average − 1, percentile vs ~3y of the same measure",
+      reading: `price ${trend.value >= 0 ? "+" : ""}${r1(trend.value * 100)}% vs 50-observation avg — ${trend.value > 0.0005 ? "above average" : trend.value < -0.0005 ? "below average" : "near average"}`,
+      detail: "price / 50-observation average − 1, percentile vs up to three years of the same measure",
     });
   }
 
@@ -131,7 +135,7 @@ export function computeMarketState(
       label: "Volatility",
       percentile: vol.pct,
       supportive: 100 - vol.pct, // calm = orderly = supportive
-      reading: `20d realized ${r1(vol.value)}% ann. — ${vol.pct >= 70 ? "turbulent" : vol.pct <= 30 ? "calm" : "normal"}`,
+      reading: `20-observation realized ${r1(vol.value)}% ann. — ${vol.pct >= 70 ? "turbulent" : vol.pct <= 30 ? "calm" : "normal"}`,
       detail: "20-obs realized volatility (annualized), percentile vs ~3y; calm scores supportive",
     });
   }
@@ -145,7 +149,7 @@ export function computeMarketState(
         label: "US dollar",
         percentile: usd.pct,
         supportive: 100 - usd.pct, // strong dollar = headwind for USD commodities
-        reading: `Broad USD ${usd.value >= 0 ? "+" : ""}${r1(usd.value)}% over 60d — ${usd.pct >= 70 ? "dollar strength" : usd.pct <= 30 ? "dollar weakness" : "neutral"}`,
+        reading: `Broad USD ${usd.value >= 0 ? "+" : ""}${r1(usd.value)}% over 60 observations — ${usd.value > 0.05 ? "dollar appreciation" : usd.value < -0.05 ? "dollar depreciation" : "little change"}`,
         detail: "Federal Reserve broad dollar index, 60-obs % change, percentile vs ~3y; dollar weakness scores supportive",
       });
     }

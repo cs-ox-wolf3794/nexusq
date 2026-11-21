@@ -14,7 +14,8 @@ export async function yahooChart(symbol, interval = "1d", range = "10y") {
   throw failure;
 }
 
-export function parseYahooDaily(result, now = Date.now()) {
+export function parseYahooDaily(result, now = Date.now(), expectedSymbol) {
+  if (expectedSymbol && (result.meta?.symbol !== expectedSymbol || result.meta?.currency !== "USD")) throw new Error("Yahoo daily identity/currency mismatch");
   const timestamps = result.timestamp;
   const closes = result.indicators?.quote?.[0]?.close;
   const adjusted = result.indicators?.adjclose?.[0]?.adjclose;

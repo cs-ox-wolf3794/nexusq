@@ -3,8 +3,9 @@ import type { EChartsOption, SeriesOption } from "echarts";
 import { EChart } from "./EChart";
 import { readTokens } from "./useTheme";
 import type { Series } from "../lib/data";
-import type { Points, Transform } from "../lib/transform";
+import { seriesCadence, type Points, type Transform } from "../lib/transform";
 import { GlossaryTip } from "./Guidance";
+import { forecastBand } from "../lib/chart";
 
 export interface OverlaySeries {
   series: Series;
@@ -23,7 +24,7 @@ export interface Projection {
 }
 
 const CAPTION_TEXT: Record<Transform, string> = {
-  index: "indexed to 100 at window start",
+  index: "indexed to 100 at each series’ first visible observation",
   zscore: "z-scores over the visible window",
   yoy: "year-over-year % change",
   raw: "raw values",
@@ -67,17 +68,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
       } : undefined;
 
       if (p.fan) {
-        series.push({
-          name: `__lo ${p.name}`, type: "line", silent: true,
-          stack: `fan-${p.name}`, data: p.fan.map((f) => [f[0], f[1]]),
-          lineStyle: { opacity: 0 }, showSymbol: false,
-        });
-        series.push({
-          name: `__band ${p.name}`, type: "line", silent: true,
-          stack: `fan-${p.name}`, data: p.fan.map((f) => [f[0], f[5] - f[1]]),
-          lineStyle: { opacity: 0 }, showSymbol: false,
-          areaStyle: { color, opacity: 0.14 },
-        });
+        series.push(...forecastBand(p.fan, p.name, color));
         series.push({
           name: `${p.name} · ${p.sourceLabel}`, type: "line",
           data: p.fan.map((f) => [f[0], f[3]]),
@@ -99,6 +90,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
 
     return {
       backgroundColor: "transparent",
+      useUTC: true,
       animation: false,
       grid: { left: 56, right: 16, top: items.length > 1 ? 48 : 20, bottom: 66 },
       // Slider only — an "inside" zoom hijacks page scrolling (mousewheel and touch-pan).
@@ -117,6 +109,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
         },
       ],
       legend: items.length > 1 ? {
+        selectedMode: false, // Selection is controlled by the picker, including its forecast/fan.
         top: 0, left: 0, icon: "roundRect", itemWidth: 12, itemHeight: 4,
         data: items.map((i) => i.series.name), // helpers & projections stay out of the legend
         textStyle: { color: tokens["--text-secondary"], fontSize: 12 },
@@ -160,6 +153,8 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
       },
       series,
     };
+  // Theme mode invalidates CSS-derived colors even though it is not an option value.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, projections, transform, themeMode]);
 
   return (
@@ -169,14 +164,18 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
         {items.length > 1
           ? `Overlaid on a single axis, ${CAPTION_TEXT[transform]} — mixed units are never dual-axed.`
           : items.length === 1
-            ? `${items[0].series.name}, ${items[0].series.unit} (${items[0].series.source})`
+            ? `${items[0].series.name}: ${CAPTION_TEXT[transform]}${transform === "raw" ? `, ${items[0].series.unit}` : ""} (${items[0].series.source})`
             : "Select at least one series."}
         {projections.length > 0 && (
           <>
-            {" "}· Dashed = projection from the observation anchor; shaded fan = <GlossaryTip term="P10-P90" definition="Projected 10th-to-90th percentile range at each horizon." /> under damped-drift + EWMA assumptions, with uncalibrated coverage; GDP projections from IMF WEO. Model output, not investment advice.
+            {" "}· Shaded model fan = <GlossaryTip term="P10-P90" definition="Projected 10th-to-90th percentile range under the model assumptions; real-world coverage is uncalibrated." />. External forecast markers are period estimates; connecting lines are visual guides, not intervening observations. Model output, not investment advice.
           </>
         )}
       </p>
+      {transform === "index" && <p className="sub">Index bases: {items.filter((i) => i.points.length).map((i) => `${i.series.name}: ${i.points[0][0]}`).join("; ")}. These compare price levels, not total investment returns.</p>}
+      {items.some((i) => seriesCadence(i.series) === "monthly") && <p className="sub">Monthly observations are plotted at period end; the date labels identify the month, not a daily closing price.</p>}
+      {items.some((i) => i.series.id === "GDP_IND") && <p className="sub">India GDP history uses April–March fiscal years labeled by the starting year. It is not directly aligned with calendar-year GDP for the other countries.</p>}
+      {items.some((i) => !i.points.length) && <p className="sub">◔ Not plotted: {items.filter((i) => !i.points.length).map((i) => i.series.name).join(", ")} — insufficient valid observations for this scale/window.</p>}
       {projections.filter((p) => p.note).map((p) => <p className="sub" key={p.name}>{p.note}</p>)}
     </div>
   );

@@ -35,7 +35,7 @@ export type FanPoint = [string, number, number, number, number, number];
 
 export type Forecast =
   | { kind: "model"; method: string; points: FanPoint[]; issuedAt?: string; asOf?: string }
-  | { kind: "external"; source: string; points: [string, number][]; retrievedAt?: string; retained?: boolean; sourceUrl?: string; deliveryUrl?: string; sourceVintage?: string; periodBasis?: string };
+  | { kind: "external"; source: string; points: [string, number][]; retrievedAt?: string; retained?: boolean; sourceUrl?: string; deliveryUrl?: string; sourceVintage?: string; periodBasis?: string; contentUpdatedAt?: string };
 
 export interface ForecastFile {
   generated: string;
@@ -77,6 +77,8 @@ export interface ImpactFile {
   countries: ImpactCountry[];
   oilAnnual: [string, number][]; // [year, avg price] — long-history oil for GDP betas
   oilAnnualSource: string;
+  oilAnnualValidated?: boolean;
+  oilAnnualExcludedYears?: string[];
   worldGdp: [string, number][]; // global-cycle control
 }
 
@@ -109,9 +111,9 @@ export interface QualityFile {
 export interface BacktestStats {
   n: number;
   hitRate: number;
-  hitCI: [number, number];
+  hitCI: [number, number] | null;
   meanMove: number;
-  moveCI: [number, number];
+  moveCI: [number, number] | null;
   baselineHit: number;
 }
 
@@ -124,12 +126,12 @@ export interface BacktestFamily {
 
 export interface BacktestFile {
   engineVersion?: string;
+  inputSnapshot?: string;
   generated: string;
   method: {
     frame: string;
     options: { start: string; visibilityLagDays: number; cooldownDays: number; horizons: number[]; corrEvalObs: number };
     hypotheses: Record<string, string>;
   };
-  corrPersistenceBaseline: number;
   families: Record<string, BacktestFamily>;
 }

@@ -1,4 +1,4 @@
-import type { QualityFile, Series } from "./data";
+import type { ImpactCompany, ImpactCountry, ImpactFile, QualityFile, Series } from "./data";
 
 export type Cadence = "daily" | "weekly" | "monthly" | "annual";
 export type SourcePolicy = { cadence: Cadence; maxAgeDays: number; periodEnd: boolean; note: string };
@@ -91,11 +91,46 @@ export function assessSeries(id: string, points: [string, number][], now = Date.
 /** Fail closed for current analysis, while leaving historical observations available. */
 export function analysisEligibility(series: Series, quality: QualityFile | null, now = Date.now()): { eligible: boolean; reason: string } {
   if (!quality?.series[series.id]) return { eligible: false, reason: "Quality assessment unavailable" };
-  const reportAge = now - Date.parse(quality.generated);
-  if (!Number.isFinite(reportAge) || reportAge < -300000 || reportAge > 72 * 3600000) return { eligible: false, reason: "Quality assessment is overdue" };
+  if (!qualityCurrent(quality, now)) return { eligible: false, reason: "Quality assessment is overdue" };
   const f = freshness(series.id, series.lastUpdated, now);
   if (f.stale) return { eligible: false, reason: "Source observation is overdue" };
   const flags = quality.series[series.id].flags;
   if (flags.length) return { eligible: false, reason: flags.map((flag) => flag.code).join(", ") };
   return { eligible: true, reason: "Within source cadence; snapshot analysis" };
+}
+
+export function recentTimestamp(value: string | undefined, maxAgeMs: number, now = Date.now()): boolean {
+  const age = now - Date.parse(value ?? "");
+  return Number.isFinite(age) && age >= -300000 && age <= maxAgeMs;
+}
+
+export function qualityCurrent(quality: QualityFile | null, now = Date.now()): boolean {
+  return !!quality && recentTimestamp(quality.generated, 72 * 3600000, now);
+}
+
+export function validateAdjustedAlignment(points: [string, number][], adjusted: [string, number][]) {
+  validatePoints(adjusted);
+  if (points.length !== adjusted.length || points.some(([date], i) => date !== adjusted[i][0]) || adjusted.some(([, v]) => v <= 0)) throw new Error("adjusted-close alignment/value mismatch");
+}
+
+export function companyEligible(company: ImpactCompany, now = Date.now()): boolean {
+  return !company.refreshFailed && !!company.adjustedPoints && !!company.quality
+    && company.quality.flags.length === 0 && !freshness(company.id, company.lastUpdated, now).stale
+    && recentTimestamp(company.retrievedAt, 72 * 3600000, now);
+}
+
+export function sovereignExclusion(country: ImpactCountry, impact: ImpactFile, now = Date.now()): string | null {
+  if (country.iso === "IND") return "India uses April–March fiscal years; matching fiscal-year oil and world-cycle controls are unavailable.";
+  if (!impact.oilAnnualValidated) return "Full-year Brent observation coverage has not been verified.";
+  if (freshness("GDP_" + country.iso, country.gdp.at(-1)?.[0] ?? "", now).stale || freshness("GDP_WLD", impact.worldGdp?.at(-1)?.[0] ?? "", now).stale) return "Annual country/world GDP observations are overdue.";
+  if (!recentTimestamp(impact.generated, 45 * 86400000, now)) return "Annual enrichment has not been refreshed within 45 days.";
+  return null;
+}
+
+export function energyTradeProfile(country: ImpactCountry): string {
+  const energy = country.energyImports, fuel = country.fuelExports;
+  const profile = energy && Number.isFinite(energy.value)
+    ? `Reported net energy ${energy.value < 0 ? "exports" : "imports"}: ${Math.abs(energy.value).toFixed(1)}% of energy use (${energy.year})`
+    : "Net energy trade data unavailable";
+  return profile + (fuel && Number.isFinite(fuel.value) ? `; fuel: ${fuel.value.toFixed(1)}% of merchandise exports (${fuel.year})` : "");
 }

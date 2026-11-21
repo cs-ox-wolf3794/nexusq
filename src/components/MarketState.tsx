@@ -75,7 +75,7 @@ export function MarketStatePanel({ seriesMap, cot }: {
                   <div className="state-cond-reading">{c.reading}</div>
                 </div>
               ))}
-              <div className="state-asof">inputs through {s.asOf}</div>
+              <div className="state-asof">{s.conditions.length}/4 conditions · inputs through {s.asOf}</div>
             </div>
           );
         })}
@@ -83,8 +83,8 @@ export function MarketStatePanel({ seriesMap, cot }: {
       <p className="sub" style={{ marginTop: 10 }}>
         Each condition is the current value's percentile within its own ~3-year history (positioning:
         full CFTC weekly history; Brent positioning uses the thin NYMEX Last Day contract as a proxy).
-        The composite orients conditions to a common "supportive" direction (uptrend, calm volatility,
-        soft dollar, light positioning) and averages them — a description of the current regime,
+        The composite averages oriented historical ranks (higher trend rank, lower volatility,
+        dollar-change and positioning ranks). This convention is an unvalidated heuristic; missing conditions change its composition. It describes relative conditions,
         <strong> not a forecast or trading signal</strong>. Bands: &lt;35 headwinds · 35–65 mixed · &gt;65 constructive.
       </p>
     </div>

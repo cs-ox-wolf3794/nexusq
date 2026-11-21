@@ -9,15 +9,16 @@
  *   - the latest actual observation per series (the future "realized" anchor).
  *
  * Committed by the daily cron → git history becomes a tamper-evident public
- * ledger of what was claimed and when. The calibration scoreboard reads these.
+ * ledger of what was claimed and when. These records support future calibration; no outcome scoreboard is claimed.
  *
  * Run: npx tsx scripts/snapshot-signals.ts
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
 import { ENGINE_VERSION, computeSignals } from "../src/lib/signals";
-import { analysisEligibility } from "../src/lib/quality";
-import type { QualityFile, Series } from "../src/lib/data";
+import { analysisEligibility, recentTimestamp } from "../src/lib/quality";
+import { externalForecastCurrent, forecastHorizons } from "../src/lib/forecast";
+import type { ForecastFile, QualityFile, Series } from "../src/lib/data";
 
 const DATA = path.resolve(process.env.NEXUSQ_DATA_DIR ?? "public/data");
 const HIST = path.join(DATA, "history");
@@ -50,41 +51,18 @@ const signals = computeSignals(eligible).map((s) => ({
   seriesIds: s.seriesIds,
 }));
 
-// forecast digest: quantiles at ~7/30/90 days out, plus the current spot anchor
-type FanPoint = [string, number, number, number, number, number];
-type ExtPoint = [string, number];
-const forecasts = read("forecasts.json") as {
-  series: Record<string, { kind: string; source?: string; points: (FanPoint | ExtPoint)[] }>;
-};
-const addDays = (d: string, n: number) => {
-  const t = new Date(`${d}T00:00:00Z`);
-  t.setUTCDate(t.getUTCDate() + n);
-  return t.toISOString().slice(0, 10);
-};
-const HORIZONS = [7, 30, 90];
-
+// Preserve future-only points and their actual horizon and source-period basis.
+const forecasts = read("forecasts.json") as ForecastFile;
 const digest: Record<string, unknown> = {};
 for (const [id, fc] of Object.entries(forecasts.series)) {
   if (!eligible.has(id)) continue;
-  const byHorizon: Record<string, unknown> = {};
-  for (const h of HORIZONS) {
-    const target = addDays(today, h);
-    let best: (FanPoint | ExtPoint) | null = null;
-    let bestGap = Infinity;
-    for (const p of fc.points) {
-      const gap = Math.abs(
-        (Date.parse(`${p[0]}T00:00:00Z`) - Date.parse(`${target}T00:00:00Z`)) / 86400000,
-      );
-      if (gap < bestGap) { bestGap = gap; best = p; }
-    }
-    if (!best || bestGap > Math.max(10, h * 0.3)) continue;
-    byHorizon[String(h)] = best.length === 6
-      ? { date: best[0], p10: best[1], p50: best[3], p90: best[5] }
-      : { date: best[0], value: best[1] };
-  }
-  if (Object.keys(byHorizon).length) {
-    digest[id] = { kind: fc.kind, source: fc.source, horizons: byHorizon };
-  }
+  if (fc.kind === "external" && !externalForecastCurrent(fc)) continue;
+  if (fc.kind === "model" && (fc.asOf !== eligible.get(id)!.lastUpdated || !recentTimestamp(fc.issuedAt, 72 * 3600000))) continue;
+  const horizons = forecastHorizons(fc, today);
+  if (Object.keys(horizons).length) digest[id] = {
+    kind: fc.kind, horizons,
+    ...(fc.kind === "external" ? { source: fc.source, sourceVintage: fc.sourceVintage, retrievedAt: fc.retrievedAt, periodBasis: fc.periodBasis, contentUpdatedAt: fc.contentUpdatedAt } : { issuedAt: fc.issuedAt, asOf: fc.asOf, method: fc.method }),
+  };
 }
 
 const spot: Record<string, [string, number]> = {};

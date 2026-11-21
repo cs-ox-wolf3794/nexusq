@@ -1,4 +1,5 @@
 import type { Series } from "./data";
+import { observationEnd } from "./quality";
 
 export type Transform = "index" | "zscore" | "yoy" | "raw";
 
@@ -10,6 +11,25 @@ export const TRANSFORM_LABELS: Record<Transform, string> = {
 };
 
 export type Points = [string, number][];
+
+export function isRateSeries(s: Pick<Series, "id">): boolean {
+  return ["UST10Y", "BREAKEVEN10Y"].includes(s.id) || s.id.startsWith("GDP_");
+}
+
+/** Rates/growth rates are already ratios; rebasing or taking their percentage growth is misleading. */
+export function comparableTransform(list: Series[], requested: Transform): Transform {
+  const sameUnit = new Set(list.map((s) => s.unit)).size <= 1;
+  if (list.some(isRateSeries) && ["index", "yoy"].includes(requested)) return sameUnit ? "raw" : "zscore";
+  if (requested === "raw" && !sameUnit) return list.some(isRateSeries) ? "zscore" : "index";
+  return requested;
+}
+
+export function overlayPoints(series: Series, transform: Transform, from: string): Points {
+  // Transform on the source calendar first; then place monthly observations at period end.
+  const points = transform === "yoy" ? toYoY(series.points) : series.points;
+  const visible = points.map(([date, value]): [string, number] => [observationEnd(series.id, date), value]).filter(([date]) => date >= from);
+  return transform === "yoy" ? visible : applyTransform(visible, transform);
+}
 
 export function clampRange(points: Points, from: string): Points {
   return points.filter(([d]) => d >= from);
@@ -64,7 +84,7 @@ export function daysBetween(a: string, b: string): number {
 
 /**
  * Align series onto a common daily grid (union of dates), forward-filling gaps
- * up to `maxGapDays`. Used for correlations, not for display.
+ * up to `maxGapDays`. Legacy utility only; never use filled values for inference.
  */
 export function alignSeries(list: Series[], from: string, maxGapDays = 40): { dates: string[]; values: (number | null)[][] } {
   const dateSet = new Set<string>();
@@ -133,7 +153,7 @@ export function observedCorrelation(a: Series, b: Series, from: string): { rho: 
   const aPoints = (a.adjustedPoints ?? a.points).filter(([d]) => d >= from);
   const bMap = new Map((b.adjustedPoints ?? b.points).filter(([d]) => d >= from));
   const matched = aPoints.filter(([d]) => bMap.has(d));
-  const usesLog = (s: Series, values: number[]) => !["UST10Y", "BREAKEVEN10Y"].includes(s.id) && !s.id.startsWith("GDP_") && values.every((v) => v > 0);
+  const usesLog = (s: Series, values: number[]) => !isRateSeries(s) && values.every((v) => v > 0);
   const logA = usesLog(a, matched.map((p) => p[1]));
   const logB = usesLog(b, matched.map(([d]) => bMap.get(d)!));
   const maxGap = { daily: 7, weekly: 10, monthly: 35, annual: 370 }[cadence];
@@ -149,5 +169,6 @@ export function observedCorrelation(a: Series, b: Series, from: string): { rho: 
     asOf = d1;
   }
   const rho = ra.length >= 20 ? pearson(ra, rb) : null;
-  return rho == null ? null : { rho, n: ra.length, asOf, basis: `${logA ? "log returns" : "differences"} / ${logB ? "log returns" : "differences"}` };
+  const label = (s: Series, log: boolean) => log ? `${s.adjustedPoints ? "adjusted-close " : ""}log returns` : "differences";
+  return rho == null ? null : { rho, n: ra.length, asOf, basis: `${label(a, logA)} / ${label(b, logB)}` };
 }

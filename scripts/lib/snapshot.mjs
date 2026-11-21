@@ -1,7 +1,7 @@
 import { readFile, writeFile, readdir, mkdir, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { validatePoints, validDate } from "../../src/lib/quality.ts";
+import { validatePoints, validDate, validateAdjustedAlignment } from "../../src/lib/quality.ts";
 
 export async function readJson(directory, name, fallback = null) {
   try { return JSON.parse(await readFile(path.join(directory, name), "utf8")); }
@@ -18,6 +18,8 @@ export async function validateSnapshot(directory) {
     ids.add(entry.id);
     const series = await readJson(directory, `${entry.id}.json`);
     validatePoints(series?.points);
+    if (series.adjustedPoints) validateAdjustedAlignment(series.points, series.adjustedPoints);
+    if (series.source === "Yahoo Finance" && !series.adjustedPoints) throw new Error(`adjusted closes unavailable: ${entry.id}`);
     if (series.id !== entry.id || series.points.length !== entry.count || series.points.at(-1)[0] !== entry.lastUpdated
       || series.lastUpdated !== entry.lastUpdated || series.source !== entry.source || series.unit !== entry.unit || !quality.series[entry.id]) throw new Error(`catalog/series/QC mismatch: ${entry.id}`);
   }
@@ -29,7 +31,7 @@ export async function validateSnapshot(directory) {
     if (forecast.source?.includes("World Bank Data360") && (!validDate(forecast.sourceVintage) || !forecast.deliveryUrl?.startsWith("https://data360") || !forecast.periodBasis)) throw new Error(`missing GDP forecast lineage: ${id}`);
     let previousDate = "";
     for (const p of forecast.points) {
-      if (p.length !== (forecast.kind === "model" ? 6 : 2) || p[0] <= previousDate || !Number.isFinite(Date.parse(p[0])) || !p.slice(1).every(Number.isFinite)) throw new Error(`invalid forecast: ${id}`);
+      if (p.length !== (forecast.kind === "model" ? 6 : 2) || p[0] <= previousDate || !validDate(p[0]) || !p.slice(1).every(Number.isFinite)) throw new Error(`invalid forecast: ${id}`);
       if (forecast.kind === "model" && p.slice(2).some((v, i) => v < p[i + 1])) throw new Error(`crossed forecast quantiles: ${id}`);
       previousDate = p[0];
     }
