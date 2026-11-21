@@ -1,8 +1,13 @@
 import { get } from "./http.mjs";
 
-/** @param {(result: object) => void} [validate] */
-export async function yahooChart(symbol, interval = "1d", range = "10y", validate = undefined) {
-  const url = `/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
+/**
+ * @param {(result: object) => void} [validate]
+ * @param {{start: number, end: number}} [period] Unix seconds; alternate explicit-period cache key.
+ */
+export async function yahooChart(symbol, interval = "1d", range = "10y", validate = undefined, period = undefined) {
+  if (period && (![period.start, period.end].every(Number.isSafeInteger) || period.start >= period.end)) throw new Error("Invalid Yahoo date range");
+  const window = period ? `period1=${period.start}&period2=${period.end}` : `range=${range}`;
+  const url = `/v8/finance/chart/${encodeURIComponent(symbol)}?${window}&interval=${interval}`;
   let failure;
   // Same instrument/provider on both hosts: never substitute a futures contract for spot.
   for (const host of ["query1.finance.yahoo.com", "query2.finance.yahoo.com"]) {

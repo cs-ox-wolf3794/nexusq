@@ -46,7 +46,10 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
       };
       try { await yahooChart(symbol, "1d", "5y", validate); }
       catch { // Yahoo range caches can disagree; validate a longer history of the same instrument.
-        await yahooChart(symbol, "1d", "10y", validate);
+        try { await yahooChart(symbol, "1d", "10y", validate); }
+        catch {
+          await yahooChart(symbol, "1d", "5y", validate, { start: Math.floor((now - 5 * 366 * DAY) / 1000), end: Math.floor(now / 1000) });
+        }
       }
       prices.series[symbol] = { points, adjustedPoints, retrievedAt: generated, issue: null };
     } catch (error) {

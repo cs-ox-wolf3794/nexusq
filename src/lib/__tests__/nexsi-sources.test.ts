@@ -17,6 +17,17 @@ describe("NexSI public source contracts", () => {
       expect(fetcher.mock.calls[1][0]).toContain("query2.finance.yahoo.com");
     } finally { vi.unstubAllGlobals(); }
   });
+  it("uses an explicit-period request without weakening validation", async () => {
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ chart: { result: [{ value: "current" }] } }) });
+    vi.stubGlobal("fetch", fetcher);
+    try {
+      const validate = vi.fn();
+      await yahooChart("SNDK", "1d", "5y", validate, { start: 1700000000, end: 1795208400 });
+      expect(fetcher.mock.calls[0][0]).toContain("period1=1700000000&period2=1795208400&interval=1d");
+      expect(validate).toHaveBeenCalledOnce();
+      await expect(yahooChart("SNDK", "1d", "5y", validate, { start: 2, end: 1 })).rejects.toThrow("range");
+    } finally { vi.unstubAllGlobals(); }
+  });
   it("keeps SEC issuer identity and acceptance time, excluding future/unsupported disclosures", () => {
     const data = { cik: 1045810, filings: { recent: { form: ["8-K", "10-Q", "4"], acceptanceDateTime: ["2026-11-17T21:20:51Z", "2026-12-01T12:00:00Z", "2026-11-19T12:00:00Z"], accessionNumber: ["0001045810-26-000088"], primaryDocument: ["nvda-20261117.htm"], items: ["2.02,9.01"] } } };
     expect(parseFilings(data, 1045810, now)).toEqual([expect.objectContaining({ kind: "filing", publishedAt: "2026-11-17T21:20:51.000Z", title: expect.stringContaining("earnings"), url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000088/nvda-20261117.htm" })]);
