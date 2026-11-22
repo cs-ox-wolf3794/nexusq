@@ -40,11 +40,13 @@ export function validateNexsi(file: NexsiFile) {
     if (c.events.some(e => !/^https:\/\//.test(e.url) || !Number.isFinite(Date.parse(e.publishedAt)))) throw new Error(`Invalid NexSI evidence: ${c.symbol}`);
     for (const e of c.events) if (e.summary) {
       const s = e.summary;
-      if (![1, 2, 3].includes(s.version) || !Number.isFinite(Date.parse(s.checkedAt)) || !Array.isArray(s.documents) || !Array.isArray(s.facts)
+      if (![1, 2, 3, 4].includes(s.version) || !Number.isFinite(Date.parse(s.checkedAt)) || !Array.isArray(s.documents) || !Array.isArray(s.facts)
         || s.documents.some(d => !validDisclosureSource(d.url, e) || !/^[a-f\d]{64}$/.test(d.sha256))
         || s.facts.some(f => !BRIEF_CATEGORIES.includes(f.category) || !f.text || f.text.length > 700 || !['rule-extracted', 'reviewed'].includes(f.method)
           || !s.documents.some(d => d.url === f.sourceUrl) || !validDisclosureSource(f.sourceUrl, e)
           || (!f.sourceUrl.startsWith('https://www.sec.gov/') && f.sourceTiming !== 'unverified')
+          || (f.sourceUrl.startsWith('https://stockanalysis.com/') && f.sourceKind !== 'third-party-transcript')
+          || (f.guidanceType && (f.category !== 'guidance' || !['quantitative','qualitative','limited','policy','not-issued','withdrawn'].includes(f.guidanceType)))
           || (f.excerpt && f.excerpt.split(/\s+/).length > 24))) throw new Error(`Invalid NexSI disclosure summary: ${c.symbol}`);
     }
     for (const e of c.events) if (e.financialSummary) {

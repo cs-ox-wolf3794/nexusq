@@ -14,6 +14,8 @@ export interface NexsiDisclosureFact {
   period: string | null; periodEnd?: string; sourceUrl: string; method: "rule-extracted" | "reviewed" | "sec-xbrl"; excerpt?: string; reviewedAt?: string;
   evidence?: { url: string; sha256: string; taxonomy: string; concept: string; unit: string; start: string; end: string; value: number; accession: string };
   sourceTiming?: 'unverified';
+  sourceKind?: 'third-party-transcript';
+  guidanceType?: 'quantitative' | 'qualitative' | 'limited' | 'policy' | 'not-issued' | 'withdrawn';
 }
 export interface NexsiDisclosureSummary {
   version: number; checkedAt: string; documents: { url: string; sha256: string; retrievedAt?: string }[];

@@ -1,6 +1,18 @@
 // Concise document-reviewed notes. Exact document hashes prevent reuse after a source correction.
 // Facts describe issuer disclosures, not independent verification of allegations or price causation.
 export const REVIEWED_DISCLOSURES = {
+  '83cb7e94afe2cf19942b6f1acec462f4ef53931416710ff8c4839216439a2583': {
+    url:'https://www.sec.gov/Archives/edgar/data/865752/000110465926123387/tm2629095d1_ex99-1.htm',
+    facts:[{category:'guidance',guidanceType:'not-issued',topic:'guidance-absence',period:'Q3 2026 written results release',text:'This reviewed results release provides historical financial results but no numerical forward revenue, EPS or margin forecast. This assessment is limited to the written release; it does not establish a company-wide policy or assess statements made on the earnings call.'}],
+  },
+  'e77f2a6170d427ac8c94a1ad329fddcb05c8c00f61c9b150309b4c75d0b590bf': {
+    url:'https://www.sec.gov/Archives/edgar/data/1181412/000162828026066482/spaceexplorationtechnologi.htm',
+    facts:[{category:'guidance',guidanceType:'not-issued',topic:'guidance-absence',period:'Q3 2026 written results release',text:'This reviewed results release contains no numerical company-wide forward revenue, EPS or margin forecast. Management discusses investment discipline and project plans; these are not a consolidated financial forecast. Earnings-call guidance and a permanent no-guidance policy have not been verified.'}],
+  },
+  '7f72b7d0f8406f85479c2e0b1525499b4a483f0aa087eedb111c609f186aeeee': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1737806/000110465926130116/tm2630261d1_ex99-1.htm',
+    facts: [{ category:'guidance',guidanceType:'not-issued',topic:'guidance-absence',period:'Q3 2026 results release',text:'The reviewed Q3 results release contains no numerical forward revenue, earnings or margin guidance. Management provides qualitative investment priorities. This finding is limited to this release; a permanent company policy of not issuing guidance has not been verified.' }],
+  },
   '18218bfbf2d976351898b9afebd9cd70e221836104374457b27c1c31380962c3': {
     url: 'https://www.sec.gov/Archives/edgar/data/1075531/000107553126000044/q3-26bkngearningsrelease.htm',
     replaceCategories: ['earnings', 'guidance'],

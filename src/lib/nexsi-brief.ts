@@ -9,6 +9,7 @@ export function validDisclosureSource(url: string, event: NexsiEvent) {
     if (isPrimaryFiling(event) && event.items?.split(',').map(s=>s.trim()).includes('2.02') && !source.search && !source.hash && !source.username && !source.password) {
       if (event.issuerCik === 789019 && /^https:\/\/www\.microsoft\.com\/en-us\/investor\/events\/fy-(20\d{2})\/earnings-fy-\1-q[1-4]$/.test(url)) return true;
       if (event.issuerCik === 1652044 && /^https:\/\/s206\.q4cdn\.com\/479360582\/files\/doc_events\/20\d{2}\/[A-Z][a-z]{2}\/\d{1,2}\/20\d{2}_Q[1-4]_Earnings_Transcript\.pdf$/.test(url)) return true;
+      if (event.issuerCik === 320193 && /^https:\/\/stockanalysis\.com\/stocks\/aapl\/transcripts\/\d+-q[1-4]-20\d{2}\/$/.test(url)) return true;
     }
     return isPrimaryFiling(event) && source.origin === parent.origin && !source.search && !source.hash && !source.username && !source.password
       && source.pathname.slice(0, source.pathname.lastIndexOf('/')) === parent.pathname.slice(0, parent.pathname.lastIndexOf('/'))
@@ -16,6 +17,17 @@ export function validDisclosureSource(url: string, event: NexsiEvent) {
   } catch { return false; }
 }
 export type BriefItem = { fact: NexsiDisclosureFact; event: NexsiEvent; timing: EvidenceTiming };
+export function guidanceCoverage(items: BriefItem[]) {
+  const facts=items.map(x=>x.fact).filter(f=>f.category==='guidance'&&f.topic!=='assumptions');
+  if(!facts.length)return 'missing';
+  if(facts.some(f=>!f.guidanceType||f.guidanceType==='quantitative'))return 'quantitative';
+  return (['limited','policy','not-issued','withdrawn','qualitative'] as const).find(t=>facts.some(f=>f.guidanceType===t))??'missing';
+}
+export const GUIDANCE_LABELS = {
+  quantitative:'Management outlook',limited:'Other guidance — limited scope',qualitative:'Qualitative outlook only',
+  policy:'Company policy: no traditional earnings guidance','not-issued':'No numerical guidance in reviewed release',
+  withdrawn:'Guidance withdrawn',missing:'Guidance coverage missing',
+};
 export function validFinancialEvidence(fact: NexsiDisclosureFact, event: NexsiEvent) {
   const x = fact.evidence;
   const accession = event.url.split('/').at(-2) ?? '';
@@ -31,16 +43,28 @@ export function companyBrief(company: NexsiCompany, move: Pick<Attribution, 'sta
   const all: BriefItem[] = company.events.flatMap(event => {
     if (!isPrimaryFiling(event) || Date.parse(event.publishedAt) > now || !Number.isFinite(Date.parse(event.publishedAt))) return [];
     const timing = evidenceTiming(event.publishedAt, move);
-    const prose = [2, 3].includes(event.summary?.version ?? 0) ? event.summary!.facts.filter(f => validDisclosureSource(f.sourceUrl, event) && event.summary!.documents.some(d => d.url === f.sourceUrl && /^[a-f\d]{64}$/.test(d.sha256))) : [];
+    const prose = [2, 3, 4].includes(event.summary?.version ?? 0) ? event.summary!.facts.filter(f => validDisclosureSource(f.sourceUrl, event) && event.summary!.documents.some(d => d.url === f.sourceUrl && /^[a-f\d]{64}$/.test(d.sha256))) : [];
     const financial = event.financialSummary?.version === 1 ? event.financialSummary.facts.filter(f => validFinancialEvidence(f, event) && event.financialSummary!.documents.some(d => d.url === f.evidence?.url && d.sha256 === f.evidence.sha256)) : [];
     return [...prose, ...financial]
       .filter(f => nearby.has(event.url) || (f.category !== 'company-news' && timing === 'before' && Date.parse(move.start) - Date.parse(event.publishedAt) < 100 * 86400000))
-      .map(fact => ({ fact, event, timing: fact.sourceTiming === 'unverified' ? 'uncertain' as const : timing }));
+      .map(fact => ({ fact, event, timing: fact.sourceTiming === 'unverified' && timing !== 'after' ? 'uncertain' as const : timing }));
   });
-  const rank = { within: 0, before: 1, uncertain: 2, after: 3 };
-  all.sort((a, b) => rank[a.timing] - rank[b.timing] || b.event.publishedAt.localeCompare(a.event.publishedAt));
+  const rank = { within: 0, uncertain: 1, before: 2, after: 3 };
+  // A filing at the market-close boundary is recent context, even when its exact
+  // ordering versus the close is uncertain. Do not prefer last quarter to it.
+  // Transcript uncertainty must never promote an after-move report over one
+  // already available during the selected window.
+  all.sort((a, b) => rank[evidenceTiming(a.event.publishedAt,move)] - rank[evidenceTiming(b.event.publishedAt,move)] || b.event.publishedAt.localeCompare(a.event.publishedAt));
   const categories = BRIEF_CATEGORIES.map(category => {
     let rows = all.filter(x => x.fact.category === category);
+    if(category==='guidance'){
+      // A reviewed absence/policy is not evidence about a later reporting cycle.
+      // Keep historical moves independent of releases published after that move.
+      const reporting=company.events.filter(e=>isPrimaryFiling(e)&&Date.parse(e.publishedAt)<=now&&evidenceTiming(e.publishedAt,move)!=='after'
+        &&(e.items?.split(',').map(s=>s.trim()).includes('2.02')||/^(10-Q|10-K|20-F)$/.test(e.form??'')||e.form==='6-K'&&e.summary?.facts.some(f=>f.category==='earnings')));
+      const latestReport=Math.max(0,...reporting.map(e=>Date.parse(e.publishedAt)));
+      rows=rows.filter(x=>!['policy','not-issued','withdrawn'].includes(x.fact.guidanceType??'')||Date.parse(x.event.publishedAt)>=latestReport-5*86400000);
+    }
     if (category === 'earnings' && rows.length) {
       // Structured statements fill gaps. Prefer a release from the same reporting
       // cycle, which can include Q4/non-GAAP details missing from an annual filing.
@@ -65,6 +89,9 @@ export function companyBrief(company: NexsiCompany, move: Pick<Attribution, 'sta
 }
 export function possibleRelevance(category: NexsiDisclosureFact['category'], topics: string[]) {
   if (category === 'earnings') return 'Results can change expectations for growth and profitability. A comparable analyst-consensus benchmark has not been verified, so no earnings beat or miss is assigned.';
+  if (category === 'guidance' && topics.includes('guidance-policy')) return 'A stated policy of not giving earnings guidance is different from a missing source or a withdrawn forecast. It does not by itself establish a new catalyst for this share-price move.';
+  if (category === 'guidance' && topics.includes('guidance-absence')) return 'The absence of a numerical forecast in a reviewed release is different from failed retrieval. Qualitative priorities cannot be used as a quantified earnings forecast or a measured cause of the price move.';
+  if (category === 'guidance' && topics.includes('preferred-share-tax')) return 'This outlook concerns preferred-share distributions and tax assumptions. It cannot be treated as guidance for common-share earnings or returns, or as a measured explanation of the stock move.';
   if (category === 'guidance') return 'The outlook can change expected future cash flows and valuation. A forecast is not an achieved result; a raise or cut requires a like-for-like comparison with the prior outlook.';
   if (topics.includes('split')) return 'A stock split alone does not reduce shareholder value. It cannot explain an adjusted-price loss.';
   if (topics.includes('transaction')) return 'Business transactions, financing and share issuance can change expected earnings, ownership dilution and execution risk. The source must be checked for completion status; an announcement alone does not establish that a transaction has closed.';

@@ -4,9 +4,10 @@ import { createHash } from 'node:crypto';
 import { isPrimaryFiling, evidenceForMove } from '../../src/lib/nexsi-explanation.ts';
 import { REVIEWED_DISCLOSURES } from './nexsi-reviewed-disclosures.mjs';
 import { disclosurePeriods, extractOutlook } from './nexsi-outlook.mjs';
-import { transcriptSource, extractTranscriptFacts } from './nexsi-transcripts.mjs';
+import { transcriptSource, extractTranscriptFacts, discoverTranscript } from './nexsi-transcripts.mjs';
+import { extractGuidanceContext, extractShortGuidance } from './nexsi-guidance.mjs';
 
-export const DISCLOSURE_VERSION = 3;
+export const DISCLOSURE_VERSION = 4;
 const DAY = 86400000;
 const reader = fileURLToPath(new URL('./disclosure-html.py', import.meta.url));
 const sentences = new Intl.Segmenter('en', { granularity: 'sentence' });
@@ -149,7 +150,9 @@ export function extractDisclosureFacts(blocks, sourceUrl, isRelease = false) {
     const text = `Management capital-expenditure outlook: ${m[1]?.toLowerCase() === 'in excess of' ? 'above ' : m[1] && m[1] !== 'between' ? 'approximately ' : ''}USD ${m[2]}${m[3] ? `–${m[3]}` : ''} ${m[4].toLowerCase()}.`;
     if (!capex.some(f=>f.text===text&&f.period===m[5])) capex.push({category:'guidance',topic:'capex',text,period:m[5],sourceUrl,method:'rule-extracted'});
   }
-  return [...(outlook.length ? [...facts.filter(f => f.category !== 'guidance'), ...outlook] : facts), ...capex];
+  const result=[...(outlook.length ? [...facts.filter(f => f.category !== 'guidance'), ...outlook] : facts), ...capex, ...extractGuidanceContext(blocks, sourceUrl)];
+  if(isRelease&&!result.some(f=>f.category==='guidance'||f.excerpt))result.push(...extractShortGuidance(blocks,sourceUrl));
+  return result;
 }
 
 export function selectDisclosureEvents(company, now) {
@@ -214,16 +217,17 @@ export function createDisclosureLoader({ now = Date.now(), maxRequests = 700, ma
             if (retained) { docs.push(retained); facts.push(...old.facts.filter(f => f.sourceUrl === url)); }
           }
         }
-        const transcript=transcriptSource(event,transcriptInputs);
+        let transcript=transcriptSource(event,transcriptInputs);
         if(transcript) {
           try {
+            if(transcript.kind==='index')transcript=discoverTranscript(await retrieve(transcript.url),transcript);
             const doc=await retrieve(transcript.url,transcript.kind==='pdf');
             const extracted=extractTranscriptFacts(doc.blocks.join(' '),event,transcript);
             docs.push({url:transcript.url,sha256:doc.sha256,retrievedAt:checkedAt}); facts.push(...extracted);
           } catch(error) {
-            issues.push(`Official transcript: ${error.message}`);
-            const retained=old?.documents.find(d=>d.url===transcript.url);
-            if(retained){docs.push(retained);facts.push(...old.facts.filter(f=>f.sourceUrl===transcript.url));}
+            issues.push(`Earnings transcript: ${error.message}`);
+            const retained=old?.documents.find(d=>d.url===transcript.url || transcript.kind==='index' && d.url.startsWith(transcript.url) && d.url.endsWith(`-q${transcript.quarter}-${transcript.year}/`));
+            if(retained){docs.push(retained);facts.push(...old.facts.filter(f=>f.sourceUrl===retained.url));}
           }
         }
         const key = f => `${f.category}:${f.text.toLowerCase().replace(/\b(?:to|and)\b|[–−-]/g, '~').replace(/\s+/g,'')}:${f.period?.toLowerCase()}`;
@@ -245,7 +249,9 @@ export async function enrichCompanyDisclosures(companies, now = Date.now(), opti
   for (const company of ordered) {
     for (const event of selectDisclosureEvents(company, now)) event.summary = await load(event);
     // Periodic filings can contain explicit capex forecasts absent from earnings releases.
-    if (company.included && !company.events.some(e=>e.summary?.facts.some(f=>f.category==='guidance'))) {
+    const reporting=company.events.filter(e=>isPrimaryFiling(e)&&Date.parse(e.publishedAt)<=now&&(e.items?.split(',').map(s=>s.trim()).includes('2.02')||/^(10-Q|10-K|20-F)$/.test(e.form??'')||e.form==='6-K'&&e.summary?.facts.some(f=>f.category==='earnings')));
+    const latestReport=Math.max(0,...reporting.map(e=>Date.parse(e.publishedAt)));
+    if (!company.events.some(e=>Date.parse(e.publishedAt)>=latestReport-5*DAY&&e.summary?.facts.some(f=>f.category==='guidance'))) {
       const periodic=company.events.filter(e=>isPrimaryFiling(e)&&/^(10-Q|10-K|20-F)(\/A)?$/.test(e.form??'')&&Date.parse(e.publishedAt)<=now).sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt))[0];
       if(periodic)periodic.summary=await load(periodic);
     }

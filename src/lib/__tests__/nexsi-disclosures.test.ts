@@ -95,7 +95,7 @@ describe('Company disclosure summaries', () => {
   });
   it('does not fetch healthy cached documents and bounds initial requests', async () => {
     const fetchImpl = vi.fn(); const load = createDisclosureLoader({ now, maxRequests: 0, fetchImpl, sleep: async () => {} });
-    const cached = { ...summary, version: 3, checkedAt: new Date(now).toISOString() };
+    const cached = { ...summary, version: 4, checkedAt: new Date(now).toISOString() };
     expect(await load({ ...event, summary: cached })).toEqual(cached);
     expect((await load(event)).issue).toContain('budget'); expect(fetchImpl).not.toHaveBeenCalled();
     const expired = createDisclosureLoader({ now, maxDurationMs: 0, fetchImpl, sleep: async () => {} });
@@ -106,6 +106,12 @@ describe('Company disclosure summaries', () => {
 describe('Event summaries for a selected drop', () => {
   const move = { start: '2026-11-19', end: '2026-11-20' };
   const company = (events: NexsiEvent[]) => ({ events } as NexsiCompany);
+  it('shows current close-boundary results before older background while retaining timing uncertainty',()=>{
+    const old={...event,publishedAt:'2026-09-01T12:00:00Z',summary};
+    const current={...event,publishedAt:'2026-11-19T21:00:00Z',summary:{...summary,facts:[{...summary.facts[0],text:'Current quarter results'}]}};
+    const rows=companyBrief(company([old,current]),move,now).categories[0].items;
+    expect(rows[0].fact.text).toBe('Current quarter results');expect(rows[0].timing).toBe('uncertain');
+  });
   it('prefers in-window disclosures and keeps later releases out of the current earnings summary', () => {
     const before = { ...event, url: event.url.replace('report', 'earlier'), publishedAt: '2026-11-10T22:00:00Z', summary };
     const within = { ...event, summary };

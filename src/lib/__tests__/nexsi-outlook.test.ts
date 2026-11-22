@@ -2,6 +2,28 @@ import { describe, it, expect } from 'vitest';
 import { disclosurePeriods, extractOutlook } from '../../../scripts/lib/nexsi-outlook.mjs';
 const run=(blocks:string[])=>extractOutlook(blocks,'https://example.test/release.htm');
 describe('Issuer outlook extraction',()=>{
+  it('selects current forecasts and fails closed on a missing comparison-table cell',()=>{
+    const table=['Full Year 2026 Guidance','Metric | Previous | Current'];
+    expect(run([...table,'Adjusted EPS | $4.10 to $4.50 | $4.20 to $4.30'])[0].text).toContain('$4.20 to $4.30');
+    expect(run([...table,'Adjusted EPS | $4.10 to $4.50'])).toEqual([]);
+    expect(run([...table,'Adjusted EPS | $4.10 to $4.50 | Unchanged'])).toEqual([]);
+  });
+  it('selects the latest dated outlook without substituting historical bases or unchanged cells',()=>{
+    const facts=run(['Guidance','Fiscal year 2027','Consolidated metric | Original from 2.19.2026 | As of 8.20.2026 | As of 11.19.26','Net sales (cc) | Increase 3.5% to 4.5% | Increase 4.0% to 5.0% | Increase 4.9% to 5.2%','Adj. EPS | $2.75 to $2.85 | $2.80 to $2.87 | $2.84 to $2.89','Capital expenditures | $5 billion | $6 billion | Unchanged']);
+    expect(facts.map((f:{text:string})=>f.text)).toEqual(['Management net-sales growth (constant currency) outlook: 4.9% to 5.2%.','Management non-GAAP EPS outlook: $2.84 to $2.89.']);
+  });
+  it('retains approximation, full percentage ranges and the metric accounting basis',()=>{
+    const facts=run(['2026 Outlook','Non-GAAP gross margin on net product sales | Approximately 86%','Revenue growth | 5% to 6%','Pro forma standalone adjusted earnings per share | $7.85 to $8.00']);
+    expect(facts.map((f:{text:string})=>f.text)).toEqual(['Management non-GAAP gross margin on net product sales outlook: approximately 86%.','Management revenue growth outlook: 5% to 6%.','Management pro forma standalone adjusted EPS (non-GAAP) outlook: $7.85 to $8.00.']);
+  });
+  it('handles numbered metrics but does not relabel an FX contribution as total growth',()=>{
+    const facts=run(['2026 Growth and Financial Performance Outlook','Updated | Prior','Revenue1 | $4,741 to $4,767 million | $4,689 to $4,766 million','Revenue growth rate impact from FX | 2% | 1%']);
+    expect(facts).toHaveLength(1);expect(facts[0].text).toContain('$4,741 to $4,767 million');
+  });
+  it('uses the explicitly first forecast column when trailing reconciliation cells are empty',()=>{
+    const facts=run(['Outlook for Fiscal Year 2027','Fiscal Year Ending March 31, 2027','$ in millions except for per share amounts | | Outlook (b) | | Change in deferred net revenue and related cost of revenue | | Stock-based compensation | | Other','Total net revenue | | $7,980 to $8,180 | | $20']);
+    expect(facts[0]).toMatchObject({period:'Full fiscal year ending March 31, 2027',text:'Management revenue outlook: $7,980 to $8,180 million.'});
+  });
   it('does not treat an earnings headline mentioning guidance as a guidance section',()=>{
     expect(run(['Company reports results and updates guidance','Q3 2026 results','Revenue was $1.5 billion.'])).toEqual([]);
   });

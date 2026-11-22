@@ -1,6 +1,6 @@
 import { readFile, appendFile } from "node:fs/promises";
 import { nexsiStatus, companyStatus } from "../src/lib/nexsi-quality.ts";
-import { companyBrief } from "../src/lib/nexsi-brief.ts";
+import { companyBrief, guidanceCoverage } from "../src/lib/nexsi-brief.ts";
 
 const file = JSON.parse(await readFile("public/data/nexsi.json", "utf8"));
 const now = Date.now(), blocked = file.companies.filter(c => companyStatus(c, now));
@@ -14,13 +14,19 @@ const briefs = included.map(c => ({ symbol: c.symbol, ...companyBrief(c, c.moves
 const coverage = ['earnings', 'guidance', 'company-news'].map(category => {
   const covered = briefs.filter(b => b.categories.find(g => g.category === category)?.items.length);
   const missing = briefs.filter(b => !b.categories.find(g => g.category === category)?.items.length).map(b => b.symbol);
-  return `${category}: ${covered.length}/${included.length} AI/technology securities with a source-backed summary for the latest move${missing.length ? `; not extracted: ${missing.join(', ')}` : ''}.`;
+  return `${category}: ${covered.length}/${included.length} AI/technology securities with a source-backed ${category==='guidance'?'coverage assessment (not necessarily a financial forecast)':'summary'} for the latest move${missing.length ? `; not extracted: ${missing.join(', ')}` : ''}.`;
 });
+const guidanceGroups=[['AI/technology',briefs],['Full universe',file.companies.map(c=>({symbol:c.symbol,...companyBrief(c,c.moves[1]??{start:c.asOf,end:c.asOf},now)}))]].flatMap(([scope,rows])=>
+  ['quantitative','limited','policy','not-issued','withdrawn','qualitative','missing'].map(status=>{
+    const symbols=rows.filter(b=>guidanceCoverage(b.categories.find(g=>g.category==='guidance').items)===status).map(b=>b.symbol);
+    return `${scope} guidance ${status}: ${symbols.length}${symbols.length ? ` (${symbols.join(', ')})` : ''}.`;
+  }));
 if (sndk && !sndk.issue && sndk.history.length >= 127 && !sndk.moves[1]) problems.push("SNDK daily attribution unavailable; review model coverage");
 const lines = [
   `NexSI refresh: ${file.status}; generated ${file.generated}`,
   `${file.companies.length} securities; ${file.companies.filter(c => c.moves[1] && !companyStatus(c, now)).length} daily models; ${blocked.length} price-source issues; ${file.companies.filter(c => c.eventIssues.length).length} evidence-source issues.`,
   ...coverage,
+  ...guidanceGroups,
   'Missing summaries are coverage gaps, not evidence of no announcement. Company news is limited to the nearby event window; earnings and guidance can include earlier background.',
   ...(sndk ? [`SNDK: ${sndk.asOf}, USD ${sndk.price}, ${sndk.provenance?.provider ?? "unknown source"}; 1-session return ${sndk.observedReturns[1]?.toFixed(4)}%; attribution ${sndk.moves[1] ? "available" : "withheld"}.`] : []),
   ...problems.map(p => `Review: ${p}`),
