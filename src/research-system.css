@@ -221,7 +221,10 @@ body { font-size: var(--type-body); }
 .research-nexsi .investigation-title h1>span { font-size: 1.125rem; }
 .timestamp time,.timestamp-label,.fresh,.qc-chip { overflow-wrap: anywhere; }
 .bridge-row { grid-template-columns: minmax(100px,38%) minmax(24px,1fr) 94px; }
-.bridge-axis { margin-left: 38%; margin-right: 104px; }
+.bridge-axis { margin-left: 38%; margin-right: 104px; display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 12px; align-items: center; }
+.bridge-axis span { white-space: nowrap; }
+.bridge-axis span:first-child { justify-self: end; }
+.bridge-axis span:last-child { justify-self: start; }
 .bridge-value { font-size: .875rem; letter-spacing: -.4px; }
 .bridge-value small { font-size: .75rem; }
 .factor-links a { white-space: normal; }
