@@ -2,8 +2,9 @@ import type { Attribution } from "../lib/nexsi-model";
 import type { NexsiCompany, NexsiEvent, NexsiFile } from "../lib/nexsi-types";
 import { CALENDAR_SOURCE, FUTURE_CALENDAR_SOURCE, FACTOR_EXPLANATIONS, TIMING_LABELS, disclosureContext, easternTime, evidenceForMove, explainMove, isPrimaryFiling, reviewedDisclosure, signed, type EvidenceTiming } from "../lib/nexsi-explanation";
 import { HowToRead } from "./Guidance";
+import { NexsiCompanyBrief } from "./NexsiCompanyBrief";
 
-export function MoveExplanation({ move, company, factors }: { move: Attribution; company: NexsiCompany; factors: NexsiFile["factors"] }) {
+export function MoveExplanation({ move, company, factors, now }: { move: Attribution; company: NexsiCompany; factors: NexsiFile["factors"]; now: number }) {
   const reading = explainMove(move);
   return <section className="nexsi-explanation" aria-label="Explanation of the selected move">
     <h3>{move.actual <= -3 ? "Understanding this major drop" : "Understanding this move"}</h3>
@@ -16,6 +17,7 @@ export function MoveExplanation({ move, company, factors }: { move: Attribution;
       <article><h4>Unexplained remainder · {signed(move.components.unexplained)} pp</h4><p>{reading.residualText}</p><p className="nexsi-foot">Earnings, guidance, valuation, competition, policy and positioning are possible avenues to investigate. Their individual impacts have not been measured here.</p></article>
     </div>
     {move.end === company.asOf && company.validation && (!company.validation.energyImprovesFit || company.validation.r2 < 0) && <p className="nexsi-alert">⚠ Recent model check: {company.validation.r2 < 0 ? "the full model performed worse than its historical-mean benchmark." : "adding energy did not improve the recent explanatory fit."} This further limits confidence in an energy-led explanation.</p>}
+    <NexsiCompanyBrief company={company} move={move} now={now} />
     <h3>Market inputs behind the estimate</h3>
     <p className="sub">Actual input moves over {move.start} → {move.end}, alongside their estimated contribution to this stock. Percent changes and percentage-point contributions are different measures.</p>
     <table className="nexsi-drivers"><caption className="sr-only">Observed factor moves and estimated stock-return contributions</caption>

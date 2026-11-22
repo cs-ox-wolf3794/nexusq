@@ -536,6 +536,21 @@ body::before {
 .nexsi-contributions > div { display: flex; justify-content: space-between; gap: 12px; }
 .nexsi-contributions dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nexsi-evidence { margin-top: 16px; }
+.nexsi-company-brief { margin: 20px 0; }
+.nexsi-brief-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.nexsi-brief-grid > article { min-width: 0; border: 1px solid var(--gridline); border-radius: 8px; padding: 14px; }
+.nexsi-brief-grid > article:last-child { grid-column: 1 / -1; }
+.nexsi-brief-grid h4 { margin: 0 0 10px; font-size: 1rem; }
+.nexsi-brief-grid p { margin: 7px 0; font-size: .875rem; line-height: 1.55; color: var(--text-secondary); overflow-wrap: anywhere; }
+.nexsi-brief-grid ul { list-style: none; padding: 0; margin: 8px 0; }
+.nexsi-brief-grid li + li { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--gridline); }
+.nexsi-brief-grid .nexsi-confirmed { color: var(--text-primary); font-weight: 600; }
+.nexsi-brief-grid .nexsi-brief-meta, .nexsi-brief-grid .nexsi-brief-timing { font-size: .8125rem; color: var(--text-muted); }
+.nexsi-brief-timing { font-weight: 600; }
+.nexsi-brief-grid blockquote { margin: 8px 0; padding-left: 12px; border-left: 2px solid var(--gridline); font-size: .875rem; color: var(--text-secondary); }
+.nexsi-hypothesis { background: var(--chip-wash); border-radius: 6px; padding: 10px 12px; margin-top: 12px; }
+.nexsi-hypothesis strong { font-size: .875rem; }
+@media (max-width: 600px) { .nexsi-brief-grid { grid-template-columns: minmax(0, 1fr); } }
 .nexsi-explanation { margin: 16px 0; }
 .nexsi-lead { border-left: 3px solid var(--accent); padding-left: 12px; }
 .nexsi-reasons { display: grid; gap: 10px; }

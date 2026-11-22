@@ -8,6 +8,7 @@ import { nasdaqUniverse, secDirectory, companyFilings, companyHeadlines, electri
 import { NEXSI_VERSION, factorRows, attributeMove, validateFactors } from "../src/lib/nexsi-model.ts";
 import { computeSignals } from "../src/lib/signals.ts";
 import { validateNexsi } from "../src/lib/nexsi-quality.ts";
+import { enrichCompanyDisclosures, selectDisclosureEvents } from "./lib/nexsi-disclosures.mjs";
 
 const DAY = 86400000;
 const FACTORS = [
@@ -92,6 +93,12 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
       history: p.slice(-252), observedReturns, moves, drawdown: p.length ? (p.at(-1)[1] / Math.max(...p.slice(-252).map(x => x[1])) - 1) * 100 : null,
       largestDrops, validation: rows.length ? validateFactors(rows) : null, signals, events, eventCheckedAt, eventIssues };
   });
+  await enrichCompanyDisclosures(companies, now);
+  for (const c of companies) {
+    const issues = selectDisclosureEvents(c, now).filter(e => e.summary?.issue);
+    if (issues.length) failures.push(`${c.symbol}: ${issues.length} disclosure summaries incomplete (${[...new Set(issues.map(e => e.summary.issue))].join('; ')})`);
+  }
+  console.log(`NexSI disclosures: ${companies.reduce((n, c) => n + c.events.filter(e => e.summary?.facts.length).length, 0)} summaries with source-backed facts`);
   let electricity = previous?.electricity ?? { retrievedAt: null, rates: [], issue: null };
   if (!electricity.retrievedAt || now - Date.parse(electricity.retrievedAt) > DAY || electricity.issue) {
     try { electricity = { rates: await electricityRates(now), retrievedAt: generated, issue: null }; }

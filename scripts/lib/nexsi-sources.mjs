@@ -66,7 +66,7 @@ export function mergeEvidence(previous, incoming, now = Date.now()) {
       let key;
       try { key = `${event.kind}:${canonical(event.url)}`; } catch { continue; }
       const old = records.get(key);
-      records.set(key, { ...event, firstSeenAt: old?.firstSeenAt ?? event.firstSeenAt ?? event.lastSeenAt ?? checked,
+      records.set(key, { ...event, ...(event.summary ?? old?.summary ? { summary: event.summary ?? old.summary } : {}), firstSeenAt: old?.firstSeenAt ?? event.firstSeenAt ?? event.lastSeenAt ?? checked,
         lastSeenAt: fresh ? checked : event.lastSeenAt ?? null });
     }
   }

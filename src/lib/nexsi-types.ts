@@ -6,6 +6,15 @@ export interface NexsiUniverse { asOf: string; retrievedAt: string; sources: str
 export interface NexsiEvent {
   title: string; url: string; publishedAt: string; source: string; kind: "filing" | "headline"; items?: string;
   form?: string; issuerCik?: number; reportDate?: string; firstSeenAt?: string; lastSeenAt?: string | null;
+  summary?: NexsiDisclosureSummary;
+}
+export interface NexsiDisclosureFact {
+  category: "earnings" | "guidance" | "company-news"; text: string; topic: string;
+  period: string | null; sourceUrl: string; method: "rule-extracted" | "reviewed"; excerpt?: string; reviewedAt?: string;
+}
+export interface NexsiDisclosureSummary {
+  version: number; checkedAt: string; documents: { url: string; sha256: string; retrievedAt?: string }[];
+  facts: NexsiDisclosureFact[]; issue: string | null;
 }
 export interface NexsiPriceSource {
   provider: string; url: string; returnBasis: string; note?: string;
