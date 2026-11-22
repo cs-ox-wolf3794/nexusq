@@ -8,14 +8,15 @@ function systemPrefersDark(): boolean {
 
 export function useTheme(): { mode: ThemeMode; toggle: () => void } {
   const [mode, setMode] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem("nexusq-theme");
+    let saved: string | null = null;
+    try { saved = localStorage.getItem("nexusq-theme"); } catch { /* Use the system preference when storage is blocked. */ }
     if (saved === "light" || saved === "dark") return saved;
     return systemPrefersDark() ? "dark" : "light";
   });
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", mode);
-    localStorage.setItem("nexusq-theme", mode);
+    try { localStorage.setItem("nexusq-theme", mode); } catch { /* Theme still applies for this session. */ }
   }, [mode]);
 
   const toggle = useCallback(() => setMode((m) => (m === "dark" ? "light" : "dark")), []);

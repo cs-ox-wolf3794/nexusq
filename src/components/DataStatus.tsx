@@ -1,9 +1,11 @@
+import { displayInstant, quoteCheckOverdue, quoteScheduleActive } from "../lib/research-ui";
+import { ResearchAlert, TimeStamp } from "./ResearchChrome";
 import type { Snapshot } from "../lib/snapshot";
 import { quoteStatus } from "../lib/snapshot";
 import { analysisEligibility, freshness, observationEnd, sourcePolicy } from "../lib/quality";
 import { externalForecastCurrent } from "../lib/forecast";
 
-const stamp = (date?: string) => date ? `${new Date(date).toLocaleString("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" })} UTC` : "Not recorded";
+const stamp = displayInstant;
 
 export function DataStatus({ snapshot, now, error }: { snapshot: Snapshot | null; now: number; error: string | null }) {
   if (!snapshot) return error ? <p className="load-error" role="alert">Data could not be verified. {error} Retrying automatically.</p> : null;
@@ -66,15 +68,16 @@ export function QuotePanel({ snapshot, now }: { snapshot: Snapshot | null; now: 
     <div className="card-head"><h2>Latest ETF quotes</h2><span className="sub">Target: checks every 15 minutes</span></div>
     <p className="sub">Yahoo Finance quotes, shown separately from completed daily observations. Delivery is best effort; exchange delays vary.
       These quotes do not update the daily signals, betas or forecasts.</p>
-    {now - Date.parse(file.generated) > 30 * 60000 && <p className="sub">⚠ Quote checks have not run in the last 30 minutes. The scheduled checks cover weekdays 12:00–23:59 UTC; outside that window the last quotes remain visible.</p>}
-    {file.failures.length > 0 && <p className="sub">⚠ {file.failures.length} quote sources could not be refreshed.</p>}
+    {quoteCheckOverdue(file.generated,now) && <ResearchAlert title="Scheduled quote checks are overdue">Quote checks have not run in the last 30 minutes. Checks are scheduled every 15 minutes on weekdays, from 12:07 to 23:52 UTC.</ResearchAlert>}
+    {!quoteScheduleActive(now) && now-Date.parse(file.generated)>30*60000 && <p className="quote-schedule-note">Outside the quote-refresh schedule · weekdays, every 15 minutes from 12:07 to 23:52 UTC. The last reported quotes remain visible with their original observation times.</p>}
+    {file.failures.length > 0 && <ResearchAlert title="Quote updates incomplete">{file.failures.length} quote sources could not be refreshed. Retained prices preserve their observation dates.</ResearchAlert>}
     <div className="quote-grid">{["XLE", "ICLN", "TAN", "GOLD"].map((id) => {
       const quote = file.quotes[id];
       if (!quote) return <div className="quote-tile" key={id}><strong>{id}</strong><p>Quote unavailable</p></div>;
       const status = quoteStatus(quote, now);
       return <div className="quote-tile" key={id}>
         <strong>{quote.symbol}</strong><div className="quote-price">{quote.price.toLocaleString("en-US", { maximumFractionDigits: 2 })} {quote.currency}</div>
-        <p className="sub">{status.current ? "✓" : "◔"} {status.label}<br/>Observed {stamp(quote.observedAt)}<br/>Provider delay: {quote.delayMinutes == null ? "not disclosed" : `${quote.delayMinutes} min`}</p>
+        <p className="quote-state">{status.label}</p><TimeStamp label="Quote observed" value={quote.observedAt}/><TimeStamp label="Source checked" value={quote.checkedAt}/><p className="quote-delay">Provider delay: {quote.delayMinutes == null ? "not disclosed" : `${quote.delayMinutes} min`}</p>
       </div>;
     })}</div>
     <details className="company-quotes">

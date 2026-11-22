@@ -11,15 +11,12 @@ import { EChart } from "./EChart";
 import { readTokens, type ThemeMode } from "./useTheme";
 import { HowToRead } from "./Guidance";
 import { Freshness } from "./Freshness";
-import { SectionNav } from "./SectionNav";
+import { WorkspaceTabs, WorkspacePanel, ResearchDisclosure } from "./WorkspaceUI";
+import { ConnectedInvestigation } from "./ConnectedInvestigation";
+import { ResearchAlert, TimeStamp } from "./ResearchChrome";
+import { displayDate, displayInstant } from "../lib/research-ui";
 import { MoveExplanation, MoveEvidence } from "./NexsiExplanation";
 
-const SECTIONS = [
-  { id: "nexsi-overview", label: "Coverage" }, { id: "nexsi-screen", label: "Company screen" },
-  { id: "nexsi-company-analysis", label: "Stock impact" }, { id: "nexsi-evidence", label: "Sources" }, { id: "nexsi-projects", label: "Data centers" },
-  { id: "nexsi-power-scenario", label: "Power scenario" }, { id: "nexsi-inputs", label: "Market inputs" },
-  { id: "nexsi-methodology", label: "Methodology" },
-];
 const CHART_TOKENS = ["--text-primary", "--text-secondary", "--text-muted", "--gridline", "--surface-1", "--border", "--series-1", "--series-2"];
 
 function useChartTokens(mode: ThemeMode) {
@@ -33,7 +30,7 @@ function useChartTokens(mode: ThemeMode) {
 }
 
 const fmt = (v: number | null | undefined, suffix = "%", digits = 2) => v == null || !Number.isFinite(v) ? "Unavailable" : `${v > 0 ? "+" : ""}${v.toFixed(digits)}${suffix}`;
-const stamp = (v: string | null) => v ? `${new Date(v).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })} UTC` : "Unavailable";
+const stamp = (v: string | null) => displayInstant(v);
 const interval = (a: Attribution) => `${fmt(a.energyCI[0], "")} to ${fmt(a.energyCI[1], " pp")}`;
 const labels: Record<keyof Attribution["components"], string> = { market: "Broad market", technology: "Relative technology", rates: "Treasury / rates proxy", oil: "Oil futures", gas: "Gas futures", baseline: "Model baseline", unexplained: "Unexplained remainder" };
 
@@ -72,10 +69,11 @@ function Project({ project, snapshot, now }: { project: NexsiProject; snapshot: 
   </article>;
 }
 
-export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizon, eventDate, setEventDate }: {
+export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizon, eventDate, setEventDate, view, onView, onFind }: {
   snapshot: Snapshot | null; now: number; mode: ThemeMode; symbol: string; horizon: number;
   onSymbol: (s: string) => void; onHorizon: (h: number) => void;
   eventDate: string; setEventDate: (date: string) => void;
+  view: string; onView: (view: string) => void; onFind: () => void;
 }) {
   const [search, setSearch] = useState(""), [scope, setScope] = useState("AI & technology"), [onlyDrops, setOnlyDrops] = useState(false);
   const [allProjects, setAllProjects] = useState(false);
@@ -89,10 +87,7 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
     && `${c.symbol} ${c.name}`.toLowerCase().includes(search.toLowerCase())
     && (!onlyDrops || (c.observedReturns[horizon] ?? 0) <= -3)
   ).sort((a, b) => (a.observedReturns[horizon] ?? Infinity) - (b.observedReturns[horizon] ?? Infinity)), [file, scope, search, onlyDrops, horizon]);
-  const choose = (s: string) => {
-    onSymbol(s); setEventDate("");
-    if (window.matchMedia("(max-width: 1100px)").matches) requestAnimationFrame(() => document.getElementById("nexsi-company-analysis")?.scrollIntoView({ block: "start" }));
-  };
+  const choose = (s: string) => onSymbol(s);
   const tokens = useChartTokens(mode);
   const contributionOption = useMemo<EChartsOption>(() => ({
     animation: false, textStyle: { color: tokens["--text-secondary"] },
@@ -114,27 +109,54 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
   const currentCompanies = file.companies.filter(c => !suspended && !companyStatus(c, now) && c.moves[horizon]);
   const quote = snapshot.quotes?.quotes[selected.symbol];
   const totalOther = move ? move.components.market + move.components.technology + move.components.rates + move.components.baseline : null;
-  return <>
-    <p className="data-stamp">NexSI analysis refreshed <strong>{stamp(file.generated)}</strong><span className={`qc-chip ${!suspended && file.status === "ok" ? "qc-ok" : "qc-warn"}`}>{!suspended && file.status === "ok" ? "✓ Sources current" : "⚠ Review sources"}</span></p>
-    <SectionNav sections={SECTIONS} preserveView />
-    <div className="nexsi">
-    <section className="card anchor-target" id="nexsi-overview">
-      <div className="card-head"><h2>AI stocks — energy & capital markets</h2><Freshness date={file.factors.find(f => f.symbol === "SPY")?.asOf} /></div>
-      <p className="sub">Trace stock moves through the market, energy prices and company evidence. Explore the data-center projects behind the exposure.</p>
-      <div className="kpi-strip nexsi-stats">
-        <div className="kpi-tile"><span className="kpi-name">Nasdaq-100 coverage</span><strong className="kpi-value">{file.universe.members.length} <span className="kpi-unit">securities</span></strong><small>Published membership {file.universe.asOf}</small></div>
-        <div className="kpi-tile"><span className="kpi-name">AI & technology screen</span><strong className="kpi-value">{file.companies.filter(c => c.included).length} <span className="kpi-unit">securities</span></strong><small>Technology and curated AI businesses</small></div>
-        <div className="kpi-tile"><span className="kpi-name">Eligible attributions</span><strong className="kpi-value">{currentCompanies.length} <span className="kpi-unit">of {file.companies.length}</span></strong><small>{horizon}-session window · full universe</small></div>
-      </div>
-      <p className="nexsi-foot">Membership published {file.universe.asOf} · analysis refreshed {stamp(file.generated)} · <a href={file.universe.sources[0]} target="_blank" rel="noreferrer">Nasdaq membership ↗</a></p>
-      <HowToRead>The energy component is a statistical estimate after market, technology and rate controls. It is not proof of what caused the move. The unexplained portion stays visible. Choose a company and a completed-session window to compare these components.</HowToRead>
-      {suspended && <p role="status" className="nexsi-alert">⚠ {suspended}</p>}
-      {!suspended && file.status === "degraded" && <p role="status" className="nexsi-alert">⚠ Some source updates are incomplete. Available company models remain visible; inspect coverage and source health for the gaps.</p>}
-      <HowToRead title="Coverage and source health"><p>The default screen includes official Nasdaq technology members plus a broad, curated set of cloud, chip, hardware, software and AI application businesses. Inclusion does not establish material AI revenue. All published constituents remain available, including non-technology companies and power suppliers. Separate share classes count as separate securities.</p><p>Current-membership selection and revised price histories limit historical inference. This is not a historical index backtest.</p><p>{file.status === "ok" ? "All requested source updates completed." : "Some sources or evidence links could not be refreshed; details below."} {file.universe.retained && "Membership uses the last validated publication."}</p><ul>{file.failures.map((f, i) => <li key={i}>{f}</li>)}</ul><p>{file.companies.filter(c => c.eventIssues.length).length} companies have evidence-source gaps. Company-specific gaps appear below.</p><p><a href={`${import.meta.env.BASE_URL}data/nexsi.json`}>Download analysis JSON</a> · <a href={`${import.meta.env.BASE_URL}data/nexsi-prices.json`}>Download model inputs</a></p></HowToRead>
-    </section>
+  return <div className="nexsi research-nexsi">
+    <header className="workspace-intro investigation-title"><div><p className="eyebrow">NexSI / Company investigation · {selected.group}</p><h1>{selected.symbol} <span>{selected.name}</span></h1></div><button className="workspace-button secondary" onClick={onFind} aria-label="Change company"><span className="change-label">Change company</span><span aria-hidden="true">⌕</span></button></header>
+    <WorkspaceTabs page="nexsi" value={view} onChange={onView}/>
+    <div className="investigation-context">
+              <div className="nexsi-company-heading"><div><strong>{selected.price == null ? "No close" : `$${selected.price.toFixed(2)}`}</strong><small>Latest completed close · {displayDate(selected.asOf)}</small></div></div>
+      <div className="investigation-controls"><label>Return window<select aria-label="Analysis return window" value={horizon} onChange={e=>{onHorizon(Number(e.target.value));setEventDate('');}}>{[1,5,20].map(h=><option key={h} value={h}>{h} session{h>1?'s':''}</option>)}</select></label></div>
+    </div>
+    <div className="investigation-clocks" aria-label="Observation and processing times"><TimeStamp label="Latest price close" value={selected.asOf}/><TimeStamp label="Model calculated" value={file.generated}/><TimeStamp label="History retrieved" value={selected.retrievedAt}/><TimeStamp label="Evidence checked" value={selected.eventCheckedAt}/></div>
+    <div className="analysis-status-line"><span className="type-label">Daily attribution</span><span>Completed-session model · {suspended?"Withheld until source checks recover":issue?"Company attribution withheld":move?"Selected-window estimate available":"Selected window unavailable"}</span><button className="text-action" onClick={()=>onView("evidence")}>Inspect coverage →</button></div>
+    {suspended&&<ResearchAlert tone="critical" title="Current attribution suspended" action="Inspect coverage" onAction={()=>onView("evidence")}>{suspended}</ResearchAlert>}
+    {!suspended&&file.status==='degraded'&&<ResearchAlert title="Source updates incomplete" action="Inspect coverage" onAction={()=>onView("evidence")}>Available company models remain visible; retained evidence keeps its original dates.</ResearchAlert>}
+    <WorkspacePanel page="nexsi" id="explain" active={view==='explain'}><section className="card nexsi-detail anchor-target" id="nexsi-company-analysis" aria-label="Selected company analysis">
 
-    <section className="nexsi-workspace">
-      <aside className="card nexsi-board anchor-target" id="nexsi-screen" aria-label="Company screen">
+        {quote && selected.price && selected.asOf && quote.observedAt.slice(0, 10) > selected.asOf && <p className="nexsi-callout">Reported price change since the last completed close: {fmt((quote.price / selected.price - 1) * 100)} (unadjusted; splits or distributions may affect this comparison). Attribution for that newer move awaits complete daily observations.</p>}
+        {symbol !== selected.symbol && <p className="nexsi-alert">⚠ The requested ticker {symbol} is absent from this membership publication. Showing {selected.symbol} instead.</p>}
+        {eventDate && !selected.largestDrops.some(d => d.end === eventDate) && <p className="nexsi-alert">⚠ The requested historical move is outside the available major-drop set. Select the latest window or another available date.</p>}
+        <ResearchDisclosure title="Choose another move" description={eventDate?`Historical daily drop · ${eventDate}`:`Latest ${horizon}-session window selected`}>        <div className="nexsi-event-picker"><label>Investigate a move<select aria-label="Investigate a move" value={eventDate} onChange={e => { setEventDate(e.target.value); if(e.target.value)onHorizon(1); }}><option value="">Latest {horizon}-session move</option>{selected.largestDrops.map(a => <option key={a.end} value={a.end}>{a.end}: {fmt(a.actual)} in 1 session</option>)}</select></label><small>Up to five largest daily losses ≥3% over the latest 60 sessions with sufficient model coverage.</small></div></ResearchDisclosure>
+        {issue && !suspended && <ResearchAlert tone="critical" title="Attribution withheld for this company">{issue}</ResearchAlert>}
+        {move ? <>
+          <p className="nexsi-period control-label">Completed closes: {displayDate(move.start)} → {displayDate(move.end)} · {move.sessions} trading session{move.sessions > 1 ? "s" : ""}</p>
+          <div className="kpi-strip nexsi-metrics">
+            <div className="kpi-tile"><span className="kpi-name">Observed stock return</span><strong className={move.actual < 0 ? "nexsi-negative" : "nexsi-positive"}>{fmt(move.actual)}</strong><small>{selected.provenance?.returnBasis ?? "Adjusted for splits and distributions"}</small></div>
+            <div className="kpi-tile"><span className="kpi-name">Energy-associated estimate</span><strong>{fmt(move.energy, " pp")}</strong><small>95% parameter interval: {interval(move)}</small></div>
+            <div className="kpi-tile"><span className="kpi-name">Other modeled components</span><strong>{fmt(totalOther, " pp")}</strong><small>Market + relative tech + rates + baseline</small></div>
+            <div className="kpi-tile"><span className="kpi-name">Unexplained remainder</span><strong>{fmt(move.components.unexplained, " pp")}</strong><small>Company events, omitted factors and model error</small></div>
+          </div>
+          <ConnectedInvestigation key={selected.symbol+move.start+move.end} company={selected} move={move} factors={file.factors} now={now} onEvidence={()=>onView('evidence')}/>
+          <MoveExplanation move={move} company={selected} factors={file.factors} now={now} />
+          {move.warning && <p className="nexsi-alert">⚠ {move.warning}</p>}
+          <ResearchDisclosure title="Full component chart & model diagnostics" description="Seven fitted components, exact contributions and held-out checks">
+          <div aria-label="Return component chart, percentage points"><EChart height={300} option={contributionOption} /></div>
+          <HowToRead title="Exact contributions and model checks"><dl className="nexsi-contributions">{Object.entries(move.components).map(([k, v]) => <div key={k}><dt>{labels[k as keyof typeof labels]}</dt><dd>{fmt(v, " pp", 4)}</dd></div>)}<div><dt>Reconciled total</dt><dd>{fmt(move.actual, "%", 4)}</dd></div></dl>
+            <p>Fit: {move.fit.n} matched observations from {move.fit.from} through {move.fit.through}, ending before this move. In-sample R² {(move.fit.r2 * 100).toFixed(1)}%; maximum variance inflation {move.fit.maxVif.toFixed(2)}.</p>
+            {selected.validation ? <p>Latest rolling held-out check ({selected.validation.n} sessions, ending {selected.asOf}): R² {(selected.validation.r2 * 100).toFixed(1)}%; log-return RMSE {selected.validation.rmseLogPct.toFixed(2)}% with energy versus {selected.validation.withoutEnergyRmseLogPct.toFixed(2)}% without energy. {selected.validation.energyImprovesFit ? "Energy improved the recent explanatory fit." : "Energy did not improve the recent explanatory fit; treat its attribution with added caution."} This uses realized factor moves and is not a forecasting record. For historical events this check includes later data; it never enters that event's fit.</p> : <p>Insufficient held-out observations for a validation comparison.</p>}
+          </HowToRead>
+          </ResearchDisclosure>
+        </> : <p className="nexsi-callout">Attribution withheld for this window. At least 126 prior matched observations, complete event coverage and stable factor estimates are required. Observed returns remain available in the company screen.</p>}
+        <HowToRead title="Price history and existing NexusQ signals"><p>Adjusted performance over up to 252 sessions; first observation = 100. Drawdown from the highest adjusted close in this window: {fmt(selected.drawdown)}.</p>
+          <EChart height={220} option={historyOption} />
+          {!issue && selected.signals.length ? <ul>{selected.signals.map((s, i) => <li key={i}><strong>{s.severity} · {s.label}</strong>: {s.detail}</li>)}</ul> : <p>{issue ? "Current signals suspended." : "No existing NexusQ threshold signal is active."}</p>}
+        </HowToRead>
+        <ResearchDisclosure title="Price context, history source & energy pathway" description="Latest reported quote, completed close and the company's transmission channel">        {quote && <p className="nexsi-foot">Latest reported quote: ${quote.price.toFixed(2)} · {stamp(quote.observedAt)} · {quoteStatus(quote, now).label}{quote.delayMinutes != null && ` · provider delay ${quote.delayMinutes} min`}. Quotes are separate from completed-session attribution.</p>}
+        <p className="sub">{energyPathway(selected.group)}</p>
+        {selected.provenance && <p className="nexsi-foot">Price history: <a href={selected.provenance.url} target="_blank" rel="noreferrer">{selected.provenance.provider} ↗</a> · {selected.provenance.returnBasis}. Retrieved {stamp(selected.retrievedAt)}.</p>}
+</ResearchDisclosure>
+        <div className="investigation-next"><div><span className="eyebrow">Continue the investigation</span><p>Check the disclosures and physical exposure behind this company.</p></div><button className="workspace-button secondary" onClick={()=>onView('evidence')}>Inspect evidence →</button><button className="workspace-button secondary" onClick={()=>onView('projects')}>Projects & power →</button></div>
+      </section></WorkspacePanel>
+    <WorkspacePanel page="nexsi" id="screen" active={view==='screen'}><aside className="card nexsi-board anchor-target" id="nexsi-screen" aria-label="Company screen">
         <h2>Company screen</h2><p className="sub">Sorted by the largest loss. Select a company to investigate.</p>
         <label className="nexsi-label control-group">Find a company<input type="search" value={search} placeholder="Name or ticker" onChange={e => setSearch(e.target.value)} /></label>
         <label className="nexsi-label control-group">Universe<select aria-label="Universe" value={scope} onChange={e => setScope(e.target.value)}>{["AI & technology", "All Nasdaq-100", ...new Set(file.companies.map(c => c.group))].map(s => <option key={s}>{s}</option>)}</select></label>
@@ -148,54 +170,32 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
             <small className="nexsi-company-energy">Energy estimate {a ? fmt(a.energy, " pp") : "withheld"}{a && a.energyCI[0] <= 0 && a.energyCI[1] >= 0 ? " · inconclusive" : ""}</small><small className="nexsi-company-date">{c.asOf ?? "No close"}{blocked ? " · review data" : ""}</small>
           </button>;
         })}{!companies.length && <p>No companies match these filters.</p>}</div>
-      </aside>
-
-      <section className="card nexsi-detail anchor-target" id="nexsi-company-analysis" aria-label="Selected company analysis">
-        <div className="nexsi-company-heading"><div><span className="control-label">{selected.group}</span><h2>{selected.symbol} · {selected.name}</h2></div><div><strong>{selected.price == null ? "No close" : `$${selected.price.toFixed(2)}`}</strong><small>Latest completed close · {selected.asOf}</small></div></div>
-        {quote && <p className="nexsi-foot">Latest reported quote: ${quote.price.toFixed(2)} · {stamp(quote.observedAt)} · {quoteStatus(quote, now).label}{quote.delayMinutes != null && ` · provider delay ${quote.delayMinutes} min`}. Quotes are separate from completed-session attribution.</p>}
-        {quote && selected.price && selected.asOf && quote.observedAt.slice(0, 10) > selected.asOf && <p className="nexsi-callout">Reported price change since the last completed close: {fmt((quote.price / selected.price - 1) * 100)} (unadjusted; splits or distributions may affect this comparison). Attribution for that newer move awaits complete daily observations.</p>}
-        <p className="sub">{energyPathway(selected.group)}</p>
-        {selected.provenance && <p className="nexsi-foot">Price history: <a href={selected.provenance.url} target="_blank" rel="noreferrer">{selected.provenance.provider} ↗</a> · {selected.provenance.returnBasis}. Retrieved {stamp(selected.retrievedAt)}.</p>}
-        {symbol !== selected.symbol && <p className="nexsi-alert">⚠ The requested ticker {symbol} is absent from this membership publication. Showing {selected.symbol} instead.</p>}
-        {eventDate && !selected.largestDrops.some(d => d.end === eventDate) && <p className="nexsi-alert">⚠ The requested historical move is outside the available major-drop set. Select the latest window or another available date.</p>}
-        <div className="nexsi-event-picker"><label>Investigate a move<select aria-label="Investigate a move" value={eventDate} onChange={e => setEventDate(e.target.value)}><option value="">Latest {horizon}-session move</option>{selected.largestDrops.map(a => <option key={a.end} value={a.end}>{a.end}: {fmt(a.actual)} in 1 session</option>)}</select></label><small>Up to five largest daily losses ≥3% over the latest 60 sessions with sufficient model coverage.</small></div>
-        {issue && <p className="nexsi-alert">⚠ {issue}</p>}
-        {move ? <>
-          <p className="nexsi-period control-label">Completed closes: {move.start} → {move.end} · {move.sessions} trading session{move.sessions > 1 ? "s" : ""}</p>
-          <div className="kpi-strip nexsi-metrics">
-            <div className="kpi-tile"><span className="kpi-name">Observed stock return</span><strong className={move.actual < 0 ? "nexsi-negative" : "nexsi-positive"}>{fmt(move.actual)}</strong><small>{selected.provenance?.returnBasis ?? "Adjusted for splits and distributions"}</small></div>
-            <div className="kpi-tile"><span className="kpi-name">Energy-associated estimate</span><strong>{fmt(move.energy, " pp")}</strong><small>95% parameter interval: {interval(move)}</small></div>
-            <div className="kpi-tile"><span className="kpi-name">Other modeled components</span><strong>{fmt(totalOther, " pp")}</strong><small>Market + relative tech + rates + baseline</small></div>
-            <div className="kpi-tile"><span className="kpi-name">Unexplained remainder</span><strong>{fmt(move.components.unexplained, " pp")}</strong><small>Company events, omitted factors and model error</small></div>
-          </div>
-          <MoveExplanation move={move} company={selected} factors={file.factors} now={now} />
-          {move.warning && <p className="nexsi-alert">⚠ {move.warning}</p>}
-          <div aria-label="Return component chart, percentage points"><EChart height={300} option={contributionOption} /></div>
-          <HowToRead title="Exact contributions and model checks"><dl className="nexsi-contributions">{Object.entries(move.components).map(([k, v]) => <div key={k}><dt>{labels[k as keyof typeof labels]}</dt><dd>{fmt(v, " pp", 4)}</dd></div>)}<div><dt>Reconciled total</dt><dd>{fmt(move.actual, "%", 4)}</dd></div></dl>
-            <p>Fit: {move.fit.n} matched observations from {move.fit.from} through {move.fit.through}, ending before this move. In-sample R² {(move.fit.r2 * 100).toFixed(1)}%; maximum variance inflation {move.fit.maxVif.toFixed(2)}.</p>
-            {selected.validation ? <p>Latest rolling held-out check ({selected.validation.n} sessions, ending {selected.asOf}): R² {(selected.validation.r2 * 100).toFixed(1)}%; log-return RMSE {selected.validation.rmseLogPct.toFixed(2)}% with energy versus {selected.validation.withoutEnergyRmseLogPct.toFixed(2)}% without energy. {selected.validation.energyImprovesFit ? "Energy improved the recent explanatory fit." : "Energy did not improve the recent explanatory fit; treat its attribution with added caution."} This uses realized factor moves and is not a forecasting record. For historical events this check includes later data; it never enters that event's fit.</p> : <p>Insufficient held-out observations for a validation comparison.</p>}
-          </HowToRead>
-        </> : <p className="nexsi-callout">Attribution withheld for this window. At least 126 prior matched observations, complete event coverage and stable factor estimates are required. Observed returns remain available in the company screen.</p>}
-        <HowToRead title="Price history and existing NexusQ signals"><p>Adjusted performance over up to 252 sessions; first observation = 100. Drawdown from the highest adjusted close in this window: {fmt(selected.drawdown)}.</p>
-          <EChart height={220} option={historyOption} />
-          {!issue && selected.signals.length ? <ul>{selected.signals.map((s, i) => <li key={i}><strong>{s.severity} · {s.label}</strong>: {s.detail}</li>)}</ul> : <p>{issue ? "Current signals suspended." : "No existing NexusQ threshold signal is active."}</p>}
-        </HowToRead>
-        <MoveEvidence company={selected} move={move} now={now} />
-      </section>
-    </section>
-
-    <section className="card anchor-target" id="nexsi-projects"><div className="nexsi-section-heading card-head"><div><h2>Data-center projects & power commitments</h2><p className="sub">Primary-source case studies. Coverage is curated, not an exhaustive project inventory. Capacity and status retain the source's meaning.</p></div><label className="nexsi-checkbox"><input type="checkbox" checked={allProjects} onChange={e => setAllProjects(e.target.checked)} />Show all case studies</label></div>
-      {projects.length ? <div className="nexsi-project-grid">{projects.map(p => <Project key={p.id} project={p} snapshot={snapshot} now={now} />)}</div> : <p>No independently curated facility or power commitment for {selected.symbol} in this release. This does not establish that the company has no data-center exposure. Use its filings above, or show all case studies to explore the operator side of the supply chain.</p>}
+      </aside></WorkspacePanel>
+    <WorkspacePanel page="nexsi" id="projects" active={view==='projects'}><section className="card anchor-target" id="nexsi-projects"><div className="nexsi-section-heading card-head"><div><h2>Data-center projects & power commitments</h2><p className="sub">Primary-source case studies. Coverage is curated, not an exhaustive project inventory. Capacity and status retain the source's meaning.</p></div><label className="nexsi-checkbox"><input type="checkbox" checked={allProjects} onChange={e => setAllProjects(e.target.checked)} />Show all case studies</label></div>
+      {projects.length ? <div className="nexsi-project-grid">{projects.map(p => <Project key={p.id} project={p} snapshot={snapshot} now={now} />)}</div> : <p>No independently curated facility or power commitment for {selected.symbol} in this release. This does not establish that the company has no data-center exposure. Inspect its filings in Evidence & coverage, or show all case studies to explore the operator side of the supply chain.</p>}
       {file.electricity.issue && <p className="nexsi-foot">Regional electricity benchmark: {file.electricity.issue}. Retained observations, where within 150 days of period end, keep their original dates.</p>}
     </section>
-    <CostScenario />
-    <section className="card anchor-target" id="nexsi-inputs"><h2>Energy and market inputs</h2><div className="nexsi-factor-grid">{file.factors.map(f => <div key={f.symbol}><strong>{f.label}</strong><p>{f.basis}</p><a href={f.sourceUrl} target="_blank" rel="noreferrer">{f.symbol} · {f.asOf || "Unavailable"} ↗</a></div>)}</div><p className="sub">Oil and gas futures are energy-market proxies, not data-center electricity costs. Settlement times, contract rolls and exchange holidays differ. The existing official spot-price, inventory, inflation and macro series remain available in Nexus Signal.</p></section>
-    <NexsiMethodology />
-  </div></>;
+    <CostScenario /></WorkspacePanel>
+    <WorkspacePanel page="nexsi" id="evidence" active={view==='evidence'}><div className="card"><MoveEvidence company={selected} move={move} now={now}/></div><section className="card anchor-target" id="nexsi-overview">
+      <div className="card-head"><h2>AI stocks — energy & capital markets</h2><Freshness date={file.factors.find(f => f.symbol === "SPY")?.asOf} /></div>
+      <p className="sub">Trace stock moves through the market, energy prices and company evidence. Explore the data-center projects behind the exposure.</p>
+      <div className="kpi-strip nexsi-stats">
+        <div className="kpi-tile"><span className="kpi-name">Nasdaq-100 coverage</span><strong className="kpi-value">{file.universe.members.length} <span className="kpi-unit">securities</span></strong><small>Published membership {file.universe.asOf}</small></div>
+        <div className="kpi-tile"><span className="kpi-name">AI & technology screen</span><strong className="kpi-value">{file.companies.filter(c => c.included).length} <span className="kpi-unit">securities</span></strong><small>Technology and curated AI businesses</small></div>
+        <div className="kpi-tile"><span className="kpi-name">Eligible attributions</span><strong className="kpi-value">{currentCompanies.length} <span className="kpi-unit">of {file.companies.length}</span></strong><small>{horizon}-session window · full universe</small></div>
+      </div>
+      <p className="nexsi-foot">Membership published {file.universe.asOf} · analysis refreshed {stamp(file.generated)} · <a href={file.universe.sources[0]} target="_blank" rel="noreferrer">Nasdaq membership ↗</a></p>
+      <HowToRead>The energy component is a statistical estimate after market, technology and rate controls. It is not proof of what caused the move. The unexplained portion stays visible. Choose a company and a completed-session window to compare these components.</HowToRead>
+      {suspended && <p role="status" className="nexsi-alert">⚠ {suspended}</p>}
+      {!suspended && file.status === "degraded" && <p role="status" className="nexsi-alert">⚠ Some source updates are incomplete. Available company models remain visible; inspect coverage and source health for the gaps.</p>}
+      <HowToRead title="Coverage and source health"><p>The default screen includes official Nasdaq technology members plus a broad, curated set of cloud, chip, hardware, software and AI application businesses. Inclusion does not establish material AI revenue. All published constituents remain available, including non-technology companies and power suppliers. Separate share classes count as separate securities.</p><p>Current-membership selection and revised price histories limit historical inference. This is not a historical index backtest.</p><p>{file.status === "ok" ? "All requested source updates completed." : "Some sources or evidence links could not be refreshed; details below."} {file.universe.retained && "Membership uses the last validated publication."}</p><ul>{file.failures.map((f, i) => <li key={i}>{f}</li>)}</ul><p>{file.companies.filter(c => c.eventIssues.length).length} companies have evidence-source gaps. Selected-company gaps appear with its supporting sources.</p><p><a href={`${import.meta.env.BASE_URL}data/nexsi.json`}>Download analysis JSON</a> · <a href={`${import.meta.env.BASE_URL}data/nexsi-prices.json`}>Download model inputs</a></p></HowToRead>
+    </section>    <section className="card anchor-target" id="nexsi-inputs"><h2>Energy and market inputs</h2><div className="nexsi-factor-grid">{file.factors.map(f => <div key={f.symbol}><strong>{f.label}</strong><p>{f.basis}</p><a href={f.sourceUrl} target="_blank" rel="noreferrer">{f.symbol} · {f.asOf || "Unavailable"} ↗</a></div>)}</div><p className="sub">Oil and gas futures are energy-market proxies, not data-center electricity costs. Settlement times, contract rolls and exchange holidays differ. The existing official spot-price, inventory, inflation and macro series remain available in Nexus Signal.</p></section>
+    <NexsiMethodology /></WorkspacePanel>
+  </div>;
 }
 
-export function NexsiMethodology() {
-  return <section className="card anchor-target" id="nexsi-methodology"><h2>NexSI methodology · 2026-11-21.1</h2><HowToRead title="How the attribution and uncertainty work">
+export function NexsiMethodology({id="nexsi-methodology"}:{id?:string}) {
+  return <section className="card anchor-target" id={id}><h2>NexSI methodology · 2026-11-21.1</h2><HowToRead title="How the attribution and uncertainty work">
     <p>Price-source basis is shown for each company. SanDisk uses Nasdaq split-adjusted price history (cash dividends excluded), with Yahoo split-adjusted prices as a validated fallback; other equities and ETF controls use Yahoo closes adjusted for splits and distributions. SanDisk’s entire series is replaced together; overlapping returns, dates and coverage must pass validation, and new price discontinuities above a 1.5× ratio require review. A stock split is never applied twice. These are conditional stock-return estimates, not uniform total-shareholder-return comparisons across companies.</p>
     <p>Adjusted stock log return = intercept + β₁ SPY + β₂ (QQQ − SPY) + β₃ IEF + β₄ WTI futures + β₅ Henry Hub gas futures + residual. Fit uses the latest 252 complete matched return intervals before the event, with at least 126, a maximum 520-day span and maximum variance inflation factor of 20. Both endpoints must match across every instrument; intervals longer than seven calendar days are excluded. No missing returns are filled. Singular models are withheld.</p>
     <p>Each contribution sums coefficient × factor log returns over the selected window. All components use the same observed-log-to-simple-return scale, so the displayed percentage-point components reconcile exactly to the adjusted stock return. The remainder is actual minus fitted contributions; it includes omitted drivers and model error. The energy estimate adds the oil and gas components.</p>

@@ -1,63 +1,60 @@
-# NexusQ
+# NexusQ 2.0
 
 [![CI](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml)
 [![Data refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml)
 
-**The Market Intelligence Platform for Capital Markets** — by Gygante Quantitative Systems.
+**Market intelligence for capital markets — by Gygante Quantitative Systems.**
 
-NexusQ transforms energy, commodity and macro-economic data into continuously updated
-financial models, institutional-grade signals, scenario forecasts and decision intelligence.
+[Open NexusQ](https://nexus.gygante.com) · [Release 2.0.0](https://github.com/cs-ox-wolf3794/nexusq/releases/tag/v2.0.0) · [Changelog and earlier milestones](CHANGELOG.md)
 
-> Bloomberg shows what happened. NexusQ explains why it happened, what happens next,
-> and what portfolio action should be considered.
+NexusQ connects company returns, energy exposure and economic context in one research workspace. It helps analysts inspect the estimated energy contribution to a stock move, other modeled factors, the unexplained remainder and the supporting disclosures. Estimates, confirmed disclosures and possible explanations are explicitly separated.
 
-Value chain: **Information → Signal → Scenario → Decision → Outcome**
+**NexusQ 2.0 is the official product release.** It keeps the existing free infrastructure and analytical capabilities, with a connected investigation experience and a shared design system across desktop, tablet and mobile. Product release status is not a guarantee of source completeness, causal attribution, forecast accuracy or a market-data service level.
 
-## Product family (Vision 2030)
+## Find the analysis
 
-| Product | What it does | Status |
-|---|---|---|
-| **Nexus Signal** | Energy Beta, Carbon Beta, Supply-Risk Beta, LNG Beta, Energy-FX arbitrage, inventory divergence, sentiment pulse | **MVP — this repo** |
-| **Nexus Model** | Continuously updating financial models ("What happens to BASF earnings if EU gas rises 30%?") | Roadmap |
-| **Nexus Scenario** | Shock simulation (Hormuz closure, sanctions, carbon-tax expansion) → instant cross-asset impact | Roadmap |
-| **Nexus Portfolio** | Hidden energy-exposure detection (LNG, power, diesel, freight, carbon) | Roadmap |
-| **Nexus Agent** | Always-on agentic institutional analyst | Roadmap |
+| Workspace | Analyst task | Included analysis |
+| --- | --- | --- |
+| **Research desk** | Choose a question or resume an investigation. | Eligible stock moves, market signals, global company/market/tool search and browser-local saved views. |
+| **NexSI** | Explain stock moves and investigate AI/technology energy exposure. | Nasdaq-100 company screening; 1/5/20-session and recent major-drop attribution; energy, other modeled components and unexplained returns; event timing; earnings, guidance and company news; source coverage; data-center/power case studies and electricity-cost scenarios. |
+| **Nexus Signal** | Understand cross-asset market relationships. | Market pulse, dated quotes, snapshot signals, market state, overlays and correlations, forecasts, equity energy sensitivity, sovereign GDP/oil associations and historical signal validation. |
+| **Evidence & methods** | Assess whether an analysis can support a conclusion. | Observation and retrieval dates, source quality, analytical eligibility, forecast provenance, definitions, formulas, validation and limitations. |
 
-(Positioning, go-to-market and moat thesis live in internal strategy docs, deliberately
-kept out of this public repo.)
+### The connected investigation
 
-## The MVP (Nexus Signal preview)
+1. Find a company or open an eligible move from the research desk.
+2. Select a return window or a recent historical major drop. The contribution bridge, timeline and company summaries use that same window.
+3. Inspect the energy estimate, other modeled components or unexplained remainder. The interval and model limitations remain visible; the full seven-component chart and exact diagnostics remain available.
+4. Inspect a dated filing or reported headline. Primary disclosures, unreviewed reporting, earlier context and follow-up evidence are distinguished. Sources do not automatically establish a cause or receive a measured share of the return.
+5. Continue to projects and power exposure, compare markets, inspect coverage, or save/share the investigation context.
 
-A responsive static web app (browser / tablet / mobile) with:
+Saved views and activity history are stored in the current browser, not a user account or server audit log. Shared links retain the company, time window and selected analysis; they reopen with the latest published data. Scenario assumptions persist only in the current session. The original analytical detail remains accessible through dedicated views and disclosures.
 
-- **Cross-asset overlay** — up to six series from the catalog (energy fundamentals,
-  weekly EIA inventories, commodities, equities, renewables, macro, FX) on a single
-  comparable axis (indexed, z-score, y/y % or raw). No dual axes, ever. Question presets
-  and shareable view links.
-- **Correlation structure** — Pearson ρ of log-returns over the selected window,
-  matched on common observation intervals without forward filling; incompatible frequencies are withheld.
-- **Snapshot signals** — dislocation z-scores, 50/200-observation momentum regimes,
-  correlation-regime shifts on curated energy↔cross-asset pairs, and inventory-divergence
-  flags (EIA weekly fundamentals vs price, seasonal z × dislocation tension).
-- **Market state** — trend / volatility / dollar / CFTC managed-money-positioning
-  percentile conditions per energy market, with a supportive-oriented composite. A regime
-  description, not a trading signal.
-- **Signal validation** — an event study of the supported daily signal families since 2015 (weekly inventory divergence is excluded),
-  source-lag-aware and episode-collapsed, using revised histories rather than point-in-time vintages. Historical comparisons and their limitations are published without claiming a trading edge.
-- **Equity impact (Energy Beta board)** — rolling 90-observation β / α / R² of ~15 energy-exposed
-  stocks (majors, services, steel, chemicals, airlines, transition names) against
-  Brent / WTI / Henry Hub, with a scenario translator consistent with the fitted log-return slope.
-- **Sovereign impact** — GDP sensitivity of major energy exporters vs importers to oil
-  (cycle-controlled Frisch–Waugh betas with r and n disclosed), grounded in World Bank
-  fuel-trade intensity.
-- **Trust layer** — per-series QC (`quality.json`), a daily public signal/forecast ledger,
-  an in-app Methodology page, and a CI-tested analytics library.
-- Light/dark theme, colorblind-validated palette, mobile-first responsive.
+### Presentation and operational states
+
+- Shared color, spacing and typography tokens; locally served IBM Plex fonts; aligned numeric figures; light/dark themes and compact/comfortable density.
+- Responsive navigation and tables, keyboard-accessible tabs, global search and preserved investigation context.
+- Separate labels for observations, model calculation, history retrieval, evidence checks and event publication. Full timestamps show their time zone; date-only observations remain dates.
+- A scheduled US cash-session clock, persistent actionable data exceptions, nonblocking save/copy notifications and browser-local activity history. Scheduled market closure is not presented as a data failure.
+- Data-provider credits and evidence links are retained. The app footer no longer links to the source repository.
+
+### Established analytical capabilities
+
+- **Cross-asset comparison:** up to six selected markets on a comparable axis, with indexed, z-score, year-over-year or permitted raw transformations. No dual-axis charts. Series retain their color assignment as the selection changes.
+- **Correlation:** paired common observation intervals without forward filling; log returns where appropriate and differences for series that can be nonpositive. Incompatible frequencies are withheld.
+- **Snapshot signals:** dislocation, momentum, curated correlation-regime changes and seasonal inventory-divergence conditions. Signals describe conditions; they do not by themselves demonstrate a forecasting edge.
+- **Market state:** trend, volatility, dollar and CFTC managed-money-positioning context. The composite is a regime description, not a trading instruction.
+- **Validation:** source-lag-aware, episode-collapsed event studies for supported daily signal families. Weekly inventory divergence is excluded. Revised histories and selection limits are disclosed.
+- **Equity exposure:** rolling energy beta, alpha and fit diagnostics with a translator consistent with the fitted log-return slope.
+- **Sovereign exposure:** cycle-controlled GDP/oil associations, sample sizes, correlations and World Bank energy-trade context; fiscal-year mismatches are withheld where applicable.
+- **Forecasts and trust controls:** damped-drift uncertainty fans, dated external projections, source-aware QC, a daily signal/forecast ledger, coherent checksummed publications and visible failure states.
+
+Nexus Model, Nexus Scenario, Nexus Portfolio and Nexus Agent remain planned workspaces; their broader roadmap capabilities are not claimed as shipped features of 2.0.
 
 ### Architecture
 
 ```
-FRED / Yahoo Finance / World Bank / IMF / EIA / CFTC
+FRED / Yahoo Finance / Nasdaq / SEC / issuer disclosures / World Bank / IMF / EIA / CFTC
         │  scripts/refresh-data.mjs   (node, also runs on a GitHub Actions cron)
         │  + snapshot-signals.ts (daily ledger) + backtest-signals.ts
         ▼
@@ -98,8 +95,12 @@ npm run refresh
 | Source | Series | Notes |
 |---|---|---|
 | FRED (fredgraph CSV, keyless) | Brent, WTI, Henry Hub, EU gas, coal, copper, wheat, S&P 500, Nasdaq, VIX, UST 10Y, breakevens, CPI, INDPRO, dollar index, EURUSD | daily/monthly |
-| Yahoo Finance chart API | XLE, ICLN, TAN, GLD | 10y daily closes |
-| World Bank API | GDP growth (US, China, India, Germany) | annual |
+| Yahoo Finance chart API | ETFs, screened equities and model factor histories; timestamped quotes | adjusted completed-session histories are separate from quotes |
+| Nasdaq public sources | Nasdaq-100 membership and the validated SanDisk history route | membership PDF checks; split treatment and source validation |
+| SEC EDGAR and company disclosures | filings, earnings, guidance, company news and structured financial facts | source-linked summaries with coverage and timing limits |
+| Company / Stock Analysis transcripts | supplemental management commentary | issuer and third-party sources distinguished; historical availability may be unverified |
+| World Bank API | GDP growth and sovereign energy-trade context | annual |
+| CFTC public reports | managed-money positioning | published weekly context; unavailable sources are surfaced |
 | IMF WEO via World Bank Data360 | GDP-growth projections to +3y (keyless API and bulk-file fallback) | forecast layer; source-version dates preserved |
 | EIA v2 API (optional) | STEO Brent/WTI/Henry Hub forecasts + weekly inventories | set free `EIA_API_KEY` |
 
@@ -112,9 +113,7 @@ npm run refresh
   drift + EWMA volatility. The uncertainty band is the product, not the point estimate.
 - **External forecasts** — IMF WEO GDP projections delivered by World Bank Data360; EIA STEO oil & gas forecasts when a
   key is configured.
-- Because the cron commits `forecasts.json` daily, **git history is the outcome database**:
-  every published forecast is permanently recorded against what subsequently happened —
-  the raw material for a calibration scoreboard.
+- Versioned forecasts and the daily first-issued ledger support later calibration. Repository history is auditable but is not an independent immutable archive; collecting forecasts alone does not establish calibrated accuracy.
 
 *Not investment advice. © 2026 Gygante Quantitative Systems.*
 
@@ -160,10 +159,25 @@ State-direction labels follow the actual change, tied percentile values receive 
 
 The **NexSI** tab (`#page=nexsi&company=NVDA&horizon=1`) screens every security in the latest validated public Nasdaq-100 membership PDF. The default broad AI/technology screen combines the official NDXT subset with explicit cloud, semiconductor, hardware, software and application classifications; all constituents and power suppliers remain selectable. Inclusion is a research scope, not a claim of material AI revenue. Published membership must be at most 45 days old. Separate share classes are separate securities; no index weights are republished.
 
-`npm run refresh:nexsi` refreshes NexSI alone; full refreshes include it as secondary enrichment. It requires Python with `pypdf==6.21.4` for the official membership PDFs (`NEXSI_PYTHON` can select the interpreter). Actions installs the pinned reader. No hosted model, paid feed, new service or new secret is used. The existing `EIA_API_KEY` supplies optional state commercial electricity benchmarks. Yahoo supplies adjusted daily stock/ETF/futures histories and timestamped quotes; SEC submissions and Yahoo RSS provide dated evidence links. Quote checks now include every screened stock. Source-specific failures remain visible; broad failures retain and suspend the prior analytical snapshot.
+`npm run refresh:nexsi` refreshes NexSI alone; full refreshes include it as secondary enrichment. It requires Python with `pypdf==6.21.4` for the official membership PDFs (`NEXSI_PYTHON` can select the interpreter). Actions installs the pinned reader. No hosted model, paid feed, new service or new secret is used. The existing `EIA_API_KEY` supplies optional state commercial electricity benchmarks. Yahoo supplies adjusted daily stock/ETF/futures histories and timestamped quotes. SanDisk has a validated free Nasdaq history route with a checked Yahoo fallback and explicit split treatment. SEC submissions, issuer disclosures and Yahoo RSS provide dated evidence links. Quote checks now include every screened stock. Source-specific failures remain visible; broad failures retain and suspend the prior analytical snapshot.
 
 Attribution fits pre-event adjusted stock log returns on SPY, QQQ-minus-SPY, IEF, WTI futures and Henry Hub futures over up to 252 exactly matched intervals, minimum 126. The 1/5/20-session and recent major-drop views reconcile conditional factor contributions and an unexplained residual to the actual arithmetic return. Newey–West parameter intervals, extrapolation flags and rolling held-out explanatory checks are published. Controls absorb some indirect energy effects and contain some screened stocks; futures rolls and differing closes remain limitations. This does **not** identify exact causes or a total causal energy share. News/filings are candidate context; the residual is not automatically company news. Analytics expire after 72 hours and are separate from best-effort 15-minute quotes.
 
 `nexsi.json` contains membership, model output, events and source status. `nexsi-prices.json` preserves the 850-observation inputs used in that snapshot for reproducibility; both are checksummed in the publication manifest. Structural checks account for all constituents and validate exact return reconciliation and pre-event fit boundaries. Histories are vendor-revised, not point-in-time vintages; current-member selection is unsuitable for a historical index backtest.
 
 Project case studies in `src/lib/nexsi-projects.ts` link dated primary disclosures, distinguish operators from suppliers and generation capacity from IT/facility demand, and explicitly identify announced versus reported operating status. This registry is manually reviewed, not a complete or automatically current project census. The electricity calculator uses user assumptions: MW × 8,760 × load factor × PUE (IT only) × USD/MWh change × exposed share. It makes no EPS or share-price conversion and must not use a generation PPA as facility demand. EIA state commercial rates are context, not data-center tariffs; observations expire 150 days after month end.
+
+
+### Earnings, guidance and company-news coverage
+
+NexSI combines source-linked issuer disclosure summaries with SEC structured financial facts where eligible. Official company transcripts and third-party transcripts are distinguished, and transcript availability during a selected move is not inferred from a related SEC filing timestamp. Refreshes validate source identity and document references, retain the dates of supported prior evidence, and surface incomplete coverage.
+
+Guidance states distinguish quantitative, qualitative and limited outlooks, withdrawn or explicitly not-issued guidance, and missing coverage. Coverage extensions include AAPL, MELI, PDD and MSTR. No summary is treated as proof that a company never issues guidance. A statement by management is evidence of what was disclosed, not verification that the forecast or an asserted cause is true. The unexplained return is not allocated to news.
+
+### Checks and release history
+
+Use Node.js 22 for the supported workflow. Run `npm test`, `npm run lint`, `npm run data:validate` and `npm run build` before publication. Membership-PDF integration checks also use the Python reader described above. The 2.0 release baseline includes 228 regression tests across 25 files; the CI result is authoritative as tests evolve. Browser checks cover desktop, tablet and 375-pixel phone layouts, connected investigation controls, timestamps, alerts and notifications.
+
+See [CHANGELOG.md](CHANGELOG.md) for the 2.0 changes and a commit-linked history of earlier work. Older milestones are summarized as untagged development history, not invented prior releases. Analytical engine versions are separate from the product's 2.0.0 version.
+
+The bundled IBM Plex fonts retain their [Open Font License](public/fonts/IBM-Plex-OFL.txt). Data-provider and redistribution requirements continue to apply; free access does not by itself confer redistribution rights.

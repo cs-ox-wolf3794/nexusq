@@ -49,6 +49,8 @@ function closeMinute(date: string) {
   if (!validDate(date) || year < 2026 || year > 2028 || day === 0 || day === 6 || CLOSED.has(date)) return null;
   return EARLY.has(date) ? 13 * 60 : 16 * 60;
 }
+/** Shared presentation of the already-reviewed exchange calendar. */
+export const scheduledEquityClose = (date: string) => closeMinute(date);
 const EASTERN = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 export function easternTime(timestamp: string) {
   if (!Number.isFinite(Date.parse(timestamp))) return null;

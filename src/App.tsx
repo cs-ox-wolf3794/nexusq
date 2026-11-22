@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, useEffect, useMemo, useRef, useState } from "react";
 import type { Series } from "./lib/data";
 import { loadSnapshot, type Snapshot } from "./lib/snapshot";
 import { analysisEligibility, freshness, observationEnd, qualityCurrent, companyEligible, recentTimestamp, validDate } from "./lib/quality";
@@ -10,28 +10,29 @@ import { ENGINE_VERSION, computeSignals } from "./lib/signals";
 import { useTheme } from "./components/useTheme";
 import { SeriesPicker } from "./components/SeriesPicker";
 import { KpiStrip } from "./components/KpiStrip";
-import { EquityImpact } from "./components/EquityImpact";
-import { GdpImpact } from "./components/GdpImpact";
 import { Freshness } from "./components/Freshness";
-import { SectionNav } from "./components/SectionNav";
-import { Methodology } from "./components/Methodology";
-import { ValidationPanel } from "./components/ValidationPanel";
+import { WorkspaceIntro, WorkspaceNav, WorkspacePanel, WorkspaceTabs, RetainedView } from "./components/WorkspaceUI";
+import { ResearchSearch, type NavigateResearch } from "./components/ResearchSearch";
+import { ResearchDesk } from "./components/ResearchDesk";
+import { WORKSPACES, SECTION_ROUTES, readWorkspace, workspaceHash, readSavedViews, researchTitle, selectionColors, type WorkspacePage, type SavedView } from "./lib/workspace";
 import { Skeleton, SkeletonRows, SkeletonTiles } from "./components/Skeleton";
-import { MarketStatePanel } from "./components/MarketState";
-import { OverlayChart, type OverlaySeries, type Projection } from "./components/OverlayChart";
-import { CorrelationMatrix } from "./components/CorrelationMatrix";
+import type { OverlaySeries, Projection } from "./components/OverlayChart";
 import { GlossaryTip, HowToRead } from "./components/Guidance";
 import { SignalPanel } from "./components/SignalPanel";
-import { NexSI } from "./components/NexSI";
+import { useResearchActivity } from "./components/useResearchActivity";
+import { dataExceptions, displayInstant } from "./lib/research-ui";
+import { ActivityCenter, ResearchToast, ResearchAlert, SessionClock, StatusMark } from "./components/ResearchChrome";
 
-const PRODUCTS = [
-  { key: "signal", label: "Signal", live: true },
-  { key: "nexsi", label: "NexSI", live: true },
-  { key: "model", label: "Model", live: false },
-  { key: "scenario", label: "Scenario", live: false },
-  { key: "portfolio", label: "Portfolio", live: false },
-  { key: "agent", label: "Agent", live: false },
-];
+
+// Load analysis workspaces on demand; the research desk does not require charts.
+const EquityImpact = lazy(()=>import("./components/EquityImpact").then(m=>({default:m.EquityImpact})));
+const GdpImpact = lazy(()=>import("./components/GdpImpact").then(m=>({default:m.GdpImpact})));
+const Methodology = lazy(()=>import("./components/Methodology").then(m=>({default:m.Methodology})));
+const ValidationPanel = lazy(()=>import("./components/ValidationPanel").then(m=>({default:m.ValidationPanel})));
+const MarketStatePanel = lazy(()=>import("./components/MarketState").then(m=>({default:m.MarketStatePanel})));
+const OverlayChart = lazy(()=>import("./components/OverlayChart").then(m=>({default:m.OverlayChart})));
+const CorrelationMatrix = lazy(()=>import("./components/CorrelationMatrix").then(m=>({default:m.CorrelationMatrix})));
+const NexSI = lazy(()=>import("./components/NexSI").then(m=>({default:m.NexSI})));
 
 const RANGES: { label: string; years: number | null }[] = [
   { label: "1Y", years: 1 }, { label: "3Y", years: 3 }, { label: "5Y", years: 5 },
@@ -110,9 +111,18 @@ export default function App() {
   const [projectionOn, setProjectionOn] = useState<boolean>(() => parseHash().projection ?? true);
   const [linkCopied, setLinkCopied] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false); // mobile-only disclosure
-  const [page, setPage] = useState<"dashboard" | "methodology" | "nexsi">(() =>
-    window.location.hash.includes("page=methodology") ? "methodology" : window.location.hash.includes("page=nexsi") ? "nexsi" : "dashboard",
-  );
+  const [page,setPage]=useState<WorkspacePage>(()=>readWorkspace(window.location.hash).page);
+  const [workspaceView,setWorkspaceView]=useState(()=>readWorkspace(window.location.hash).view);
+  const [searchOpen,setSearchOpen]=useState(false);
+  const [pendingAnchor,setPendingAnchor]=useState(()=>{const id=window.location.hash.slice(1);return Object.hasOwn(SECTION_ROUTES,id)?id:'';});
+  const {activity,record,notify,toast,dismiss}=useResearchActivity();
+  const [activityOpen,setActivityOpen]=useState(false);
+  const [density,setDensity]=useState<'compact'|'comfortable'>(()=>{try{return localStorage.getItem('nexusq-density')==='comfortable'?'comfortable':'compact';}catch{return 'compact';}});
+  const exceptions=useMemo(()=>dataExceptions(snapshot,now,loadError),[snapshot,now,loadError]);
+  useEffect(()=>{if(snapshot)record({id:'publication:'+snapshot.revision,tone:'info',title:'Verified publication loaded',detail:'Analytical snapshot calculated '+displayInstant(snapshot.catalog.generated)+'. Observation dates remain separate.'});},[snapshot,record]);
+  useEffect(()=>{if(loadError)record({id:'failure:'+loadError.slice(0,140),tone:'critical',title:'Publication verification failed',detail:loadError.slice(0,1500)});},[loadError,record]);
+  const changeDensity=(value:'compact'|'comfortable')=>{setDensity(value);try{localStorage.setItem('nexusq-density',value);}catch{notify('Preference applies to this session','Browser storage is unavailable.','warning');}};
+  const [savedViews,setSavedViews]=useState<SavedView[]>(()=>{try{return readSavedViews(localStorage.getItem('nexusq-saved-views'));}catch{return [];}});
   const [nexsiSymbol, setNexsiSymbol] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get("company") ?? "NVDA");
   const [nexsiHorizon, setNexsiHorizon] = useState(() => { const h = Number(new URLSearchParams(window.location.hash.slice(1)).get("horizon")); return [1, 5, 20].includes(h) ? h : 1; });
   const [nexsiEvent, setNexsiEvent] = useState(() => { const d = new URLSearchParams(window.location.hash.slice(1)).get("event"); return validDate(d) ? d : ""; });
@@ -123,11 +133,9 @@ export default function App() {
 
   // The URL hash mirrors the view state — every view is a shareable link.
   useEffect(() => {
-    const h = `#s=${selected.join(",")}&t=${transform}&w=${rangeYears ?? "all"}&p=${projectionOn ? 1 : 0}${
-      page === "methodology" ? "&page=methodology" : page === "nexsi" ? `&page=nexsi&company=${encodeURIComponent(nexsiSymbol)}&horizon=${nexsiHorizon}${nexsiEvent ? `&event=${nexsiEvent}` : ""}` : ""
-    }`;
+    const h = `#s=${selected.join(",")}&t=${transform}&w=${rangeYears ?? "all"}&p=${projectionOn ? 1 : 0}&page=${page}&view=${workspaceView}&company=${encodeURIComponent(nexsiSymbol)}&horizon=${nexsiHorizon}${nexsiEvent ? `&event=${nexsiEvent}` : ""}`;
     window.history.replaceState(null, "", h);
-  }, [selected, transform, rangeYears, projectionOn, page, nexsiSymbol, nexsiHorizon, nexsiEvent]);
+  }, [selected, transform, rangeYears, projectionOn, page, workspaceView, nexsiSymbol, nexsiHorizon, nexsiEvent]);
 
   // Apply shared links opened while the app is already running (hash navigation
   // doesn't remount React). Our own replaceState writes never fire hashchange.
@@ -135,15 +143,14 @@ export default function App() {
     const onHash = () => {
       const h = parseHash();
       if (h.ids) {
-        slotMap.current.clear();
-        h.ids.forEach((id, i) => slotMap.current.set(id, SLOT_VARS[i]));
+        slotMap.current = selectionColors(slotMap.current,h.ids,SLOT_VARS);
         setSelected(h.ids);
       }
       if (h.transform) setTransform(h.transform);
       if (h.years !== undefined) setRangeYears(h.years);
       if (h.projection != null) setProjectionOn(h.projection);
       const params = new URLSearchParams(window.location.hash.slice(1));
-      setPage(params.get("page") === "methodology" ? "methodology" : params.get("page") === "nexsi" ? "nexsi" : "dashboard");
+      const route=readWorkspace(window.location.hash); setPage(route.page); setWorkspaceView(route.view);
       setNexsiSymbol(params.get("company") ?? "NVDA");
       const horizon = Number(params.get("horizon"));
       setNexsiHorizon([1, 5, 20].includes(horizon) ? horizon : 1);
@@ -151,8 +158,33 @@ export default function App() {
       setNexsiEvent(validDate(event) ? event : "");
     };
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onHash);
+    return () => { window.removeEventListener("hashchange", onHash); window.removeEventListener("popstate", onHash); };
   }, []);
+
+  const navigate:NavigateResearch=(route,extra={},anchor='')=>{
+    const hash=workspaceHash(window.location.hash,route,extra);
+    if(hash!==window.location.hash)window.history.pushState(null,'',hash);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    if(document.activeElement?.getAttribute('role')!=='tab')setPendingAnchor(anchor||'workspace-heading');
+  };
+  useEffect(()=>{
+    if(!pendingAnchor)return;
+    const focusTarget=()=>{
+      const target=document.getElementById(pendingAnchor);
+      if(!target||target.closest('[hidden]'))return;
+      target.tabIndex=-1;target.focus({preventScroll:true});target.scrollIntoView({block:'start',behavior:'instant'});
+      setPendingAnchor('');
+    };
+    const frame=requestAnimationFrame(focusTarget);
+    const observer=new MutationObserver(focusTarget);
+    observer.observe(document.getElementById('workspace-heading')!,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
+    return()=>{cancelAnimationFrame(frame);observer.disconnect();};
+  },[page,workspaceView,pendingAnchor]);
+  useEffect(()=>{const key=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();setSearchOpen(v=>!v);}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[]);
+  const storeViews=(next:SavedView[])=>{try{localStorage.setItem('nexusq-saved-views',JSON.stringify(next));setSavedViews(next);return true;}catch{notify('View could not be saved','This browser could not store the view. Copy its link instead.','warning');return false;}};
+  const saveView=()=>{const hash=window.location.hash;const next=[{hash,title:researchTitle(page,workspaceView,nexsiSymbol),savedAt:new Date().toISOString()},...savedViews.filter(v=>v.hash!==hash)].slice(0,12);if(storeViews(next))notify('View saved','Available in your research desk on this browser.');};
+  const openSaved=(hash:string)=>{window.history.pushState(null,'',hash);window.dispatchEvent(new HashChangeEvent('hashchange'));setPendingAnchor('workspace-heading');};
 
   const copyViewLink = async () => {
     const url = window.location.href;
@@ -176,6 +208,7 @@ export default function App() {
       return;
     }
     setLinkCopied(true);
+    notify("View link copied","The link preserves the company, time window and selected analysis.");
     setTimeout(() => setLinkCopied(false), 1600);
   };
 
@@ -186,7 +219,7 @@ export default function App() {
     setTransform(p.t);
     setRangeYears(p.w);
     setProjectionOn(p.p);
-    document.getElementById("overlay")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setWorkspaceView("compare"); setPendingAnchor("overlay");
   };
 
   const presetActive = (p: Preset) =>
@@ -226,7 +259,7 @@ export default function App() {
     valid.forEach((id, i) => slotMap.current.set(id, SLOT_VARS[i]));
     setSelected(valid);
     if (valid.length === 1 && ["CPI", "INDPRO"].includes(valid[0])) setTransform("yoy");
-    document.getElementById("overlay")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    navigate({page:"dashboard",view:"compare"},{s:valid.join(","),t:valid.length===1&&["CPI","INDPRO"].includes(valid[0])?"yoy":transform},"overlay");
   };
 
   const toggleSeries = (id: string) => {
@@ -290,52 +323,25 @@ export default function App() {
   }, [projectionOn, projectionAllowed, forecasts, selectedSeries, analyticalMap, now, from, effectiveTransform]);
 
   return (
-    <div className="app">
-      <header className="masthead">
-        <img src={`${import.meta.env.BASE_URL}nexusq.svg`} alt="" />
-        <div className="brand">
-          <span className="name">Nexus<span>Q</span></span>
-          <span className="byline">Gygante Quantitative Systems</span>
-        </div>
-        <div className="spacer" />
-        <span className="tagline">
-          Market intelligence for capital markets: energy, commodity and macro data turned into
-          signals, scenarios and decisions.
-        </span>
-        <button className="theme-toggle" onClick={toggle}>
-          {mode === "dark" ? "☀ Light" : "☾ Dark"}
-        </button>
-      </header>
+    <div className="app app-shell" data-density={density}>
+      <a className="skip-link" href="#workspace-heading" onClick={e=>{e.preventDefault();document.getElementById("workspace-heading")?.focus();}}>Skip to analysis</a>
+      <WorkspaceNav page={page} onNavigate={navigate}/>
+      <div className="app-workarea">
+      <header className="workspace-topbar"><div className="workspace-location"><span className="eyebrow">NEXUSQ <span aria-hidden="true">/</span> {WORKSPACES[page].label}{page==='nexsi'&&<><span aria-hidden="true">/</span><strong>{nexsiSymbol}</strong><span className="breadcrumb-window">{nexsiEvent||`${nexsiHorizon} session${nexsiHorizon>1?'s':''}`}</span></>}</span><SessionClock now={now}/></div><div className="workspace-tools"><button className="search-trigger" onClick={()=>setSearchOpen(true)}><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor"/><path d="m10 10 4 4" stroke="currentColor"/></svg><span>Find</span><kbd>Ctrl / ⌘ K</kbd></button><button className={`system-trigger ${exceptions.length?'has-exceptions':''}`} onClick={()=>setActivityOpen(true)} aria-label={!snapshot&&!loadError?"Data status: checking publication":`Data status and activity: ${exceptions.length} active exceptions`}><StatusMark tone={exceptions.some(e=>e.tone==='critical')?'critical':exceptions.length?'warning':'info'}/><span>Data status</span><b>{!snapshot&&!loadError?'—':exceptions.length.toString().padStart(2,'0')}</b></button><label className="density-control"><span className="sr-only">Display density</span><select aria-label="Display density" value={density} onChange={e=>changeDensity(e.target.value as 'compact'|'comfortable')}><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select></label><button className="theme-toggle" onClick={toggle} aria-label={mode==='dark'?'Switch to light theme':'Switch to dark theme'}><span aria-hidden="true">◐</span><span>{mode==='dark'?'Light':'Dark'}</span></button></div></header>
+      {loadError&&<ResearchAlert tone="critical" title="Publication verification failed" action="Inspect status" onAction={()=>setActivityOpen(true)}>Update could not be verified. Retaining the previous verified data and retrying. {loadError}</ResearchAlert>}
+      <main id="workspace-heading" tabIndex={-1} onClick={e=>{const anchor=(e.target as HTMLElement).closest('a[href^="#"]');const id=anchor?.getAttribute('href')?.slice(1);if(id&&SECTION_ROUTES[id]){e.preventDefault();navigate(SECTION_ROUTES[id],{},id);}}}>
+      {page!=='home'&&<div className="workspace-utility"><span>{WORKSPACES[page].description}</span><button className="text-action" onClick={saveView}>{toast?.title==='View saved'?'Saved':'Save view'}</button><button className="text-action" onClick={copyViewLink}>{linkCopied?'Link copied':'Copy view link ↗'}</button></div>}
+      <RetainedView active={page==='home'}><ResearchDesk snapshot={snapshot} now={now} signals={signals} onNavigate={navigate} onSearch={()=>setSearchOpen(true)} saved={savedViews} onOpenSaved={openSaved} onRemoveSaved={hash=>storeViews(savedViews.filter(v=>v.hash!==hash))}/></RetainedView>
+      <RetainedView active={page==='methodology'}><WorkspaceIntro eyebrow="Evidence & methods" title="Know what supports the answer." description="Source freshness, methodological choices and uncertainty, open to inspection."/><DataStatus snapshot={snapshot} now={now} error={loadError}/><Methodology /></RetainedView>
+      <RetainedView active={page==='nexsi'}>
+        <NexSI snapshot={snapshot} now={now} mode={mode} symbol={nexsiSymbol} horizon={nexsiHorizon} onSymbol={company=>navigate({page:"nexsi",view:"explain"},{company,event:null})} onHorizon={setNexsiHorizon} eventDate={nexsiEvent} setEventDate={setNexsiEvent} view={workspaceView} onView={v=>navigate({page:"nexsi",view:v})} onFind={()=>setSearchOpen(true)} />
+      </RetainedView>
+      <RetainedView active={page==='dashboard'}>
+      <WorkspaceIntro eyebrow="Nexus Signal / Market relationships" title="See the market in context." description="Move between current conditions, comparative analysis and exposure. Your selected markets stay with you."/>
+      <WorkspaceTabs page="dashboard" value={workspaceView} onChange={v=>navigate({page:"dashboard",view:v})}/>
 
-      <nav className="product-nav">
-        {PRODUCTS.map((p) => (
-          <button
-            key={p.key}
-            className={(p.key === "signal" && page === "dashboard") || (p.key === "nexsi" && page === "nexsi") ? "active" : ""}
-            disabled={!p.live}
-            onClick={() => p.live && setPage(p.key === "nexsi" ? "nexsi" : "dashboard")}
-          >
-            {p.key === "nexsi" ? p.label : `Nexus ${p.label}`}
-            {!p.live && <span className="soon">roadmap</span>}
-          </button>
-        ))}
-        <button
-          className={`nav-method${page === "methodology" ? " active" : ""}`}
-          onClick={() => { setPage("methodology"); window.scrollTo({ top: 0 }); }}
-        >
-          Methodology
-        </button>
-      </nav>
 
-      {(page !== "nexsi" || loadError) && <DataStatus snapshot={snapshot} now={now} error={loadError} />}
-
-      {page === "methodology" ? (
-        <Methodology />
-      ) : page === "nexsi" ? (
-        <NexSI snapshot={snapshot} now={now} mode={mode} symbol={nexsiSymbol} horizon={nexsiHorizon} onSymbol={setNexsiSymbol} onHorizon={setNexsiHorizon} eventDate={nexsiEvent} setEventDate={setNexsiEvent} />
-      ) : (
-        <>
-      <SectionNav />
+      <WorkspacePanel page="dashboard" id="compare" active={workspaceView==='compare'}>
 
       <div className="preset-block">
         <button
@@ -361,20 +367,6 @@ export default function App() {
       </div>
 
 
-      <QuotePanel snapshot={snapshot} now={now} />
-      <div id="kpis" className="anchor-target">
-        <div className="strip-head">
-          <span className="control-label">Market pulse — click a tile to overlay it</span>
-          <Freshness
-            date={[...seriesMap.values()].reduce((m, s) => (s.lastUpdated > m ? s.lastUpdated : m), "") || null}
-          />
-        </div>
-        {seriesMap.size ? (
-          <KpiStrip quality={quality} now={now} seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} />
-        ) : (
-          <SkeletonTiles />
-        )}
-      </div>
 
       <section id="overlay" className="card anchor-target">
         <div className="card-head">
@@ -452,7 +444,6 @@ export default function App() {
         )}
       </section>
 
-      <div className="grid-2">
         <section id="correlations" className="card anchor-target">
           <div className="card-head">
             <h2>Correlation structure</h2>
@@ -472,6 +463,24 @@ export default function App() {
           )}
         </section>
 
+      </WorkspacePanel>
+      <WorkspacePanel page="dashboard" id="pulse" active={workspaceView==='pulse'}>
+      <QuotePanel snapshot={snapshot} now={now} />
+      <div id="kpis" className="anchor-target">
+        <div className="strip-head">
+          <span className="control-label">Market pulse — select markets for comparison</span>
+          <Freshness
+            date={[...seriesMap.values()].reduce((m, s) => (s.lastUpdated > m ? s.lastUpdated : m), "") || null}
+          />
+        </div>
+        {seriesMap.size ? (
+          <><KpiStrip quality={quality} now={now} seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} /><button className="workspace-button secondary" onClick={()=>navigate({page:"dashboard",view:"compare"})}>Compare selected markets ({selected.length}) →</button></>
+        ) : (
+          <SkeletonTiles />
+        )}
+      </div>
+
+
         <section id="signals" className="card anchor-target">
           <div className="card-head">
             <h2>Snapshot signals</h2>
@@ -490,7 +499,6 @@ export default function App() {
           </HowToRead>
           {signals === null ? <SkeletonRows rows={6} /> : <SignalPanel signals={signals} onView={viewInOverlay} />}
         </section>
-      </div>
 
       <section id="market-state" className="card anchor-target">
         <div className="card-head">
@@ -509,6 +517,8 @@ export default function App() {
         {seriesMap.size ? <MarketStatePanel seriesMap={analyticalMap} cot={cot} /> : <SkeletonRows rows={7} />}
       </section>
 
+      </WorkspacePanel>
+      <WorkspacePanel page="dashboard" id="validation" active={workspaceView==='validation'}>
       <section id="validation" className="card anchor-target">
         <div className="card-head">
           <h2>Signal validation — event-study backtest</h2>
@@ -528,6 +538,8 @@ export default function App() {
         )}
       </section>
 
+      </WorkspacePanel>
+      <WorkspacePanel page="dashboard" id="impact" active={workspaceView==='impact'}>
       <section id="equity-impact" className="card anchor-target">
         <div className="card-head">
           <h2>Equity impact — Energy Beta board</h2>
@@ -581,24 +593,28 @@ export default function App() {
           <SkeletonRows rows={9} />
         )}
       </section>
-        </>
-      )}
+      </WorkspacePanel>
+      </RetainedView>
+      </main>
+      <ActivityCenter pending={!snapshot&&!loadError} open={activityOpen} onClose={()=>setActivityOpen(false)} exceptions={exceptions} activity={activity} now={now} onInspect={nexsi=>navigate(nexsi?{page:'nexsi',view:'evidence'}:{page:'methodology',view:''})}/>
+      <ResearchToast message={toast} onDismiss={dismiss}/>
+      <ResearchSearch open={searchOpen} onClose={()=>setSearchOpen(false)} snapshot={snapshot} onNavigate={navigate}/>
 
       <footer className="footer">
         <div className="footer-brand">Nexus<span>Q</span> · Gygante Quantitative Systems</div>
+        <p className="workspace-note">Market intelligence for capital markets: energy, commodity and macro data turned into signals, scenarios and decisions.</p>
         <div className="footer-links">
-          <button className="cta-link" onClick={() => { setPage("methodology"); window.scrollTo({ top: 0 }); }}>
+          <button className="cta-link" onClick={() => navigate({page:"methodology",view:""})}>
             Methodology
           </button>
-          <a className="cta-link" href="https://github.com/cs-ox-wolf3794/nexusq" target="_blank" rel="noreferrer">
-            Source &amp; data on GitHub
-          </a>
           <span>Data: FRED · Yahoo Finance · Nasdaq · World Bank · IMF · EIA</span>
         </div>
+        <details className="platform-roadmap"><summary>Platform roadmap</summary><p>Nexus Model · Nexus Scenario · Nexus Portfolio · Nexus Agent — planned workspaces, not currently available.</p></details>
         <div className="footer-fine">
-          Nexus Signal preview · model output, not investment advice · © 2026 Gygante Quantitative Systems
+          NexusQ 2.0 · model output, not investment advice · © 2026 Gygante Quantitative Systems
         </div>
       </footer>
+      </div>
     </div>
   );
 }

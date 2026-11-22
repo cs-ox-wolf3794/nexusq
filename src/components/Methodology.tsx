@@ -2,7 +2,7 @@ import { NexsiMethodology } from "./NexSI";
 /** Public specification. Formula changes must also advance ENGINE_VERSION. */
 export function Methodology() {
   return <div className="methodology">
-    <NexsiMethodology />
+    <NexsiMethodology id="global-nexsi-methodology" />
     <section className="card">
       <h2>Methodology and data reliability</h2>
       <p className="sub">NexusQ describes observed market relationships. Statistical association does not identify a causal shock or establish a trading edge. Every result depends on the quality, timing and scope of its inputs.</p>

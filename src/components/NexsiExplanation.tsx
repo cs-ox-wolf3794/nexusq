@@ -1,6 +1,8 @@
 import type { Attribution } from "../lib/nexsi-model";
 import type { NexsiCompany, NexsiEvent, NexsiFile } from "../lib/nexsi-types";
-import { CALENDAR_SOURCE, FUTURE_CALENDAR_SOURCE, FACTOR_EXPLANATIONS, TIMING_LABELS, disclosureContext, easternTime, evidenceForMove, explainMove, isPrimaryFiling, reviewedDisclosure, signed, type EvidenceTiming } from "../lib/nexsi-explanation";
+import { CALENDAR_SOURCE, FUTURE_CALENDAR_SOURCE, FACTOR_EXPLANATIONS, TIMING_LABELS, disclosureContext, evidenceForMove, explainMove, isPrimaryFiling, reviewedDisclosure, signed, type EvidenceTiming } from "../lib/nexsi-explanation";
+import { displayInstant } from "../lib/research-ui";
+import { ResearchDisclosure } from "./WorkspaceUI";
 import { HowToRead } from "./Guidance";
 import { NexsiCompanyBrief } from "./NexsiCompanyBrief";
 
@@ -9,6 +11,7 @@ export function MoveExplanation({ move, company, factors, now }: { move: Attribu
   return <section className="nexsi-explanation" aria-label="Explanation of the selected move">
     <h3>{move.actual <= -3 ? "Understanding this major drop" : "Understanding this move"}</h3>
     <p className="nexsi-lead"><strong>{company.symbol} {move.actual < 0 ? "fell" : "rose"} {Math.abs(move.actual).toFixed(2)}%.</strong> {reading.headline}</p>
+    <ResearchDisclosure title="Detailed interpretation & limitations" description="Energy, other modeled factors, the unexplained remainder and the limits of each estimate">
     <div className="nexsi-reasons">
       <article><h4>{reading.energyLabel}</h4><p>{reading.energyText}</p><p className="nexsi-foot">95% parameter interval: {signed(move.energyCI[0])} to {signed(move.energyCI[1])} pp. This measures parameter uncertainty, not the full range of possible causes.</p>
         {reading.energyShare != null ? <p>Model-implied energy share of the net loss: <strong>{reading.energyShare.toFixed(1)}%</strong>. Offsetting contributions can make this exceed 100%; it is not a verified causal share.</p>
@@ -16,8 +19,10 @@ export function MoveExplanation({ move, company, factors, now }: { move: Attribu
       <article><h4>Other modeled factors · {signed(reading.other)} pp</h4><p>{reading.otherText}</p><p className="nexsi-foot">The breakdown below separates broad market, relative technology and rates. The baseline is the fitted intercept, not an identified event.</p></article>
       <article><h4>Unexplained remainder · {signed(move.components.unexplained)} pp</h4><p>{reading.residualText}</p><p className="nexsi-foot">Earnings, guidance, valuation, competition, policy and positioning are possible avenues to investigate. Their individual impacts have not been measured here.</p></article>
     </div>
+    </ResearchDisclosure>
     {move.end === company.asOf && company.validation && (!company.validation.energyImprovesFit || company.validation.r2 < 0) && <p className="nexsi-alert">⚠ Recent model check: {company.validation.r2 < 0 ? "the full model performed worse than its historical-mean benchmark." : "adding energy did not improve the recent explanatory fit."} This further limits confidence in an energy-led explanation.</p>}
     <NexsiCompanyBrief company={company} move={move} now={now} />
+    <ResearchDisclosure title="Inspect the market inputs" description="Observed factor moves, fitted contributions and downloadable evidence">
     <h3>Market inputs behind the estimate</h3>
     <p className="sub">Actual input moves over {move.start} → {move.end}, alongside their estimated contribution to this stock. Percent changes and percentage-point contributions are different measures.</p>
     <table className="nexsi-drivers"><caption className="sr-only">Observed factor moves and estimated stock-return contributions</caption>
@@ -30,6 +35,7 @@ export function MoveExplanation({ move, company, factors, now }: { move: Attribu
     </table>
     <p className="nexsi-foot">Energy ({signed(move.energy)} pp) + other modeled factors ({signed(reading.other)} pp) + unexplained remainder ({signed(move.components.unexplained)} pp) reconcile to {signed(move.actual)}% before display rounding. Contributions describe associations after the model's controls; they do not establish causality or exclude indirect energy effects.</p>
     <p className="nexsi-foot"><a href={`${import.meta.env.BASE_URL}data/nexsi-prices.json`}>Download the dated price inputs</a> · <a href={`${import.meta.env.BASE_URL}data/nexsi.json`}>Download the fitted contribution results</a>. Source links may reflect later revisions; the downloadable snapshot records the inputs used here.</p>
+    </ResearchDisclosure>
   </section>;
 }
 
@@ -39,11 +45,11 @@ function EvidenceCard({ event, timing, company, move }: { event: NexsiEvent; tim
   return <li className="nexsi-evidence-card">
     <div className="nexsi-evidence-tags"><span className="fresh fresh-info">{primary ? "▣ Primary issuer filing" : "↗ Unreviewed reporting"}</span><span>{move ? TIMING_LABELS[timing] : "Recent source context"}</span></div>
     <a href={event.url} target="_blank" rel="noreferrer">{event.title} ↗</a>
-    <small>{event.source} · {primary ? "SEC acceptance" : "Feed publication"}: {easternTime(event.publishedAt)?.label ?? event.publishedAt}{primary && event.reportDate && ` · Reported event/period date: ${event.reportDate}`}</small>
+    <small>{event.source} · {primary ? "SEC acceptance" : "Feed publication"}: {displayInstant(event.publishedAt,'ET')}{primary && event.reportDate && ` · Reported event/period date: ${event.reportDate}`}</small>
     <p>{reviewed ?? disclosureContext(event)}</p>
     {reviewed && <small>Document reviewed 22 Nov 2026. This note concerns the split, not the cause of the selloff.</small>}
     {primary && event.items && <small>Reported 8-K items: {event.items}. SEC acceptance can follow an earlier company announcement.</small>}
-    {event.lastSeenAt && <small>Last retrieved {new Date(event.lastSeenAt).toLocaleDateString("en-GB", { timeZone: "UTC" })}. Historical context is retrospective, not a point-in-time news archive.</small>}
+    {event.lastSeenAt && <small>Last retrieved {displayInstant(event.lastSeenAt)}. Historical context is retrospective, not a point-in-time news archive.</small>}
   </li>;
 }
 
@@ -57,7 +63,7 @@ export function MoveEvidence({ company, move, now }: { company: NexsiCompany; mo
   const stale = !company.eventCheckedAt || now - Date.parse(company.eventCheckedAt) > 72 * 3600000;
   return <section className="nexsi-evidence anchor-target" id="nexsi-evidence" aria-label="Supporting sources for the selected move">
     <h3>Supporting sources & company context</h3>
-    <p className="sub">Model estimates above are supported by the linked price histories. The disclosures below document company events; they do not assign those events a share of the return.</p>
+    <p className="sub">The selected move’s model estimates are supported by the linked price histories. The disclosures below document company events; they do not assign those events a share of the return.</p>
     {move && <p className="nexsi-foot">Primary filings in the window: {primary.length} · Earlier: {earlier.length} · Later or uncertain: {followup.length} · Unreviewed reporting: {reporting.length}. Context includes seven calendar days before the starting close and two days after the ending close.</p>}
     {(company.eventIssues.length > 0 || stale) && <p className="nexsi-alert">⚠ Evidence coverage is incomplete{stale ? " or overdue" : ""}. {company.eventIssues.join(" · ")}</p>}
     {primary.length ? list(primary) : <p className="nexsi-callout">No retrieved primary filing falls within this move's verified timing window. The cause of the unexplained remainder remains unverified; missing coverage does not mean no company event occurred.</p>}
