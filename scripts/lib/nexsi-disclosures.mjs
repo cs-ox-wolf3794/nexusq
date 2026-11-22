@@ -3,12 +3,14 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { isPrimaryFiling, evidenceForMove } from '../../src/lib/nexsi-explanation.ts';
 import { REVIEWED_DISCLOSURES } from './nexsi-reviewed-disclosures.mjs';
+import { disclosurePeriods, extractOutlook } from './nexsi-outlook.mjs';
+import { transcriptSource, extractTranscriptFacts } from './nexsi-transcripts.mjs';
 
-export const DISCLOSURE_VERSION = 2;
+export const DISCLOSURE_VERSION = 3;
 const DAY = 86400000;
 const reader = fileURLToPath(new URL('./disclosure-html.py', import.meta.url));
 const sentences = new Intl.Segmenter('en', { granularity: 'sentence' });
-const money = String.raw`\$\s*[\d,]+(?:\.\d+)?\s*(?:billion|million)`;
+const money = String.raw`(?:US\$|\$|€|RMB|USD|EUR)\s*[\d,]+(?:\.\d+)?\s*(?:billion|million)`;
 const periodPattern = /(?:(?:first|second|third|fourth|[1-4](?:st|nd|rd|th))[- ]quarter(?: of)?(?: fiscal(?: year)?)? \d{4}|(?:fiscal (?:year )?|full[- ]year(?: fiscal)? )\d{4}|(?:fiscal )?quarter ended [A-Z][a-z]+ \d{1,2},? \d{4})/i;
 const excluded = /forward[- ]looking statements|safe harbor|risks and uncertainties|statements (?:that|which) are not historical|actual results (?:could|may)|shall not be deemed|incorporated (?:herein|by reference)|pursuant to section/i;
 const topics = [
@@ -29,9 +31,9 @@ export function applyReviewedFacts(facts, doc) {
 }
 
 export function parseDisclosureHtml(html) {
-  if (typeof html !== 'string' || html.length > 5_000_000 || !/<(?:html|body)\b/i.test(html)) throw new Error('Unsupported disclosure document');
+  if (typeof html !== 'string' || html.length > 10_000_000 || !/<(?:html|body)\b/i.test(html)) throw new Error('Unsupported disclosure document');
   if (/your request originates from an undeclared automated tool|request rate threshold exceeded/i.test(html)) throw new Error('SEC access limit');
-  const result = spawnSync(process.env.NEXSI_PYTHON ?? 'python', [reader], { input: html, encoding: 'utf8', timeout: 15000, maxBuffer: 6e6 });
+  const result = spawnSync(process.env.NEXSI_PYTHON ?? 'python', [reader], { input: html, encoding: 'utf8', timeout: 15000, maxBuffer: 12e6 });
   if (result.status !== 0) throw new Error('Disclosure text reader unavailable');
   const parsed = JSON.parse(result.stdout);
   if (!parsed.blocks?.length) throw new Error('Disclosure contains no readable text');
@@ -44,13 +46,13 @@ export function sameFilingDocument(url, event) {
   try {
     const u = new URL(url), parent = new URL(event.url);
     return u.origin === parent.origin && !u.search && !u.hash && !u.username && !u.password
-      && u.pathname.startsWith(parent.pathname.slice(0, parent.pathname.lastIndexOf('/') + 1))
+      && u.pathname.slice(0, u.pathname.lastIndexOf('/')) === parent.pathname.slice(0, parent.pathname.lastIndexOf('/'))
       && /^[\w.-]+\.html?$/i.test(u.pathname.split('/').at(-1));
   } catch { return false; }
 }
 export function releaseLinks(parsed, event) {
-  return [...new Set(parsed.links.filter(l => /press release|financial results|earnings release|news release/i.test(l.text))
-    .flatMap(l => { try { const u = new URL(l.href, event.url).href; return u !== event.url && sameFilingDocument(u, event) ? [u] : []; } catch { return []; } }))].slice(0, 2);
+  return [...new Set(parsed.links.filter(l => /press release|financial results|earnings release|news release|shareholder letter|99[.\s-]?[12]/i.test(l.text + ' ' + (l.context ?? '')))
+    .flatMap(l => { try { const u = new URL(l.href, event.url).href; return u !== event.url && sameFilingDocument(u, event) ? [u] : []; } catch { return []; } }))].slice(0, 3);
 }
 
 /** Narrow, source-preserving rules. Unsupported tables/wordings yield a visible coverage gap, never an invented result. */
@@ -60,11 +62,15 @@ export function extractDisclosureFacts(blocks, sourceUrl, isRelease = false) {
   const intro = blocks.slice(0, 35).find(b => /(?:reported|announced).{0,80}(?:results|revenue).{0,100}(?:quarter|year)|quarter ended/i.test(b) && b.length < 900);
   const periodCandidate = intro?.match(/(?:fiscal )?quarter ended [A-Z][a-z]+ \d{1,2},? \d{4}/i)?.[0] ?? intro?.match(periodPattern)?.[0]
     ?? blocks.slice(0, 15).map(b => b.match(periodPattern)?.[0]).find(Boolean) ?? '';
-  const reportPeriod = /quarter.*\d{4}/i.test(periodCandidate) ? periodCandidate : '';
+  const reportPeriod = /quarter.*\d{4}/i.test(periodCandidate) ? periodCandidate : blocks.slice(0, 30).flatMap(disclosurePeriods).find(p => /^Q[1-4]/.test(p)) ?? '';
   function add(category, text, topic, context = '') {
     const key = `${category}:${text}:${context}`;
     if (seen.has(key) || facts.filter(f => f.category === category).length >= (category === 'company-news' ? 1 : 5)) return;
     seen.add(key); facts.push({ category, text, topic, period: context || null, sourceUrl, method: 'rule-extracted' });
+  }
+  if (isRelease) for (const b of blocks.slice(0, 15)) {
+    const reported = b.match(new RegExp(`reports (${money}) total net sales and (${money}) net income in (Q[1-4] 20\\d{2})`, 'i'));
+    if (reported) { add('earnings', `Reported total net sales: ${reported[1]}; net income: ${reported[2]}.`, 'revenue', reported[3]); reportedRevenue = true; break; }
   }
   for (const [index, raw] of blocks.entries()) {
     const block = raw.replace(/[\u2010-\u2014]/g, '-').trim();
@@ -95,7 +101,7 @@ export function extractDisclosureFacts(blocks, sourceUrl, isRelease = false) {
       if (s.length < 25 || s.length > 850 || excluded.test(s)) continue;
       const forward = /\b(?:expects?|expected|projects?|anticipates?|forecast|will be)\b/i.test(s) || section === 'guidance';
       // Only explicit company-wide revenue prose; no segment totals or financial-table column inference.
-      const revenue = /^(?:total |net |consolidated )?revenue\s*(?:was|were|of|is|increased|decreased|grew|declined|:)/i.test(s) || /(?:reported|announced) (?:total |net |consolidated )?revenue\b/i.test(s);
+      const revenue = /^(?:(?:first|second|third|fourth)[- ]quarter )?(?:total |net |consolidated )?revenues?\s*(?:was|were|of|is|increased|decreased|grew|declined|:)/i.test(s) || /(?:reported|announced|achieved|generated) (?:record )?(?:total |net |consolidated )?revenues?\b/i.test(s);
       if (revenue) {
         // A monetary decrease is not revenue itself. Require an explicit level.
         const value = s.match(new RegExp(`(?:was|were|of|to|be|:)\\s*(${money})`, 'i'))?.[1];
@@ -114,7 +120,7 @@ export function extractDisclosureFacts(blocks, sourceUrl, isRelease = false) {
       }
       if (!forward) {
         const pair = s.match(/GAAP and non-GAAP (?:diluted )?earnings per (?:diluted )?share (?:were|was|of)\s*\$([\d.]+) and \$([\d.]+),? respectively/i);
-        if (pair && reportPeriod) add('earnings', `Diluted EPS: $${pair[1]} GAAP; $${pair[2]} non-GAAP.`, 'eps', reportPeriod);
+        if (pair && reportPeriod) add('earnings', `${/diluted/i.test(pair[0]) ? 'Diluted EPS' : 'EPS'}: $${pair[1]} GAAP; $${pair[2]} non-GAAP.`, 'eps', reportPeriod);
         const single = s.match(/^(GAAP|non-GAAP) diluted earnings per share (?:increased|decreased|grew|declined) \d+(?:\.\d+)? (?:percent|%) to \$(\d+(?:\.\d+)?)/i);
         if (single && reportPeriod) add('earnings', `Reported diluted EPS (${single[1]}): $${single[2]}.`, 'eps', reportPeriod);
       }
@@ -136,34 +142,50 @@ export function extractDisclosureFacts(blocks, sourceUrl, isRelease = false) {
       }
     }
   }
-  return facts;
+  const outlook = isRelease ? extractOutlook(blocks, sourceUrl) : [];
+  const capex = [];
+  for (const block of blocks) for (const m of block.matchAll(/\bwe (?:currently )?expect (?:that )?our capital expenditures (?:will be|to be) (in excess of|approximately|about|between)?\s*\$([\d,.]+)(?:\s*(?:to|and|[-–])\s*\$?([\d,.]+))?\s*(billion|million) in (20\d{2})\b/gi)) {
+    if (m[1] === 'between' && !m[3]) continue;
+    const text = `Management capital-expenditure outlook: ${m[1]?.toLowerCase() === 'in excess of' ? 'above ' : m[1] && m[1] !== 'between' ? 'approximately ' : ''}USD ${m[2]}${m[3] ? `–${m[3]}` : ''} ${m[4].toLowerCase()}.`;
+    if (!capex.some(f=>f.text===text&&f.period===m[5])) capex.push({category:'guidance',topic:'capex',text,period:m[5],sourceUrl,method:'rule-extracted'});
+  }
+  return [...(outlook.length ? [...facts.filter(f => f.category !== 'guidance'), ...outlook] : facts), ...capex];
 }
 
 export function selectDisclosureEvents(company, now) {
   const moves = [...Object.values(company.moves), ...company.largestDrops].filter(Boolean);
   const context = new Set(moves.flatMap(m => evidenceForMove(company.events, m, now).map(e => e.event.url)));
-  return company.events.filter(e => isPrimaryFiling(e) && /^(8-K|6-K)(\/A)?$/.test(e.form ?? '') && Date.parse(e.publishedAt) <= now)
-    .filter(e => context.has(e.url) || (e.items?.split(',').includes('2.02') && now - Date.parse(e.publishedAt) < 100 * DAY))
-    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 5);
+  const candidates = company.events.filter(e => isPrimaryFiling(e) && /^(8-K|6-K)(\/A)?$/.test(e.form ?? '') && Date.parse(e.publishedAt) <= now && now - Date.parse(e.publishedAt) < 100 * DAY)
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  // Reserve earnings separately: frequent corporate updates must not crowd out the latest results.
+  const earnings = candidates.filter(e => e.items?.split(',').map(s => s.trim()).includes('2.02')).slice(0, 2);
+  const other = candidates.filter(e => context.has(e.url) || e.form.startsWith('6-K')).slice(0, 10);
+  return [...new Map([...earnings, ...other].map(e => [e.url, e])).values()];
 }
 
 /** Serial, bounded SEC retrieval. A failed enrichment never overwrites a good summary or blocks market prices. */
-export function createDisclosureLoader({ now = Date.now(), maxRequests = 420, maxDurationMs = 300000, fetchImpl = fetch, sleep = ms => new Promise(r => setTimeout(r, ms)) } = {}) {
+export function createDisclosureLoader({ now = Date.now(), maxRequests = 700, maxDurationMs = 420000, fetchImpl = fetch, sleep = ms => new Promise(r => setTimeout(r, ms)) } = {}) {
   let remaining = maxRequests;
   const deadline = Date.now() + maxDurationMs;
   const cache = new Map();
-  const retrieve = async url => {
+  const retrieve = async (url, pdf = false) => {
     if (Date.now() >= deadline) throw new Error('Disclosure time budget reached; retry on the next full refresh');
     if (remaining-- <= 0) throw new Error('Disclosure request budget reached; retry on the next full refresh');
     await sleep(300);
     const response = await fetchImpl(url, { headers: { 'User-Agent': 'NexusQ/1.0 (public company disclosures; https://nexus.gygante.com)' }, signal: AbortSignal.timeout(12000), redirect: 'error' });
     if (!response.ok) throw new Error(`SEC document HTTP ${response.status}`);
+    if (pdf) {
+      const bytes=Buffer.from(await response.arrayBuffer());
+      const result=spawnSync(process.env.NEXSI_PYTHON ?? 'python', [fileURLToPath(new URL('./disclosure-pdf.py', import.meta.url))], { input:bytes,encoding:'utf8',timeout:15000,maxBuffer:3e6 });
+      if(result.status!==0)throw Error('Issuer transcript PDF reader unavailable');
+      return { blocks:[result.stdout],sha256:createHash('sha256').update(bytes).digest('hex') };
+    }
     const html = await response.text();
     return { ...parseDisclosureHtml(html), sha256: createHash('sha256').update(html).digest('hex') };
   };
   return async event => {
     const old = event.summary;
-    if (old?.version === DISCLOSURE_VERSION && now - Date.parse(old.checkedAt) < (old.issue?.includes('budget reached') ? 0 : old.issue ? 6 * 3600000 : 7 * DAY)) return old;
+    if (old?.version === DISCLOSURE_VERSION && now - Date.parse(old.checkedAt) < (old.issue?.includes('budget reached') ? 0 : old.issue ? 3600000 : DAY)) return old;
     if (cache.has(event.url)) return cache.get(event.url);
     const task = (async () => {
       const checkedAt = new Date(now).toISOString();
@@ -172,17 +194,40 @@ export function createDisclosureLoader({ now = Date.now(), maxRequests = 420, ma
         const main = await retrieve(event.url);
         const docs = [{ url: event.url, sha256: main.sha256, retrievedAt: checkedAt }];
         const extract = (doc, url, isRelease = false) => applyReviewedFacts(extractDisclosureFacts(doc.blocks, url, isRelease), { url, sha256: doc.sha256 });
-        const facts = extract(main, event.url);
+        const facts = extract(main, event.url), transcriptInputs = [];
         const issues = [];
-        for (const url of releaseLinks(main, event)) {
-          try { const release = await retrieve(url); docs.push({ url, sha256: release.sha256, retrievedAt: checkedAt }); facts.push(...extract(release, url, true)); }
+        let exhibits = releaseLinks(main, event);
+        // Some 6-Ks list exhibits as plain text without hyperlinks. EDGAR's filing
+        // index supplies the actual document names within the same accession.
+        if (!exhibits.length && (event.form?.startsWith('6-K') || event.items?.includes('2.02'))) {
+          const id = new URL(event.url).pathname.split('/').at(-2);
+          const accession = `${id.slice(0,10)}-${id.slice(10,12)}-${id.slice(12)}`;
+          const indexUrl = new URL(`${accession}-index.html`, event.url).href;
+          try { exhibits = releaseLinks(await retrieve(indexUrl), event).filter(u => u !== indexUrl); }
+          catch (error) { issues.push(`Exhibit discovery: ${error.message}`); }
+        }
+        for (const url of exhibits) {
+          try { const release = await retrieve(url); docs.push({ url, sha256: release.sha256, retrievedAt: checkedAt }); facts.push(...extract(release, url, true)); transcriptInputs.push(...release.blocks.slice(0,35)); }
           catch (error) {
             issues.push(error.message);
             const retained = old?.documents.find(d => d.url === url);
             if (retained) { docs.push(retained); facts.push(...old.facts.filter(f => f.sourceUrl === url)); }
           }
         }
-        const unique = facts.filter((f, i) => facts.findIndex(g => g.category === f.category && g.text === f.text && g.period === f.period) === i);
+        const transcript=transcriptSource(event,transcriptInputs);
+        if(transcript) {
+          try {
+            const doc=await retrieve(transcript.url,transcript.kind==='pdf');
+            const extracted=extractTranscriptFacts(doc.blocks.join(' '),event,transcript);
+            docs.push({url:transcript.url,sha256:doc.sha256,retrievedAt:checkedAt}); facts.push(...extracted);
+          } catch(error) {
+            issues.push(`Official transcript: ${error.message}`);
+            const retained=old?.documents.find(d=>d.url===transcript.url);
+            if(retained){docs.push(retained);facts.push(...old.facts.filter(f=>f.sourceUrl===transcript.url));}
+          }
+        }
+        const key = f => `${f.category}:${f.text.toLowerCase().replace(/\b(?:to|and)\b|[–−-]/g, '~').replace(/\s+/g,'')}:${f.period?.toLowerCase()}`;
+        const unique = facts.filter((f, i) => facts.findIndex(g => key(g) === key(f)) === i);
         return { version: DISCLOSURE_VERSION, checkedAt, documents: docs, facts: unique, issue: issues.join('; ') || null };
       } catch (error) {
         return { ...(old ?? { version: DISCLOSURE_VERSION, documents: [], facts: [] }), checkedAt, issue: error.message };
@@ -199,5 +244,10 @@ export async function enrichCompanyDisclosures(companies, now = Date.now(), opti
   const ordered = [...companies].sort((a, b) => (a.observedReturns[1] ?? 0) - (b.observedReturns[1] ?? 0));
   for (const company of ordered) {
     for (const event of selectDisclosureEvents(company, now)) event.summary = await load(event);
+    // Periodic filings can contain explicit capex forecasts absent from earnings releases.
+    if (company.included && !company.events.some(e=>e.summary?.facts.some(f=>f.category==='guidance'))) {
+      const periodic=company.events.filter(e=>isPrimaryFiling(e)&&/^(10-Q|10-K|20-F)(\/A)?$/.test(e.form??'')&&Date.parse(e.publishedAt)<=now).sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt))[0];
+      if(periodic)periodic.summary=await load(periodic);
+    }
   }
 }

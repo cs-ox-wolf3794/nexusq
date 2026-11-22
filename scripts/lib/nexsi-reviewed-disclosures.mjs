@@ -1,6 +1,82 @@
 // Concise document-reviewed notes. Exact document hashes prevent reuse after a source correction.
 // Facts describe issuer disclosures, not independent verification of allegations or price causation.
 export const REVIEWED_DISCLOSURES = {
+  '18218bfbf2d976351898b9afebd9cd70e221836104374457b27c1c31380962c3': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1075531/000107553126000044/q3-26bkngearningsrelease.htm',
+    replaceCategories: ['earnings', 'guidance'],
+    facts: [
+      { category: 'earnings', topic: 'revenue', period: 'Q3 2026', text: 'Booking reported revenue of USD 8.9 billion, down 1%, while adjusted revenue of USD 9.8 billion rose 9%. A USD 900 million revenue reduction and a separate USD 100 million loss accrual related to an FTC matter were excluded from its adjusted measures. The GAAP decline is therefore not a direct measure of weaker travel demand.' },
+      { category: 'guidance', topic: 'revenue', period: 'Q4 2026', text: 'Booking forecast adjusted revenue growth of 0–2% and approximately flat adjusted EBITDA year over year. These are non-GAAP measures. The outlook assumed Middle East travel disruptions and indirect effects, including higher airfares, would persist through year end.' },
+    ],
+  },
+  '7b25b0bff65ebad9992df6d3956563c67df59ffae60fd1bc5bee960884087f08': {
+    url: 'https://www.sec.gov/Archives/edgar/data/97476/000009747626000165/q32026txnex99-eredgar.htm',
+    replaceCategories: ['guidance'],
+    facts: [{ category: 'guidance', topic: 'revenue', period: 'Q4 2026', text: 'Texas Instruments forecast revenue of USD 5.80–6.30 billion and earnings per share of USD 2.45–2.79.' }],
+  },
+  '1f0673535099f68a794bef7d306df9778e5b899a7e02a81aff882f3044284bec': {
+    url: 'https://www.sec.gov/Archives/edgar/data/882835/000088283526000042/a2026q3earningsrelease.htm',
+    replaceCategories: ['guidance'],
+    facts: [
+      { category: 'guidance', topic: 'eps', period: 'Full year 2026', text: 'Roper raised adjusted diluted EPS guidance to USD 22.35–22.40 from USD 22.15–22.30. This is a non-GAAP measure.' },
+      { category: 'guidance', topic: 'eps', period: 'Q4 2026', text: 'Roper forecast adjusted diluted EPS of USD 5.95–6.00. Guidance excludes unannounced acquisitions or disposals, proceeds from pending Indicor disposals and potential share repurchases.' },
+    ],
+  },
+  'd37753a04e7edd54dcc93d0044476fdd81e3b3ba15ddd0e0b099c5605856af04': {
+    url: 'https://www.sec.gov/Archives/edgar/data/97210/000119312526434981/ter-ex99_1.htm',
+    replaceCategories: ['guidance'],
+    facts: [{ category: 'guidance', topic: 'revenue', period: 'Q4 2026', text: 'Teradyne forecast revenue of USD 1,250–1,350 million, GAAP diluted EPS of USD 1.88–2.18 and non-GAAP diluted EPS of USD 1.95–2.25. The adjusted measure excludes specified amortization and related tax effects.' }],
+  },
+  '74b7fe64e048de9239ffc9ab02842bd4076102977166a489bfd73d41bb8123c4': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1559720/000119312526449727/d437988dex991.htm',
+    replaceCategories: ['guidance'],
+    facts: [{ category: 'guidance', topic: 'revenue', period: 'Q4 2026', text: 'Airbnb forecast revenue of USD 3.22–3.28 billion, or 16–18% year-over-year growth, including an approximately two-percentage-point currency benefit after hedging. Management expected adjusted EBITDA margin to be slightly below Q4 2025, partly because of marketing timing; adjusted EBITDA is non-GAAP.' }],
+  },
+  '3c57c61f24ebe5e0aa86517c6ad6ebc603d15299cb7817ac5d2368bf502c9b20': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm',
+    replaceCategories: ['earnings'],
+    facts: [{ category: 'earnings', topic: 'revenue', period: 'Q3 2026', text: 'Nebius reported consolidated revenue of USD 980.8 million, up 571% year over year. The loss from continuing operations was USD 37.5 million; adjusted net income was USD 90.9 million, a separate non-GAAP measure.' }],
+  },
+  '52e21903fe069297945729de9271ab3e556de017d2bb24945993a0cd8af1cd69': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-2.htm',
+    replaceCategories: ['guidance'],
+    facts: [
+      { category: 'guidance', topic: 'revenue', period: '2026', text: 'Nebius expected revenue at the low end of its USD 3.0–3.4 billion range and an adjusted EBITDA margin around 40%. Management said some revenue shifted into early 2027 and that the annualized revenue milestone previously expected in December would move to February.' },
+      { category: 'guidance', topic: 'capex', period: '2027 preliminary outlook', text: 'Management initially forecast revenue of USD 12–13 billion and capital spending of USD 40–45 billion, with pre-tax breakeven targeted by year end. These are forecasts, not contracted revenue or achieved results.' },
+      { category: 'company-news', topic: 'operations', text: 'Nebius disclosed a shift in the timing of revenue and an annualized revenue milestone as it expanded capacity. This is a company-specific execution update; it does not establish how much of the share-price move it caused.' },
+    ],
+  },
+  '2c08b3585cf207f01417391a3ed725db0c791d20fdbafc79dd869155bcee9182': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1075124/000119312526447349/tri-ex99_2.htm',
+    replaceCategories: ['earnings'],
+    facts: [{ category: 'earnings', topic: 'revenue', period: 'Q3 2026', text: 'Thomson Reuters reported revenue from continuing operations of USD 1,833 million, compared with USD 1,658 million a year earlier. Operating profit was USD 402 million, versus USD 517 million. Global Print is excluded as a discontinued operation.' }],
+  },
+  '5b3917e48a522d5686cf36ae035a572b6ac1d8da69a2defe7f54b26fafa7d857': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1075124/000119312526447349/tri-ex99_1.htm',
+    replaceCategories: ['guidance'],
+    facts: [{ category: 'guidance', topic: 'revenue', period: 'Full year 2026', text: 'The updated continuing-operations outlook excluded Global Print: total revenue growth around 9.5%, organic revenue growth around 8.5–9.0%, and adjusted EBITDA margin around 39%. The adjusted and organic measures are non-IFRS; the change in business scope prevents a simple comparison with the earlier outlook.' }],
+  },
+  '8e037642a6a030ca4e29e96dc357ea8898338c09db94c30eb2a48f56a09d1e8b': {
+    url: 'https://www.sec.gov/Archives/edgar/data/937966/000162828026065813/pressreleasefinancialresul.htm',
+    replaceCategories: ['guidance'],
+    facts: [
+      { category: 'guidance', topic: 'revenue', period: 'Q4 2026', text: 'ASML forecast total net sales of EUR 14.2–15.2 billion and gross margin around 57%.' },
+      { category: 'guidance', topic: 'revenue', period: 'Full year 2026', text: 'ASML forecast total net sales of EUR 44–45 billion and gross margin around 56%.' },
+    ],
+  },
+  'c22007d3c88b9c9f5868272171839565ed4254a3d322e418937df88dfc0f0fd2': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1633917/000163391726000086/pypl3q-26earningsrelease.htm',
+    replaceCategories: ['guidance'],
+    facts: [
+      { category: 'guidance', topic: 'eps', period: 'Q4 2026', text: 'PayPal forecast GAAP EPS of approximately USD 1.37 and non-GAAP EPS of approximately USD 1.43.' },
+      { category: 'guidance', topic: 'eps', period: 'Full year 2026', text: 'PayPal forecast GAAP EPS of approximately USD 5.07 and non-GAAP EPS of approximately USD 5.60. Management raised its non-GAAP outlook and reaffirmed GAAP EPS guidance; the two accounting measures are not interchangeable.' },
+    ],
+  },
+  'c017178e0082f311a3d36da0bb60a91721567442c51aa551496dec1937f6bd95': {
+    url: 'https://www.sec.gov/Archives/edgar/data/1792789/000179278926000062/proddashex991-pressrelease.htm',
+    replaceCategories: ['guidance'],
+    facts: [{ category: 'guidance', topic: 'outlook', period: 'Q4 2026', text: 'DoorDash forecast marketplace gross order value of USD 35.4–36.4 billion and adjusted EBITDA of USD 900–1,100 million. Order value is transaction volume, not DoorDash revenue; adjusted EBITDA is a non-GAAP measure. The outlook assumes relatively stable consumer demand and key exchange rates.' }],
+  },
   'cb778cd14593ce93d1bc4073523d740b1ee4235c94676aa8107012c75c7ba5c9': {
     url: 'https://www.sec.gov/Archives/edgar/data/2023554/000162828026068243/sndkq1-27ex991xpressrelease.htm',
     replaceCategories: ['earnings', 'guidance'],

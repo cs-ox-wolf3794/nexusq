@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { applyReviewedFacts, createDisclosureLoader, extractDisclosureFacts, parseDisclosureHtml, releaseLinks } from '../../../scripts/lib/nexsi-disclosures.mjs';
+import { applyReviewedFacts, createDisclosureLoader, extractDisclosureFacts, parseDisclosureHtml, releaseLinks, selectDisclosureEvents } from '../../../scripts/lib/nexsi-disclosures.mjs';
 import { mergeEvidence } from '../../../scripts/lib/nexsi-sources.mjs';
 import { companyBrief, validDisclosureSource } from '../nexsi-brief';
 import type { NexsiCompany, NexsiEvent } from '../nexsi-types';
@@ -10,12 +10,27 @@ const release = event.url.replace('report.htm', 'release.htm');
 const summary = { version: 2, checkedAt: '2026-11-10T12:00:00Z', issue: null, documents: [{ url: release, sha256: 'a'.repeat(64), retrievedAt: '2026-11-10T12:00:00Z' }], facts: [{ category: 'earnings' as const, topic: 'revenue', text: 'Reported revenue: $4 billion.', period: 'third quarter of fiscal 2026', method: 'rule-extracted' as const, sourceUrl: release }] };
 
 describe('Company disclosure summaries', () => {
+  it('preserves an explicit annual capex lower bound from a periodic filing',()=>{
+    const facts=extractDisclosureFacts(['We currently expect our capital expenditures to be in excess of $20 billion in 2026.','We expected our capital expenditures to be $10 billion in 2025.'],event.url);
+    expect(facts).toEqual([expect.objectContaining({category:'guidance',period:'2026',text:'Management capital-expenditure outlook: above USD 20 billion.'})]);
+  });
+  it('reserves earnings coverage despite a stream of more recent corporate reports',()=>{
+    const earnings={...event,publishedAt:'2026-10-29T20:00:00Z'};
+    const reports=Array.from({length:15},(_,i)=>({...event,url:event.url.replace('report',`report${i}`),items:'8.01',publishedAt:new Date(now-i*86400000).toISOString()}));
+    const selected=selectDisclosureEvents({events:[...reports,earnings],moves:{1:{start:'2026-11-19',end:'2026-11-20'}},largestDrops:[]},now);
+    expect(selected).toContain(earnings);
+  });
+  it('preserves table cells across formatting tags and discovers numeric exhibit links by row context',()=>{
+    const parsed=parseDisclosureHtml('<html><body><table><tr><td>99.1</td><td><a href="release.htm">Company</a> quarterly release</td></tr><tr><td><p>Revenue</p></td><td><p>$4 billion</p></td></tr></table></body></html>');
+    expect(parsed.blocks).toContain('Revenue | $4 billion');
+    expect(releaseLinks(parsed,event)).toEqual([release]);
+  });
   it('preserves period, actual/outlook distinction, tolerance and GAAP basis', () => {
     const facts = extractDisclosureFacts(['Company reported revenue for the quarter ended October 25, 2026, of $115.8 billion, up 103% from a year ago.', 'GAAP and non-GAAP earnings per diluted share were $2.70 and $2.68, respectively.', 'Outlook', 'Our outlook for the fourth quarter of fiscal 2027 is as follows:', 'Revenue is expected to be $130.0 billion, plus or minus 3%.'], release, true);
     expect(facts).toEqual(expect.arrayContaining([
       expect.objectContaining({ category: 'earnings', text: 'Reported revenue: $115.8 billion. Year-over-year change: +103%.', period: 'quarter ended October 25, 2026' }),
       expect.objectContaining({ category: 'earnings', text: 'Diluted EPS: $2.70 GAAP; $2.68 non-GAAP.' }),
-      expect.objectContaining({ category: 'guidance', text: 'Management revenue outlook: $130.0 billion (plus or minus 3%).', period: 'fourth quarter of fiscal 2027' }),
+      expect.objectContaining({ category: 'guidance', text: 'Management revenue outlook: $130.0 billion (plus or minus 3%).', period: 'Q4 fiscal 2027' }),
     ]));
     expect(facts.filter((f: { category: string }) => f.category === 'earnings')).toHaveLength(2);
   });
@@ -80,7 +95,7 @@ describe('Company disclosure summaries', () => {
   });
   it('does not fetch healthy cached documents and bounds initial requests', async () => {
     const fetchImpl = vi.fn(); const load = createDisclosureLoader({ now, maxRequests: 0, fetchImpl, sleep: async () => {} });
-    const cached = { ...summary, checkedAt: new Date(now).toISOString() };
+    const cached = { ...summary, version: 3, checkedAt: new Date(now).toISOString() };
     expect(await load({ ...event, summary: cached })).toEqual(cached);
     expect((await load(event)).issue).toContain('budget'); expect(fetchImpl).not.toHaveBeenCalled();
     const expired = createDisclosureLoader({ now, maxDurationMs: 0, fetchImpl, sleep: async () => {} });

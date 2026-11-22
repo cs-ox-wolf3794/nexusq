@@ -7,10 +7,13 @@ export interface NexsiEvent {
   title: string; url: string; publishedAt: string; source: string; kind: "filing" | "headline"; items?: string;
   form?: string; issuerCik?: number; reportDate?: string; firstSeenAt?: string; lastSeenAt?: string | null;
   summary?: NexsiDisclosureSummary;
+  financialSummary?: NexsiDisclosureSummary;
 }
 export interface NexsiDisclosureFact {
   category: "earnings" | "guidance" | "company-news"; text: string; topic: string;
-  period: string | null; sourceUrl: string; method: "rule-extracted" | "reviewed"; excerpt?: string; reviewedAt?: string;
+  period: string | null; periodEnd?: string; sourceUrl: string; method: "rule-extracted" | "reviewed" | "sec-xbrl"; excerpt?: string; reviewedAt?: string;
+  evidence?: { url: string; sha256: string; taxonomy: string; concept: string; unit: string; start: string; end: string; value: number; accession: string };
+  sourceTiming?: 'unverified';
 }
 export interface NexsiDisclosureSummary {
   version: number; checkedAt: string; documents: { url: string; sha256: string; retrievedAt?: string }[];

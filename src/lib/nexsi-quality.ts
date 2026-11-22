@@ -1,7 +1,7 @@
 import { NEXSI_VERSION } from "./nexsi-model";
 import type { NexsiCompany, NexsiFile } from "./nexsi-types";
 import { validDate } from "./quality";
-import { validDisclosureSource, BRIEF_CATEGORIES } from "./nexsi-brief";
+import { validDisclosureSource, validFinancialEvidence, BRIEF_CATEGORIES } from "./nexsi-brief";
 
 const DAY = 86400000;
 export function nexsiStatus(file: NexsiFile, now: number): string | null {
@@ -40,11 +40,18 @@ export function validateNexsi(file: NexsiFile) {
     if (c.events.some(e => !/^https:\/\//.test(e.url) || !Number.isFinite(Date.parse(e.publishedAt)))) throw new Error(`Invalid NexSI evidence: ${c.symbol}`);
     for (const e of c.events) if (e.summary) {
       const s = e.summary;
-      if (![1, 2].includes(s.version) || !Number.isFinite(Date.parse(s.checkedAt)) || !Array.isArray(s.documents) || !Array.isArray(s.facts)
+      if (![1, 2, 3].includes(s.version) || !Number.isFinite(Date.parse(s.checkedAt)) || !Array.isArray(s.documents) || !Array.isArray(s.facts)
         || s.documents.some(d => !validDisclosureSource(d.url, e) || !/^[a-f\d]{64}$/.test(d.sha256))
         || s.facts.some(f => !BRIEF_CATEGORIES.includes(f.category) || !f.text || f.text.length > 700 || !['rule-extracted', 'reviewed'].includes(f.method)
           || !s.documents.some(d => d.url === f.sourceUrl) || !validDisclosureSource(f.sourceUrl, e)
+          || (!f.sourceUrl.startsWith('https://www.sec.gov/') && f.sourceTiming !== 'unverified')
           || (f.excerpt && f.excerpt.split(/\s+/).length > 24))) throw new Error(`Invalid NexSI disclosure summary: ${c.symbol}`);
+    }
+    for (const e of c.events) if (e.financialSummary) {
+      const s = e.financialSummary;
+      if (s.version !== 1 || !Number.isFinite(Date.parse(s.checkedAt)) || !Array.isArray(s.documents) || !Array.isArray(s.facts)
+        || s.documents.some(d => d.url !== `https://data.sec.gov/api/xbrl/companyfacts/CIK${String(e.issuerCik).padStart(10, '0')}.json` || !/^[a-f\d]{64}$/.test(d.sha256))
+        || s.facts.some(f => !validFinancialEvidence(f, e) || !s.documents.some(d => d.url === f.evidence?.url && d.sha256 === f.evidence.sha256))) throw new Error(`Invalid NexSI structured financial summary: ${c.symbol}`);
     }
   }
 }

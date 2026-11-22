@@ -8,7 +8,8 @@ import { nasdaqUniverse, secDirectory, companyFilings, companyHeadlines, electri
 import { NEXSI_VERSION, factorRows, attributeMove, validateFactors } from "../src/lib/nexsi-model.ts";
 import { computeSignals } from "../src/lib/signals.ts";
 import { validateNexsi } from "../src/lib/nexsi-quality.ts";
-import { enrichCompanyDisclosures, selectDisclosureEvents } from "./lib/nexsi-disclosures.mjs";
+import { enrichCompanyDisclosures } from "./lib/nexsi-disclosures.mjs";
+import { enrichFinancialStatements } from "./lib/nexsi-financials.mjs";
 
 const DAY = 86400000;
 const FACTORS = [
@@ -67,7 +68,7 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
     const largestDrops = rows.length ? drops.map(d => attributeMove(rows, d.prior, d.date, 1)).filter(Boolean) : [];
     const eventIssues = [];
     let events = old?.events ?? [], eventCheckedAt = old?.eventCheckedAt ?? null;
-    if (!eventCheckedAt || now - Date.parse(eventCheckedAt) > 6 * 3600000 || old?.eventIssues?.length || !old?.events.every(e => e.firstSeenAt)) {
+    if (!eventCheckedAt || now - Date.parse(eventCheckedAt) > 3600000 || old?.eventIssues?.length || !old?.events.every(e => e.firstSeenAt)) {
       const identity = directoryMap.get(symbol);
       const tasks = [companyHeadlines(symbol, now)];
       if (identity) {
@@ -94,9 +95,12 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
       largestDrops, validation: rows.length ? validateFactors(rows) : null, signals, events, eventCheckedAt, eventIssues };
   });
   await enrichCompanyDisclosures(companies, now);
+  await enrichFinancialStatements(companies, now);
   for (const c of companies) {
-    const issues = selectDisclosureEvents(c, now).filter(e => e.summary?.issue);
+    const issues = c.events.filter(e => e.summary?.issue);
     if (issues.length) failures.push(`${c.symbol}: ${issues.length} disclosure summaries incomplete (${[...new Set(issues.map(e => e.summary.issue))].join('; ')})`);
+    const financialIssues = [...new Set(c.events.flatMap(e => e.financialSummary?.issue ? [e.financialSummary.issue] : []))];
+    if (financialIssues.length) failures.push(`${c.symbol}: structured financial coverage incomplete (${financialIssues.join('; ')})`);
   }
   console.log(`NexSI disclosures: ${companies.reduce((n, c) => n + c.events.filter(e => e.summary?.facts.length).length, 0)} summaries with source-backed facts`);
   let electricity = previous?.electricity ?? { retrievedAt: null, rates: [], issue: null };
