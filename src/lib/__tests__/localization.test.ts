@@ -35,6 +35,9 @@ describe('Language preferences and financial wording',()=>{
     expect(displayInstant('2026-11-21T00:30:00Z','ET')).toBe('20. nov. 2026 · 19:30 ET');
     expect(displayInstant('2026-11-20')).not.toContain('00:00');
     expect(t('01')).toBe('01');
+    expect(t('Drag')).toBe('Negativt bidrag');
+    expect(t('Support')).toBe('Positivt bidrag');
+    expect(t('On')).toBe('På');
   });
   it('translates all curated questions and supports Norwegian stock/energy queries',()=>{
     for(const question of RESEARCH_QUESTIONS) expect(t(question.title,'nb-NO')).not.toBe(question.title);

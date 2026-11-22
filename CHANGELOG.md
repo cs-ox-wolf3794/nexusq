@@ -19,6 +19,12 @@ NexSum becomes the opening brief, with a more readable design and independent En
 - Added regression checks for preferences, Norwegian search and uncertainty wording, FX direction/units/freshness/retention, chart-data preservation and language-independent brief review signatures. US date expectations now follow en-US; timestamps keep explicit time zones.
 - Product version 2.1.0; analytical engine versions remain unchanged.
 
+### Verification
+
+- 252 regression tests pass, together with type checks, lint, publication validation and the production build.
+- Verified desktop, tablet and 375px mobile layouts, independent language/currency choices, saved preferences, translated search/filters and unchanged scenario assumptions.
+- GitHub CI and Pages deployment passed. A production quote-refresh run also published a freshly retrieved, validated Norges Bank rate while preserving its original observation date.
+
 ## 2.0.0 — 2026-11-22
 
 NexusQ 2.0 brings company-move investigation, energy exposure, market relationships and source evidence into one connected research experience. This is the first tagged product release; the earlier milestones below were previously untagged.

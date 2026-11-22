@@ -58,6 +58,8 @@ export const nb: Record<string, string> = {
   'Original source language': 'Kildens originalspråk',
   'below': 'under', 'above': 'over',
   'On': 'På', '1Y': '1 år', '3Y': '3 år', '5Y': '5 år', '10Y': '10 år',
+  'Drag': 'Negativt bidrag', 'Support': 'Positivt bidrag',
+  'Latest 1-session move': 'Siste bevegelse over én børsdag', 'Latest {0}-session move': 'Siste bevegelse over {0} børsdager',
   '+1 positively linked': '+1 positiv samvariasjon', 'inversely linked −1': 'negativ samvariasjon −1',
   '1 trading session': '1 børsdag', '{0} trading sessions': '{0} børsdager',
   'Undated project page; reviewed {0}': 'Udatert prosjektside; gjennomgått {0}',
