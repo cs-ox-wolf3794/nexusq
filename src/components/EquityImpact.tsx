@@ -1,3 +1,4 @@
+import { l as localize, t as tr } from '../lib/i18n';
 import { useMemo, useState } from "react";
 import type { ImpactCompany, Series } from "../lib/data";
 import type { RollingBeta } from "../lib/beta";
@@ -45,78 +46,68 @@ export function EquityImpact({ companies, seriesMap }: {
 
   const driverLabel = DRIVERS.find((d) => d.id === driverId)?.label ?? driverId;
 
-  if (!companies.length) return <p className="sub">Equity estimates withheld: fresh, quality-checked adjusted closing prices are required.</p>;
+  if (!companies.length) return <p className="sub">{tr("Equity estimates withheld: fresh, quality-checked adjusted closing prices are required.")}</p>;
 
   return (
     <div>
       <div className="controls">
         <div className="control-group">
-          <span className="control-label">Energy driver</span>
+          <span className="control-label">{tr("Energy driver")}</span>
           <div className="seg">
-            {DRIVERS.map((d) => (
+            {localize(DRIVERS.map((d) => (
               <button key={d.id} className={driverId === d.id ? "active" : ""} onClick={() => setDriverId(d.id)}>
-                {d.label}
+                {localize(d.label)}
               </button>
-            ))}
+            )))}
           </div>
         </div>
         <div className="control-group shock-group">
-          <span className="control-label">Shock: {driverLabel} {shockPct >= 0 ? "+" : ""}{shockPct}%</span>
+          <span className="control-label">{tr("Shock: ")}{localize(driverLabel)} {localize(shockPct >= 0 ? "+" : "")}{localize(shockPct)}{tr("%")}</span>
           <input
             type="range" min={-40} max={40} step={5} value={shockPct}
             onChange={(e) => setShockPct(Number(e.target.value))}
-            aria-label="Energy price shock percent"
+            aria-label={tr("Energy price shock percent")}
           />
         </div>
       </div>
 
-      <HowToRead>
-        Use <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver." /> for directional sensitivity and <GlossaryTip term="R²" definition="Share of return variance explained by the selected driver in this rolling window." /> for fit quality. A high beta with low R² is weak explanatory evidence.
-      </HowToRead>
+      <HowToRead>{tr("Use ")}<GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver." />{tr(" for directional sensitivity and ")}<GlossaryTip term="R²" definition="Share of return variance explained by the selected driver in this rolling window." />{tr(" for fit quality. A high beta with low R² is weak explanatory evidence.")}</HowToRead>
 
       <div className="table-wrap stack-wrap">
         <table className="beta-table stack-sm">
           <thead>
             <tr>
-              <th>Company</th>
-              <th>Sector</th>
-              <th className="num" title="Cov(stock, driver) / Var(driver), 90 obs daily log-returns"><GlossaryTip term="β" definition="Cov(stock, driver) / Var(driver), estimated on rolling 90-observation paired log-returns." /> 90 obs</th>
-              <th title="Rolling 90 obs beta, five-observation steps, last 52 estimates"><GlossaryTip term="β" definition="Last 52 rolling beta estimates, stepped every five paired observations." /> trend</th>
-              <th className="num" title="Annualized log-return intercept, in log-percentage units; not a simple return or investment alpha">Intercept (log %/yr)</th>
-              <th className="num" title="Share of daily variance explained by the driver"><GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver." /></th>
-              <th className="num" title="100 × ((1 + driver move/100)^β − 1); fitted association, not a causal forecast.">
-                Associated @ {shockPct >= 0 ? "+" : ""}{shockPct}%
-              </th>
+              <th>{tr("Company")}</th>
+              <th>{tr("Sector")}</th>
+              <th className="num" title={tr("Cov(stock, driver) / Var(driver), 90 obs daily log-returns")}><GlossaryTip term="β" definition="Cov(stock, driver) / Var(driver), estimated on rolling 90-observation paired log-returns." />{tr(" 90 obs")}</th>
+              <th title={tr("Rolling 90 obs beta, five-observation steps, last 52 estimates")}><GlossaryTip term="β" definition="Last 52 rolling beta estimates, stepped every five paired observations." />{tr(" trend")}</th>
+              <th className="num" title={tr("Annualized log-return intercept, in log-percentage units; not a simple return or investment alpha")}>{tr("Intercept (log %/yr)")}</th>
+              <th className="num" title={tr("Share of daily variance explained by the driver")}><GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver." /></th>
+              <th className="num" title={tr("100 × ((1 + driver move/100)^β − 1); fitted association, not a causal forecast.")}>{tr("Associated @ ")}{localize(shockPct >= 0 ? "+" : "")}{localize(shockPct)}{tr("%")}</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ company, rb }) => {
+            {localize(rows.map(({ company, rb }) => {
               const implied = associatedMove(rb.current.beta, shockPct)!;
               return (
                 <tr key={company.id}>
-                  <td className="beta-name">{company.name}</td>
-                  <td data-label="Sector"><span className="cell-value">{company.sector}</span></td>
-                  <td className="num" data-label="β 90 obs" title="Approximate 95% Newey–West HAC interval; parameter uncertainty, not a forecast range"><span className="cell-value"><strong>{rb.current.beta.toFixed(2)}</strong><small>[{rb.current.betaCI[0].toFixed(2)}, {rb.current.betaCI[1].toFixed(2)}]</small></span></td>
-                  <td data-label="β trend"><BetaSpark history={rb.history} /></td>
-                  <td className="num" data-label="Intercept (log %/yr)"><span className="cell-value">{rb.current.alphaAnnual >= 0 ? "+" : ""}{rb.current.alphaAnnual.toFixed(1)}</span></td>
-                  <td className="num" data-label="R²"><span className="cell-value">{rb.current.r2.toFixed(2)}<small>n={rb.current.n} · {rb.current.asOf}</small></span></td>
-                  <td className={`num implied ${implied >= 0 ? "up" : "down"}`} data-label={`Associated @ ${shockPct >= 0 ? "+" : ""}${shockPct}%`}>
-                    <span className="cell-value">{implied >= 0 ? "▲ +" : "▼ "}{implied.toFixed(1)}%</span>
+                  <td className="beta-name">{localize(company.name)}</td>
+                  <td data-label={tr("Sector")}><span className="cell-value">{localize(company.sector)}</span></td>
+                  <td className="num" data-label={tr("β 90 obs")} title={tr("Approximate 95% Newey–West HAC interval; parameter uncertainty, not a forecast range")}><span className="cell-value"><strong>{localize(rb.current.beta.toFixed(2))}</strong><small>{tr("[")}{localize(rb.current.betaCI[0].toFixed(2))}{tr(", ")}{localize(rb.current.betaCI[1].toFixed(2))}{tr("]")}</small></span></td>
+                  <td data-label={tr("β trend")}><BetaSpark history={rb.history} /></td>
+                  <td className="num" data-label={tr("Intercept (log %/yr)")}><span className="cell-value">{localize(rb.current.alphaAnnual >= 0 ? "+" : "")}{localize(rb.current.alphaAnnual.toFixed(1))}</span></td>
+                  <td className="num" data-label={tr("R²")}><span className="cell-value">{localize(rb.current.r2.toFixed(2))}<small>{tr("n=")}{localize(rb.current.n)}{tr(" · ")}{localize(rb.current.asOf)}</small></span></td>
+                  <td className={`num implied ${implied >= 0 ? "up" : "down"}`} data-label={tr(`Associated @ ${shockPct >= 0 ? "+" : ""}${shockPct}%`)}>
+                    <span className="cell-value">{localize(implied >= 0 ? "▲ +" : "▼ ")}{localize(implied.toFixed(1))}{tr("%")}</span>
                   </td>
                 </tr>
               );
-            })}
+            }))}
           </tbody>
         </table>
       </div>
-      {!rows.length && <p className="sub">Estimates withheld: the selected driver needs 90 recent, compatible paired observations.</p>}
-      <p className="sub" style={{ marginTop: 8 }}>
-        β = Cov(stock, {driverLabel}) / Var({driverLabel}) on 90 matched daily intervals using adjusted stock closes.
-        Brackets show approximate 95% HAC parameter intervals; α is the annualized log-return intercept, not risk-adjusted performance.
-        Associated move = 100 × ((1 + driver move/100)^β − 1), consistent with the log-return model and excluding the intercept.
-        This is an association scenario, not an identified causal shock; a low R² means the driver explains little of that stock. Model
-        output, not investment advice.
-      </p>
+      {localize(!rows.length && <p className="sub">{tr("Estimates withheld: the selected driver needs 90 recent, compatible paired observations.")}</p>)}
+      <p className="sub" style={{ marginTop: 8 }}>{tr("β = Cov(stock, ")}{localize(driverLabel)}{tr(") / Var(")}{localize(driverLabel)}{tr(") on 90 matched daily intervals using adjusted stock closes. Brackets show approximate 95% HAC parameter intervals; α is the annualized log-return intercept, not risk-adjusted performance. Associated move = 100 × ((1 + driver move/100)^β − 1), consistent with the log-return model and excluding the intercept. This is an association scenario, not an identified causal shock; a low R² means the driver explains little of that stock. Model output, not investment advice.")}</p>
     </div>
   );
 }

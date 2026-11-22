@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import "./theme.css";
 import "./workspace.css";
 import "./research-system.css";
+import "./nexsum.css";
+import './preferences.css';
 import App from "./App.tsx";
 
 createRoot(document.getElementById("root")!).render(

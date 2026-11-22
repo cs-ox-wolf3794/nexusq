@@ -1,3 +1,4 @@
+import { l as localize, t as tr } from '../lib/i18n';
 import type { ReactNode } from "react";
 
 export function GlossaryTip({ term, definition }: {
@@ -5,8 +6,8 @@ export function GlossaryTip({ term, definition }: {
   definition: string;
 }) {
   return (
-    <abbr className="glossary-tip" title={definition} aria-label={`${term}: ${definition}`}>
-      {term}
+    <abbr className="glossary-tip" title={tr(definition)} aria-label={`${tr(term)}: ${tr(definition)}`}>
+      {localize(term)}
     </abbr>
   );
 }
@@ -17,8 +18,8 @@ export function HowToRead({ title = "How to read this", children }: {
 }) {
   return (
     <details className="howto" role="note">
-      <summary>{title}</summary>
-      <div className="howto-body">{children}</div>
+      <summary>{localize(title)}</summary>
+      <div className="howto-body">{localize(children)}</div>
     </details>
   );
 }

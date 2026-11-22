@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as echarts from "echarts";
+import { usePreferences } from '../lib/preferences';
+import { localizeChart } from '../lib/chart-locale';
 
 /** Thin ECharts wrapper: init once, setOption on change, resize with container. */
 export function EChart({ option, height }: { option: echarts.EChartsOption; height: number }) {
+  const {language} = usePreferences();
   const ref = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
-  const styledOption = useMemo(() => ({ ...option, textStyle: { fontFamily: 'IBM Plex Sans, sans-serif', ...option.textStyle } }), [option]);
+  const styledOption = useMemo(() => localizeChart({ ...option, textStyle: { fontFamily: 'IBM Plex Sans, sans-serif', fontSize: 14, ...option.textStyle } },language), [option, language]);
   const optionRef = useRef(styledOption);
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+import { l as localize, t as tr } from './lib/i18n';
 import { lazy, useEffect, useMemo, useRef, useState } from "react";
 import type { Series } from "./lib/data";
 import { loadSnapshot, type Snapshot } from "./lib/snapshot";
@@ -22,6 +23,10 @@ import { SignalPanel } from "./components/SignalPanel";
 import { useResearchActivity } from "./components/useResearchActivity";
 import { dataExceptions, displayInstant } from "./lib/research-ui";
 import { ActivityCenter, ResearchToast, ResearchAlert, SessionClock, StatusMark } from "./components/ResearchChrome";
+import { PreferencesControl, CurrencyNotice } from './components/Preferences';
+import { FxContext } from './lib/money';
+import { usePreferences } from './lib/preferences';
+import { displayAmount } from './lib/fx';
 
 
 // Load analysis workspaces on demand; the research desk does not require charts.
@@ -87,6 +92,7 @@ function rangeStart(years: number | null): string {
 }
 
 export default function App() {
+  const prefs = usePreferences();
   const { mode, toggle } = useTheme();
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [now, setNow] = useState(Date.now());
@@ -283,11 +289,11 @@ export default function App() {
 
   const overlayItems: OverlaySeries[] = useMemo(
     () => selectedSeries.map((s) => ({
-      series: s,
-      points: overlayPoints(s, effectiveTransform, from),
+      series: effectiveTransform === 'raw' ? {...s,unit:displayAmount(1,s.unit,prefs.currency,snapshot?.fx,now).unit} : s,
+      points: overlayPoints(s, effectiveTransform, from).map(([d,v])=>[d,effectiveTransform === 'raw' ? displayAmount(v,s.unit,prefs.currency,snapshot?.fx,now).value : v]),
       color: slotMap.current.get(s.id) ?? SLOT_VARS[0],
     })),
-    [selectedSeries, from, effectiveTransform],
+    [selectedSeries, from, effectiveTransform, prefs.currency, snapshot?.fx, now],
   );
 
   // Projections only make sense on comparable level scales (raw / indexed).
@@ -302,7 +308,7 @@ export default function App() {
       if (fc.kind === "external" && !externalForecastCurrent(fc, now)) continue;
       const base = overlayPoints(s, "raw", from)[0]?.[1];
       if (effectiveTransform === "index" && !(base > 0)) continue;
-      const scale = (v: number) => (effectiveTransform === "index" ? (v / base) * 100 : v);
+      const scale = (v: number) => (effectiveTransform === "index" ? (v / base) * 100 : displayAmount(v,s.unit,prefs.currency,snapshot?.fx,now).value);
       const color = slotMap.current.get(s.id) ?? SLOT_VARS[0];
       if (fc.kind === "model") {
         out.push({
@@ -320,24 +326,24 @@ export default function App() {
       }
     }
     return out;
-  }, [projectionOn, projectionAllowed, forecasts, selectedSeries, analyticalMap, now, from, effectiveTransform]);
+  }, [projectionOn, projectionAllowed, forecasts, selectedSeries, analyticalMap, now, from, effectiveTransform, prefs.currency, snapshot?.fx]);
 
   return (
-    <div className="app app-shell" data-density={density}>
-      <a className="skip-link" href="#workspace-heading" onClick={e=>{e.preventDefault();document.getElementById("workspace-heading")?.focus();}}>Skip to analysis</a>
+    <FxContext.Provider value={{fx:snapshot?.fx??null,now}}><div className="app app-shell" data-density={density}>
+      <a className="skip-link" href="#workspace-heading" onClick={e=>{e.preventDefault();document.getElementById("workspace-heading")?.focus();}}>{tr("Skip to analysis")}</a>
       <WorkspaceNav page={page} onNavigate={navigate}/>
       <div className="app-workarea">
-      <header className="workspace-topbar"><div className="workspace-location"><span className="eyebrow">NEXUSQ <span aria-hidden="true">/</span> {WORKSPACES[page].label}{page==='nexsi'&&<><span aria-hidden="true">/</span><strong>{nexsiSymbol}</strong><span className="breadcrumb-window">{nexsiEvent||`${nexsiHorizon} session${nexsiHorizon>1?'s':''}`}</span></>}</span><SessionClock now={now}/></div><div className="workspace-tools"><button className="search-trigger" onClick={()=>setSearchOpen(true)}><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor"/><path d="m10 10 4 4" stroke="currentColor"/></svg><span>Find</span><kbd>Ctrl / ⌘ K</kbd></button><button className={`system-trigger ${exceptions.length?'has-exceptions':''}`} onClick={()=>setActivityOpen(true)} aria-label={!snapshot&&!loadError?"Data status: checking publication":`Data status and activity: ${exceptions.length} active exceptions`}><StatusMark tone={exceptions.some(e=>e.tone==='critical')?'critical':exceptions.length?'warning':'info'}/><span>Data status</span><b>{!snapshot&&!loadError?'—':exceptions.length.toString().padStart(2,'0')}</b></button><label className="density-control"><span className="sr-only">Display density</span><select aria-label="Display density" value={density} onChange={e=>changeDensity(e.target.value as 'compact'|'comfortable')}><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select></label><button className="theme-toggle" onClick={toggle} aria-label={mode==='dark'?'Switch to light theme':'Switch to dark theme'}><span aria-hidden="true">◐</span><span>{mode==='dark'?'Light':'Dark'}</span></button></div></header>
-      {loadError&&<ResearchAlert tone="critical" title="Publication verification failed" action="Inspect status" onAction={()=>setActivityOpen(true)}>Update could not be verified. Retaining the previous verified data and retrying. {loadError}</ResearchAlert>}
+      <header className="workspace-topbar"><div className="workspace-location"><span className="eyebrow">{tr("NEXUSQ ")}<span aria-hidden="true">{tr("/")}</span> {localize(WORKSPACES[page].label)}{localize(page==='nexsi'&&<><span aria-hidden="true">{tr("/")}</span><strong>{localize(nexsiSymbol)}</strong><span className="breadcrumb-window">{localize(nexsiEvent||`${nexsiHorizon} session${nexsiHorizon>1?'s':''}`)}</span></>)}</span><SessionClock now={now}/></div><div className="workspace-tools"><PreferencesControl density={density} onDensity={changeDensity}/><button className="search-trigger" onClick={()=>setSearchOpen(true)}><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor"/><path d="m10 10 4 4" stroke="currentColor"/></svg><span>{tr("Find")}</span><kbd>{tr("Ctrl / ⌘ K")}</kbd></button><button className={`system-trigger ${exceptions.length?'has-exceptions':''}`} onClick={()=>setActivityOpen(true)} aria-label={tr(!snapshot&&!loadError?"Data status: checking publication":`Data status and activity: ${exceptions.length} active exceptions`)}><StatusMark tone={exceptions.some(e=>e.tone==='critical')?'critical':exceptions.length?'warning':'info'}/><span>{tr("Data status")}</span><b>{localize(!snapshot&&!loadError?'—':exceptions.length.toString().padStart(2,'0'))}</b></button><label className="density-control"><span className="sr-only">{tr("Display density")}</span><select aria-label={tr("Display density")} value={density} onChange={e=>changeDensity(e.target.value as 'compact'|'comfortable')}><option value="compact">{tr("Compact")}</option><option value="comfortable">{tr("Comfortable")}</option></select></label><button className="theme-toggle" onClick={toggle} aria-label={tr(mode==='dark'?'Switch to light theme':'Switch to dark theme')}><span aria-hidden="true">{tr("◐")}</span><span>{localize(mode==='dark'?'Light':'Dark')}</span></button></div></header>
+      {localize(loadError&&<ResearchAlert tone="critical" title={tr("Publication verification failed")} action="Inspect status" onAction={()=>setActivityOpen(true)}>{tr("Update could not be verified. Retaining the previous verified data and retrying. ")}{localize(loadError)}</ResearchAlert>)}
       <main id="workspace-heading" tabIndex={-1} onClick={e=>{const anchor=(e.target as HTMLElement).closest('a[href^="#"]');const id=anchor?.getAttribute('href')?.slice(1);if(id&&SECTION_ROUTES[id]){e.preventDefault();navigate(SECTION_ROUTES[id],{},id);}}}>
-      {page!=='home'&&<div className="workspace-utility"><span>{WORKSPACES[page].description}</span><button className="text-action" onClick={saveView}>{toast?.title==='View saved'?'Saved':'Save view'}</button><button className="text-action" onClick={copyViewLink}>{linkCopied?'Link copied':'Copy view link ↗'}</button></div>}
+      <CurrencyNotice/>{localize(page!=='home'&&<div className="workspace-utility"><span>{localize(WORKSPACES[page].description)}</span><button className="text-action" onClick={saveView}>{localize(toast?.title==='View saved'?'Saved':'Save view')}</button><button className="text-action" onClick={copyViewLink}>{localize(linkCopied?'Link copied':'Copy view link ↗')}</button></div>)}
       <RetainedView active={page==='home'}><ResearchDesk snapshot={snapshot} now={now} signals={signals} onNavigate={navigate} onSearch={()=>setSearchOpen(true)} saved={savedViews} onOpenSaved={openSaved} onRemoveSaved={hash=>storeViews(savedViews.filter(v=>v.hash!==hash))}/></RetainedView>
-      <RetainedView active={page==='methodology'}><WorkspaceIntro eyebrow="Evidence & methods" title="Know what supports the answer." description="Source freshness, methodological choices and uncertainty, open to inspection."/><DataStatus snapshot={snapshot} now={now} error={loadError}/><Methodology /></RetainedView>
+      <RetainedView active={page==='methodology'}><WorkspaceIntro eyebrow="Evidence & methods" title={tr("Know what supports the answer.")} description="Source freshness, methodological choices and uncertainty, open to inspection."/><DataStatus snapshot={snapshot} now={now} error={loadError}/><Methodology /></RetainedView>
       <RetainedView active={page==='nexsi'}>
         <NexSI snapshot={snapshot} now={now} mode={mode} symbol={nexsiSymbol} horizon={nexsiHorizon} onSymbol={company=>navigate({page:"nexsi",view:"explain"},{company,event:null})} onHorizon={setNexsiHorizon} eventDate={nexsiEvent} setEventDate={setNexsiEvent} view={workspaceView} onView={v=>navigate({page:"nexsi",view:v})} onFind={()=>setSearchOpen(true)} />
       </RetainedView>
       <RetainedView active={page==='dashboard'}>
-      <WorkspaceIntro eyebrow="Nexus Signal / Market relationships" title="See the market in context." description="Move between current conditions, comparative analysis and exposure. Your selected markets stay with you."/>
+      <WorkspaceIntro eyebrow="Nexus Signal / Market relationships" title={tr("See the market in context.")} description="Move between current conditions, comparative analysis and exposure. Your selected markets stay with you."/>
       <WorkspaceTabs page="dashboard" value={workspaceView} onChange={v=>navigate({page:"dashboard",view:v})}/>
 
 
@@ -348,21 +354,20 @@ export default function App() {
           className="preset-toggle"
           onClick={() => setPresetsOpen((o) => !o)}
           aria-expanded={presetsOpen}
-        >
-          Start from a question {presetsOpen ? "▴" : "▾"}
+        >{tr("Start from a question ")}{localize(presetsOpen ? "▴" : "▾")}
         </button>
         <div className={`preset-row${presetsOpen ? " open" : ""}`}>
-          <span className="control-label">Start from a question</span>
-          {PRESETS.map((p) => (
+          <span className="control-label">{tr("Start from a question")}</span>
+          {localize(PRESETS.map((p) => (
             <button
               key={p.key}
               className={`chip${presetActive(p) ? " on" : ""}`}
               onClick={() => { applyPreset(p); setPresetsOpen(false); }}
-              title={`Loads ${p.ids.join(" + ")} (${p.w ?? "all"}y)`}
+              title={tr(`Loads ${p.ids.join(" + ")} (${p.w ?? "all"}y)`)}
             >
-              {p.label}
+              {localize(p.label)}
             </button>
-          ))}
+          )))}
         </div>
       </div>
 
@@ -370,63 +375,61 @@ export default function App() {
 
       <section id="overlay" className="card anchor-target">
         <div className="card-head">
-          <h2>Cross-asset overlay</h2>
+          <h2>{tr("Cross-asset overlay")}</h2>
           <span className="head-actions">
-            <button className="cta-link" onClick={copyViewLink} title="Copy a link that reproduces exactly this view">
-              {linkCopied ? "Copied ✓" : "⧉ Copy view link"}
+            <button className="cta-link" onClick={copyViewLink} title={tr("Copy a link that reproduces exactly this view")}>
+              {localize(linkCopied ? "Copied ✓" : "⧉ Copy view link")}
             </button>
             <Freshness
               date={selectedSeries.length ? selectedSeries.reduce((m, s) => (s.lastUpdated < m ? s.lastUpdated : m), "9999") : null}
               prefix="selection through"
-              title={selectedSeries.map((s) => `${s.name}: ${s.lastUpdated}`).join("\n")}
+              title={tr(selectedSeries.map((s) => `${s.name}: ${s.lastUpdated}`).join("\n"))}
             />
           </span>
         </div>
-        <p className="sub">Compare energy fundamentals, commodities, equities and macro on one comparable axis.</p>
-        <HowToRead>
-          Projections are directional uncertainty envelopes, not point calls. A shaded <GlossaryTip term="P10-P90" definition="Expected range where the model places outcomes between the 10th and 90th percentile at each horizon." /> band means higher uncertainty; dashed lines mark the projected median or external forecast path.
-        </HowToRead>
+        <p className="sub">{tr("Compare energy fundamentals, commodities, equities and macro on one comparable axis.")}</p>
+        <HowToRead>{tr("Projections are directional uncertainty envelopes, not point calls. A shaded ")}<GlossaryTip term="P10-P90" definition="Expected range where the model places outcomes between the 10th and 90th percentile at each horizon." />{tr(" band means higher uncertainty; dashed lines mark the projected median or external forecast path.")}</HowToRead>
         <div className="controls">
           <div className="control-group">
-            <span className="control-label">Scale</span>
+            <span className="control-label">{tr("Scale")}</span>
             <div className="seg">
-              {(Object.keys(TRANSFORM_LABELS) as Transform[]).map((t) => (
+              {localize((Object.keys(TRANSFORM_LABELS) as Transform[]).map((t) => (
                 <button
                   key={t}
                   className={effectiveTransform === t ? "active" : ""}
                   disabled={(t === "raw" && !sameUnit) || (containsRates && (t === "index" || t === "yoy"))}
-                  title={containsRates && (t === "index" || t === "yoy") ? "Rates and GDP growth use raw percentage units or z-scores, not percentage growth of a rate" : t === "raw" && !sameUnit ? "Raw values need identical units across selected series" : undefined}
+                  title={tr(containsRates && (t === "index" || t === "yoy") ? "Rates and GDP growth use raw percentage units or z-scores, not percentage growth of a rate" : t === "raw" && !sameUnit ? "Raw values need identical units across selected series" : undefined)}
                   onClick={() => setTransform(t)}
                 >
-                  {TRANSFORM_LABELS[t]}
+                  {localize(TRANSFORM_LABELS[t])}
                 </button>
-              ))}
+              )))}
             </div>
           </div>
           <div className="control-group">
-            <span className="control-label">Projection</span>
+            <span className="control-label">{tr("Projection")}</span>
             <div className="seg">
-              {[true, false].map((on) => (
+              {localize([true, false].map((on) => (
                 <button
                   key={String(on)}
                   className={projectionOn === on && projectionAllowed ? "active" : ""}
                   disabled={!projectionAllowed}
-                  title={!projectionAllowed ? "Projections show on raw or indexed scales only" : undefined}
+                  title={tr(!projectionAllowed ? "Projections show on raw or indexed scales only" : undefined)}
                   onClick={() => setProjectionOn(on)}
                 >
-                  {on ? "On" : "Off"}
+                  {localize(on ? "On" : "Off")}
                 </button>
-              ))}
+              )))}
             </div>
           </div>
           <div className="control-group">
-            <span className="control-label">Window</span>
+            <span className="control-label">{tr("Window")}</span>
             <div className="seg">
-              {RANGES.map((r) => (
+              {localize(RANGES.map((r) => (
                 <button key={r.label} className={rangeYears === r.years ? "active" : ""} onClick={() => setRangeYears(r.years)}>
-                  {r.label}
+                  {localize(r.label)}
                 </button>
-              ))}
+              )))}
             </div>
           </div>
         </div>
@@ -437,30 +440,29 @@ export default function App() {
           quality={quality}
           onToggle={toggleSeries}
         />
-        {seriesMap.size ? (
+        {localize(seriesMap.size ? (
           <OverlayChart items={overlayItems} projections={projections} transform={effectiveTransform} themeMode={mode} />
         ) : (
           <Skeleton height={430} />
-        )}
+        ))}
       </section>
 
         <section id="correlations" className="card anchor-target">
           <div className="card-head">
-            <h2>Correlation structure</h2>
+            <h2>{tr("Correlation structure")}</h2>
             <Freshness
               date={selectedSeries.length ? selectedSeries.reduce((m, s) => (s.lastUpdated < m ? s.lastUpdated : m), "9999") : null}
               prefix="selection through"
             />
           </div>
-          <p className="sub">
-            Pearson ρ on matched observation intervals. Mixed daily/monthly frequencies are withheld; no forward-filled returns.{" "}
-            <a className="cta-link" href="#signals">Regime shifts appear as signals ↗</a>
+          <p className="sub">{tr("Pearson ρ on matched observation intervals. Mixed daily/monthly frequencies are withheld; no forward-filled returns.")}{localize(" ")}
+            <a className="cta-link" href="#signals">{tr("Regime shifts appear as signals ↗")}</a>
           </p>
-          {seriesMap.size ? (
+          {localize(seriesMap.size ? (
             <CorrelationMatrix list={selectedSeries.filter((s) => analyticalMap.has(s.id))} from={from} themeMode={mode} />
           ) : (
             <Skeleton height={300} />
-          )}
+          ))}
         </section>
 
       </WorkspacePanel>
@@ -468,105 +470,92 @@ export default function App() {
       <QuotePanel snapshot={snapshot} now={now} />
       <div id="kpis" className="anchor-target">
         <div className="strip-head">
-          <span className="control-label">Market pulse — select markets for comparison</span>
+          <span className="control-label">{tr("Market pulse — select markets for comparison")}</span>
           <Freshness
             date={[...seriesMap.values()].reduce((m, s) => (s.lastUpdated > m ? s.lastUpdated : m), "") || null}
           />
         </div>
-        {seriesMap.size ? (
-          <><KpiStrip quality={quality} now={now} seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} /><button className="workspace-button secondary" onClick={()=>navigate({page:"dashboard",view:"compare"})}>Compare selected markets ({selected.length}) →</button></>
+        {localize(seriesMap.size ? (
+          <><KpiStrip quality={quality} now={now} seriesMap={seriesMap} selected={selected} onToggle={toggleSeries} /><button className="workspace-button secondary" onClick={()=>navigate({page:"dashboard",view:"compare"})}>{tr("Compare selected markets (")}{localize(selected.length)}{tr(") →")}</button></>
         ) : (
           <SkeletonTiles />
-        )}
+        ))}
       </div>
 
 
         <section id="signals" className="card anchor-target">
           <div className="card-head">
-            <h2>Snapshot signals</h2>
+            <h2>{tr("Snapshot signals")}</h2>
             <Freshness
               date={signals?.length ? signals.reduce((m, signal) => signal.asOf < m ? signal.asOf : m, "9999") : null}
               prefix="computed through"
-              title="Oldest observation used by the displayed signals. Inputs failing QC are excluded; this is snapshot analysis, not intraday analysis."
+              title={tr("Oldest observation used by the displayed signals. Inputs failing QC are excluded; this is snapshot analysis, not intraday analysis.")}
             />
           </div>
-          <p className="sub">
-            Dislocations, momentum regimes and correlation-regime shifts from inputs that pass QC.{" "}
-            <a className="cta-link" href="#validation">How reliable are these? See the backtest ↗</a>
+          <p className="sub">{tr("Dislocations, momentum regimes and correlation-regime shifts from inputs that pass QC.")}{localize(" ")}
+            <a className="cta-link" href="#validation">{tr("How reliable are these? See the backtest ↗")}</a>
           </p>
-          <HowToRead>
-            Dislocation signals compare levels (year-on-year growth for CPI and industrial production) using a trailing <GlossaryTip term="z-score" definition="Distance from trailing mean measured in standard deviations; +2 means two sigmas above average." />. Bigger absolute z-score means a more unusual reading relative to that series' own history.
-          </HowToRead>
-          {signals === null ? <SkeletonRows rows={6} /> : <SignalPanel signals={signals} onView={viewInOverlay} />}
+          <HowToRead>{tr("Dislocation signals compare levels (year-on-year growth for CPI and industrial production) using a trailing ")}<GlossaryTip term="z-score" definition="Distance from trailing mean measured in standard deviations; +2 means two sigmas above average." />{tr(". Bigger absolute z-score means a more unusual reading relative to that series' own history.")}</HowToRead>
+          {localize(signals === null ? <SkeletonRows rows={6} /> : <SignalPanel signals={signals} onView={viewInOverlay} />)}
         </section>
 
       <section id="market-state" className="card anchor-target">
         <div className="card-head">
-          <h2>Market state — percentile conditions</h2>
+          <h2>{tr("Market state — percentile conditions")}</h2>
           <Freshness
             date={cot ? Object.values(cot.markets).reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), "") : null}
             prefix="positioning through"
             cadence="weekly"
-            title="CFTC COT publishes weekly (Friday, for Tuesday positions). Price conditions use the daily snapshots."
+            title={tr("CFTC COT publishes weekly (Friday, for Tuesday positions). Price conditions use the daily snapshots.")}
           />
         </div>
-        <p className="sub">
-          Where each energy market sits inside its own history: trend, volatility, dollar backdrop and
-          futures positioning, each as a percentile — the regime at a glance.
-        </p>
-        {seriesMap.size ? <MarketStatePanel seriesMap={analyticalMap} cot={cot} /> : <SkeletonRows rows={7} />}
+        <p className="sub">{tr("Where each energy market sits inside its own history: trend, volatility, dollar backdrop and futures positioning, each as a percentile — the regime at a glance.")}</p>
+        {localize(seriesMap.size ? <MarketStatePanel seriesMap={analyticalMap} cot={cot} /> : <SkeletonRows rows={7} />)}
       </section>
 
       </WorkspacePanel>
       <WorkspacePanel page="dashboard" id="validation" active={workspaceView==='validation'}>
       <section id="validation" className="card anchor-target">
         <div className="card-head">
-          <h2>Signal validation — event-study backtest</h2>
-          {backtest && <Freshness date={backtest.generated} prefix="computed" cadence="monthly" />}
+          <h2>{tr("Signal validation — event-study backtest")}</h2>
+          {localize(backtest && <Freshness date={backtest.generated} prefix="computed" cadence="monthly" />)}
         </div>
-        <p className="sub">
-          Did what each signal describes actually happen afterwards? The production engine replayed
-          over history, with publication lag imposed and firings collapsed to episodes — nulls
-          published alongside positives.
-        </p>
-        {backtest ? (
+        <p className="sub">{tr("Did what each signal describes actually happen afterwards? The production engine replayed over history, with publication lag imposed and firings collapsed to episodes — nulls published alongside positives.")}</p>
+        {localize(backtest ? (
           <ValidationPanel bt={backtest} />
         ) : backtest === undefined ? (
           <SkeletonRows rows={7} />
         ) : (
-          <p className="sub">Current-methodology backtest results unavailable. Earlier results are not presented as validation of a changed engine.</p>
-        )}
+          <p className="sub">{tr("Current-methodology backtest results unavailable. Earlier results are not presented as validation of a changed engine.")}</p>
+        ))}
       </section>
 
       </WorkspacePanel>
       <WorkspacePanel page="dashboard" id="impact" active={workspaceView==='impact'}>
       <section id="equity-impact" className="card anchor-target">
         <div className="card-head">
-          <h2>Equity impact — Energy Beta board</h2>
+          <h2>{tr("Equity impact — Energy Beta board")}</h2>
           <Freshness
             date={impact?.companies.length ? impact.companies.reduce((m, c) => (c.lastUpdated > m ? c.lastUpdated : m), "") : null}
           />
         </div>
-        <p className="sub">
-          How sensitive each energy-exposed stock is to the selected driver, and what a hypothetical
-          shock implies. <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> = Cov/Var on daily log-returns (rolling 90 paired observations).{" "}
-          <a className="cta-link" href="#sovereign-impact">Country-level view ↗</a>
+        <p className="sub">{tr("How sensitive each energy-exposed stock is to the selected driver, and what a hypothetical shock implies. ")}<GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." />{tr(" = Cov/Var on daily log-returns (rolling 90 paired observations).")}{localize(" ")}
+          <a className="cta-link" href="#sovereign-impact">{tr("Country-level view ↗")}</a>
         </p>
         <HowToRead>
-          <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." /> is slope sensitivity, while <GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver in the same regression window." /> is explanatory fit. Scenario moves follow the fitted log-return relationship; they do not identify a causal effect.
-        </HowToRead>
-        {impact && seriesMap.size ? (
+          <GlossaryTip term="β" definition="Sensitivity of stock returns to the selected energy driver: Cov(stock, driver) / Var(driver)." />{tr(" is slope sensitivity, while ")}<GlossaryTip term="R²" definition="Share of daily return variance explained by the selected energy driver in the same regression window." />{tr(" is explanatory fit. Scenario moves follow the fitted log-return relationship; they do not identify a causal effect.")}</HowToRead>
+        {localize(impact && seriesMap.size ? (
           <EquityImpact companies={qualityCurrent(quality, now) ? impact.companies.filter((c) => companyEligible(c, now)) : []} seriesMap={analyticalMap} />
         ) : impact === null ? (
-          <p className="sub">Impact data unavailable.</p>
+          <p className="sub">{tr("Impact data unavailable.")}</p>
         ) : (
           <SkeletonRows rows={9} />
-        )}
+        ))}
       </section>
 
       <section id="sovereign-impact" className="card anchor-target">
         <div className="card-head">
-          <h2>Sovereign analysis — GDP–oil association</h2>
+          <h2>{tr("Sovereign analysis — GDP–oil association")}</h2>
           <Freshness
             date={impact?.countries.length
               ? impact.countries.reduce((m, c) => {
@@ -577,21 +566,17 @@ export default function App() {
             cadence="annual"
           />
         </div>
-        <p className="sub">
-          Major energy exporters vs importers: how annual GDP growth has historically moved with Brent,
-          and the fitted association under an annual oil-change scenario.{" "}
-          <a className="cta-link" href="#overlay">GDP paths with institutional projections on the overlay ↗</a>
+        <p className="sub">{tr("Major energy exporters vs importers: how annual GDP growth has historically moved with Brent, and the fitted association under an annual oil-change scenario.")}{localize(" ")}
+          <a className="cta-link" href="#overlay">{tr("GDP paths with institutional projections on the overlay ↗")}</a>
         </p>
-        <HowToRead>
-          Sovereign <GlossaryTip term="β" definition="Cycle-controlled GDP sensitivity: percentage-point change in GDP growth per +10% oil move." /> is estimated on annual data with world-cycle control; use it as regime context, not a precise near-term forecast.
-        </HowToRead>
-        {impact && seriesMap.size ? (
-          qualityCurrent(quality, now) ? <GdpImpact impact={impact} now={now} /> : <p className="sub">GDP association estimates withheld until the quality assessment is renewed.</p>
+        <HowToRead>{tr("Sovereign ")}<GlossaryTip term="β" definition="Cycle-controlled GDP sensitivity: percentage-point change in GDP growth per +10% oil move." />{tr(" is estimated on annual data with world-cycle control; use it as regime context, not a precise near-term forecast.")}</HowToRead>
+        {localize(impact && seriesMap.size ? (
+          qualityCurrent(quality, now) ? <GdpImpact impact={impact} now={now} /> : <p className="sub">{tr("GDP association estimates withheld until the quality assessment is renewed.")}</p>
         ) : impact === null ? (
-          <p className="sub">Impact data unavailable.</p>
+          <p className="sub">{tr("Impact data unavailable.")}</p>
         ) : (
           <SkeletonRows rows={9} />
-        )}
+        ))}
       </section>
       </WorkspacePanel>
       </RetainedView>
@@ -601,20 +586,16 @@ export default function App() {
       <ResearchSearch open={searchOpen} onClose={()=>setSearchOpen(false)} snapshot={snapshot} onNavigate={navigate}/>
 
       <footer className="footer">
-        <div className="footer-brand">Nexus<span>Q</span> · Gygante Quantitative Systems</div>
-        <p className="workspace-note">Market intelligence for capital markets: energy, commodity and macro data turned into signals, scenarios and decisions.</p>
+        <div className="footer-brand">{tr("Nexus")}<span>{tr("Q")}</span>{tr(" · Gygante Quantitative Systems")}</div>
+        <p className="workspace-note">{tr("Market intelligence for capital markets: energy, commodity and macro data turned into signals, scenarios and decisions.")}</p>
         <div className="footer-links">
-          <button className="cta-link" onClick={() => navigate({page:"methodology",view:""})}>
-            Methodology
-          </button>
-          <span>Data: FRED · Yahoo Finance · Nasdaq · World Bank · IMF · EIA</span>
+          <button className="cta-link" onClick={() => navigate({page:"methodology",view:""})}>{tr("Methodology")}</button>
+          <span>{tr("Data: FRED · Yahoo Finance · Nasdaq · World Bank · IMF · EIA")}</span>
         </div>
-        <details className="platform-roadmap"><summary>Platform roadmap</summary><p>Nexus Model · Nexus Scenario · Nexus Portfolio · Nexus Agent — planned workspaces, not currently available.</p></details>
-        <div className="footer-fine">
-          NexusQ 2.0 · model output, not investment advice · © 2026 Gygante Quantitative Systems
-        </div>
+        <details className="platform-roadmap"><summary>{tr("Platform roadmap")}</summary><p>{tr("Nexus Model · Nexus Scenario · Nexus Portfolio · Nexus Agent — planned workspaces, not currently available.")}</p></details>
+        <div className="footer-fine">{tr("NexusQ 2.1 · model output, not investment advice · © 2026 Gygante Quantitative Systems")}</div>
       </footer>
       </div>
-    </div>
+    </div></FxContext.Provider>
   );
 }

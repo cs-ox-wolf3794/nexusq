@@ -1,6 +1,6 @@
 /** One registry for navigation, deep links, search and future workspaces. */
 export const WORKSPACES = {
-  home: { label: 'Research desk', short: 'Research', description: 'Choose the question worth investigating.', views: [] },
+  home: { label: 'NexSum', short: 'NexSum', description: 'Your daily brief, watchlist and research desk.', views: [] },
   nexsi: { label: 'NexSI', short: 'NexSI', description: 'Connect company moves, energy exposure and evidence.', views: [
     { id: 'explain', label: 'Explain a move', description: 'What moved, what the model estimates, and what remains unexplained.' },
     { id: 'screen', label: 'Find companies', description: 'Screen the full universe, then open an investigation.' },
@@ -18,6 +18,10 @@ export const WORKSPACES = {
 export type WorkspacePage = keyof typeof WORKSPACES;
 export type WorkspaceRoute = { page: WorkspacePage; view: string };
 export const SECTION_ROUTES: Record<string, WorkspaceRoute> = {
+  'nexsum-insights': {page:'home',view:''},
+  'nexsum-watchlist': {page:'home',view:''},
+  'nexsum-actions': {page:'home',view:''},
+  'nexsi-company-brief': {page:'nexsi',view:'explain'},
   kpis:{page:'dashboard',view:'pulse'}, signals:{page:'dashboard',view:'pulse'}, 'market-state':{page:'dashboard',view:'pulse'},
   overlay:{page:'dashboard',view:'compare'}, correlations:{page:'dashboard',view:'compare'}, validation:{page:'dashboard',view:'validation'},
   'equity-impact':{page:'dashboard',view:'impact'}, 'sovereign-impact':{page:'dashboard',view:'impact'},

@@ -1,3 +1,4 @@
+import { l as localize, t as tr } from '../lib/i18n';
 import type { CatalogEntry, Category, QualityFile } from "../lib/data";
 import { CATEGORY_LABELS } from "../lib/data";
 
@@ -14,13 +15,13 @@ export function SeriesPicker({ catalog, selected, colors, quality, onToggle }: {
   const full = selected.length >= MAX_SELECTED;
   return (
     <div className="picker">
-      {CATEGORY_ORDER.map((cat) => {
+      {localize(CATEGORY_ORDER.map((cat) => {
         const entries = catalog.filter((c) => c.category === cat);
         if (!entries.length) return null;
         return (
           <div className="picker-cat" key={cat}>
-            <span className="cat-name">{CATEGORY_LABELS[cat]}</span>
-            {entries.map((e) => {
+            <span className="cat-name">{localize(CATEGORY_LABELS[cat])}</span>
+            {localize(entries.map((e) => {
               const on = selected.includes(e.id);
               const flags = quality?.series[e.id]?.flags ?? [];
               return (
@@ -29,22 +30,20 @@ export function SeriesPicker({ catalog, selected, colors, quality, onToggle }: {
                   className={`chip${on ? " on" : ""}`}
                   disabled={!on && full}
                   onClick={() => onToggle(e.id)}
-                  title={`${e.name} — ${e.source}, observation period ${e.lastUpdated}${
+                  title={tr(`${e.name} — ${e.source}, observation period ${e.lastUpdated}${
                     flags.length ? `\nQC: ${flags.map((f) => f.detail).join("; ")}` : ""
-                  }`}
+                  }`)}
                 >
-                  {on && <span className="swatch" style={{ background: `var(${colors.get(e.id)})` }} />}
-                  {e.name}
-                  {flags.length > 0 && <span className="chip-flag" aria-label="data quality flag">⚠</span>}
+                  {localize(on && <span className="swatch" style={{ background: `var(${colors.get(e.id)})` }} />)}
+                  {localize(e.name)}
+                  {localize(flags.length > 0 && <span className="chip-flag" aria-label={tr("data quality flag")}>{tr("⚠")}</span>)}
                 </button>
               );
-            })}
+            }))}
           </div>
         );
-      })}
-      <span className="picker-note">
-        Overlay up to {MAX_SELECTED} series — colors stay with a series while it remains selected.
-      </span>
+      }))}
+      <span className="picker-note">{tr("Overlay up to ")}{localize(MAX_SELECTED)}{tr(" series — colors stay with a series while it remains selected.")}</span>
     </div>
   );
 }

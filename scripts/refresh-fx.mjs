@@ -1,0 +1,10 @@
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { readJson, buildManifest } from './lib/snapshot.mjs';
+import { refreshFx } from './lib/fx.mjs';
+const directory = path.resolve(process.env.NEXUSQ_DATA_DIR ?? 'public/data');
+const fx = await refreshFx(await readJson(directory,'fx.json'));
+await writeFile(path.join(directory,'fx.json'),JSON.stringify(fx));
+await buildManifest(directory);
+console.log(`Norges Bank USD/NOK: ${fx.status}, observed ${fx.observedAt ?? 'unavailable'}`);
+if(fx.error) console.warn(fx.error);

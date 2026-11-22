@@ -1,3 +1,5 @@
+import { number } from '../lib/preferences';
+import { l as localize, t as tr } from '../lib/i18n';
 import { useMemo } from "react";
 import type { EChartsOption, SeriesOption } from "echarts";
 import { EChart } from "./EChart";
@@ -31,7 +33,7 @@ const CAPTION_TEXT: Record<Transform, string> = {
 };
 
 const fmtNum = (v: unknown) =>
-  typeof v === "number" ? v.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "—";
+  typeof v === "number" ? number(v) : "—";
 
 export function OverlayChart({ items, projections, transform, themeMode }: {
   items: OverlaySeries[];
@@ -63,7 +65,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
       const markLine = idx === 0 ? {
         silent: true, symbol: "none" as const,
         lineStyle: { color: tokens["--baseline"], type: "dashed" as const, width: 1 },
-        label: { formatter: "today", color: tokens["--text-muted"], fontSize: 10 },
+        label: { formatter: "Today", color: tokens["--text-muted"], fontSize: 12 },
         data: [{ xAxis: today }],
       } : undefined;
 
@@ -104,7 +106,7 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
           selectedDataBackground: { lineStyle: { color: tokens["--text-muted"] }, areaStyle: { color: tokens["--gridline"] } },
           handleStyle: { color: tokens["--surface-1"], borderColor: tokens["--baseline"] },
           moveHandleSize: 0,
-          textStyle: { color: tokens["--text-muted"], fontSize: 10 },
+          textStyle: { color: tokens["--text-muted"], fontSize: 12 },
           brushSelect: false,
         },
       ],
@@ -120,35 +122,35 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
         axisPointer: { type: "cross", label: { backgroundColor: tokens["--baseline"], color: tokens["--text-primary"] } },
         backgroundColor: tokens["--surface-1"],
         borderColor: tokens["--border"],
-        textStyle: { color: tokens["--text-primary"], fontSize: 12 },
+        textStyle: { color: tokens["--text-primary"], fontSize: 14 },
         formatter: (params) => {
           const list = (Array.isArray(params) ? params : [params]) as {
             seriesName?: string; marker?: string; value?: [string | number, number]; axisValueLabel?: string;
           }[];
           // units are only meaningful on the raw scale — transforms are unitless
-          const unitOf = new Map(items.map((i) => [i.series.name, i.series.unit]));
+          const unitOf = new Map(items.map((i) => [tr(i.series.name), tr(i.series.unit)]));
           const rows = list
             .filter((p) => p.seriesName && !p.seriesName.startsWith("__"))
             .map((p) => {
               const base = p.seriesName!.split(" · ")[0]; // projections inherit their series' unit
               const unit = transform === "raw" ? unitOf.get(base) : undefined;
-              return `${p.marker ?? ""} ${p.seriesName}&nbsp;&nbsp;<b>${fmtNum(p.value?.[1])}</b>${unit ? ` <span style="opacity:.65;font-size:11px">${unit}</span>` : ""}`;
+              return `${p.marker ?? ""} ${p.seriesName}&nbsp;&nbsp;<b>${fmtNum(p.value?.[1])}</b>${unit ? ` <span style="font-size:14px">${unit}</span>` : ""}`;
             });
           if (!rows.length) return "";
           const date = list[0]?.axisValueLabel ?? "";
-          return `<div style="font-size:11px;opacity:.75">${date}</div>${rows.join("<br/>")}`;
+          return `<div style="font-size:14px">${date}</div>${rows.join("<br/>")}`;
         },
       },
       xAxis: {
         type: "time",
         axisLine: { lineStyle: { color: tokens["--baseline"] } },
-        axisLabel: { color: tokens["--text-muted"], fontSize: 11 },
+        axisLabel: { color: tokens["--text-muted"], fontSize: 12 },
         splitLine: { show: false },
       },
       yAxis: {
         type: "value",
         scale: true,
-        axisLabel: { color: tokens["--text-muted"], fontSize: 11 },
+        axisLabel: { color: tokens["--text-muted"], fontSize: 12 },
         splitLine: { lineStyle: { color: tokens["--gridline"], width: 1 } },
       },
       series,
@@ -161,22 +163,22 @@ export function OverlayChart({ items, projections, transform, themeMode }: {
     <div>
       <EChart option={option} height={380} />
       <p className="sub" style={{ marginTop: 4 }}>
-        {items.length > 1
+        {localize(items.length > 1
           ? `Overlaid on a single axis, ${CAPTION_TEXT[transform]} — mixed units are never dual-axed.`
           : items.length === 1
             ? `${items[0].series.name}: ${CAPTION_TEXT[transform]}${transform === "raw" ? `, ${items[0].series.unit}` : ""} (${items[0].series.source})`
-            : "Select at least one series."}
-        {projections.length > 0 && (
+            : "Select at least one series.")}
+        {transform === "raw" && items.length > 1 && <span> · {tr(items[0].series.unit)}</span>}
+        {localize(projections.length > 0 && (
           <>
-            {" "}· Shaded model fan = <GlossaryTip term="P10-P90" definition="Projected 10th-to-90th percentile range under the model assumptions; real-world coverage is uncalibrated." />. External forecast markers are period estimates; connecting lines are visual guides, not intervening observations. Model output, not investment advice.
-          </>
-        )}
+            {localize(" ")}{tr("· Shaded model fan = ")}<GlossaryTip term="P10-P90" definition="Projected 10th-to-90th percentile range under the model assumptions; real-world coverage is uncalibrated." />{tr(". External forecast markers are period estimates; connecting lines are visual guides, not intervening observations. Model output, not investment advice.")}</>
+        ))}
       </p>
-      {transform === "index" && <p className="sub">Index bases: {items.filter((i) => i.points.length).map((i) => `${i.series.name}: ${i.points[0][0]}`).join("; ")}. These compare price levels, not total investment returns.</p>}
-      {items.some((i) => seriesCadence(i.series) === "monthly") && <p className="sub">Monthly observations are plotted at period end; the date labels identify the month, not a daily closing price.</p>}
-      {items.some((i) => i.series.id === "GDP_IND") && <p className="sub">India GDP history uses April–March fiscal years labeled by the starting year. It is not directly aligned with calendar-year GDP for the other countries.</p>}
-      {items.some((i) => !i.points.length) && <p className="sub">◔ Not plotted: {items.filter((i) => !i.points.length).map((i) => i.series.name).join(", ")} — insufficient valid observations for this scale/window.</p>}
-      {projections.filter((p) => p.note).map((p) => <p className="sub" key={p.name}>{p.note}</p>)}
+      {localize(transform === "index" && <p className="sub">{tr("Index bases: ")}{localize(items.filter((i) => i.points.length).map((i) => `${i.series.name}: ${i.points[0][0]}`).join("; "))}{tr(". These compare price levels, not total investment returns.")}</p>)}
+      {localize(items.some((i) => seriesCadence(i.series) === "monthly") && <p className="sub">{tr("Monthly observations are plotted at period end; the date labels identify the month, not a daily closing price.")}</p>)}
+      {localize(items.some((i) => i.series.id === "GDP_IND") && <p className="sub">{tr("India GDP history uses April–March fiscal years labeled by the starting year. It is not directly aligned with calendar-year GDP for the other countries.")}</p>)}
+      {localize(items.some((i) => !i.points.length) && <p className="sub">{tr("◔ Not plotted: ")}{localize(items.filter((i) => !i.points.length).map((i) => i.series.name).join(", "))}{tr(" — insufficient valid observations for this scale/window.")}</p>)}
+      {localize(projections.filter((p) => p.note).map((p) => <p className="sub" key={p.name}>{localize(p.note)}</p>))}
     </div>
   );
 }

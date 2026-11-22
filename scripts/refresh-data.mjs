@@ -475,6 +475,11 @@ try {
   if (prior) await writeFile(path.join(OUT_DIR, "nexsi.json"), JSON.stringify({ ...prior, attemptedAt: GENERATED, status: "retained", failures: [...prior.failures, error.message] }));
 }
 
+const { refreshFx } = await import('./lib/fx.mjs');
+const fx = await refreshFx(await readJson(OUT_DIR, 'fx.json'), GENERATED);
+await writeFile(path.join(OUT_DIR, 'fx.json'), JSON.stringify(fx));
+if (fx.status !== 'available') enrichmentIssues.push({source:'Norges Bank USD/NOK',detail:fx.error});
+
 await writeFile(path.join(OUT_DIR, "health.json"), JSON.stringify({
   generated: GENERATED, status: quality.summary.flagged || failures.length || enrichmentIssues.length ? "degraded" : "ok",
   coreFailures: failures, enrichmentIssues,

@@ -1,15 +1,10 @@
+import { l as localize, t as tr } from '../lib/i18n';
 import type { QualityFile, Series } from "../lib/data";
 import { analysisEligibility } from "../lib/quality";
+import { Money } from './Preferences';
 
 const KPI_IDS = ["BRENT", "WTI", "HENRYHUB", "SP500", "GOLD", "EURUSD"];
 const SPARK_POINTS = 30;
-
-function fmtValue(v: number): string {
-  return v.toLocaleString("en-US", {
-    maximumFractionDigits: Math.abs(v) >= 1000 ? 0 : 2,
-    minimumFractionDigits: 0,
-  });
-}
 
 function Sparkline({ values }: { values: number[] }) {
   const w = 76, h = 24, pad = 2;
@@ -37,7 +32,7 @@ export function KpiStrip({ seriesMap, selected, onToggle, quality, now }: {
   if (!tiles.length) return null;
   return (
     <div className="kpi-strip">
-      {tiles.map((s) => {
+      {localize(tiles.map((s) => {
         const n = s.points.length;
         const last = s.points[n - 1][1];
         const prev = s.points[n - 2]?.[1];
@@ -48,24 +43,23 @@ export function KpiStrip({ seriesMap, selected, onToggle, quality, now }: {
             key={s.id}
             className={`kpi-tile${on ? " on" : ""}`}
             onClick={() => onToggle(s.id)}
-            title={`${s.name} — ${on ? "remove from" : "add to"} overlay`}
+            title={tr(`${s.name} — ${on ? "remove from" : "add to"} overlay`)}
           >
-            <span className="kpi-name">{s.name}</span>
-            <small>{analysisEligibility(s, quality, now).eligible ? "Daily observation" : "⚠ Review required"} · {s.lastUpdated}</small>
+            <span className="kpi-name">{localize(s.name)}</span>
+            <small>{localize(analysisEligibility(s, quality, now).eligible ? "Daily observation" : "⚠ Review required")}{tr(" · ")}{localize(s.lastUpdated)}</small>
             <span className="kpi-value">
-              {fmtValue(last)} <span className="kpi-unit">{s.unit}</span>
+              <Money value={last} unit={s.unit} />
             </span>
             <span className="kpi-foot">
-              {pct != null && (
+              {localize(pct != null && (
                 <span className={`kpi-delta ${pct >= 0 ? "up" : "down"}`}>
-                  {pct >= 0 ? "▲" : "▼"} {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
-                </span>
-              )}
+                  {localize(pct >= 0 ? "▲" : "▼")} {localize(pct >= 0 ? "+" : "")}{localize(pct.toFixed(1))}{tr("%")}</span>
+              ))}
               <Sparkline values={s.points.slice(-SPARK_POINTS).map((p) => p[1])} />
             </span>
           </button>
         );
-      })}
+      }))}
     </div>
   );
 }

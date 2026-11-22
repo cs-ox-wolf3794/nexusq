@@ -1,6 +1,7 @@
 import type { BacktestFile, CatalogFile, CotFile, ForecastFile, ImpactFile, QualityFile, Series } from "./data";
 import { validatePoints, validateAdjustedAlignment } from "./quality";
 import type { NexsiFile } from "./nexsi-types";
+import type { FxFile } from './fx';
 
 export interface Quote {
   id: string; symbol: string; name: string; price: number; currency: string;
@@ -19,6 +20,7 @@ export interface Snapshot {
   quality: QualityFile; forecasts: ForecastFile | null; impact: ImpactFile | null;
   cot: CotFile | null; backtest: BacktestFile | null; quotes: QuoteFile | null; health: HealthFile | null;
   nexsi: NexsiFile | null;
+  fx?: FxFile | null;
   refreshStatus: { attemptedAt: string; outcome: string; runUrl: string | null } | null;
 }
 interface Manifest { schemaVersion: number; revision: string; files: Record<string, string> }
@@ -50,12 +52,13 @@ export async function loadSnapshot(previous?: Snapshot): Promise<Snapshot> {
     if (actual !== expected) throw new Error("Data publication in progress or integrity check failed; retaining previous snapshot");
     return JSON.parse(text) as T;
   };
-  const [catalog, quality, forecasts, impact, cot, backtest, quotes, health, refreshStatus, nexsi] = await Promise.all([
+  const [catalog, quality, forecasts, impact, cot, backtest, quotes, health, refreshStatus, nexsi, fx] = await Promise.all([
     file<CatalogFile>("catalog.json", true), file<QualityFile>("quality.json", true),
     file<ForecastFile>("forecasts.json"), file<ImpactFile>("impact.json"), file<CotFile>("cot.json"),
     file<BacktestFile>("backtest.json"), file<QuoteFile>("quotes.json"), file<HealthFile>("health.json"),
     file<Snapshot["refreshStatus"]>("refresh-status.json"),
     file<NexsiFile>("nexsi.json"),
+    file<FxFile>('fx.json'),
   ]);
   if (!catalog?.series?.length || !quality?.series || catalog.generated !== quality.generated) throw new Error("Data and quality assessments are from different updates");
   const series = await Promise.all(catalog.series.map(async (entry) => {
@@ -69,7 +72,7 @@ export async function loadSnapshot(previous?: Snapshot): Promise<Snapshot> {
     return s;
   }));
   if (new Set(series.map((s) => s.id)).size !== series.length) throw new Error("Duplicate catalog identifiers");
-  return { revision: manifest.revision, catalog, quality, forecasts, impact, cot, backtest, quotes, health, refreshStatus, nexsi,
+  return { revision: manifest.revision, catalog, quality, forecasts, impact, cot, backtest, quotes, health, refreshStatus, nexsi, fx,
     seriesMap: new Map(series.map((s) => [s.id, s])) };
 }
 

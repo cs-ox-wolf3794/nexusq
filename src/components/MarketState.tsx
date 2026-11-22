@@ -1,3 +1,4 @@
+import { l as localize, t as tr } from '../lib/i18n';
 import { useMemo } from "react";
 import type { CotFile, Series } from "../lib/data";
 import type { MarketState as MarketStateData } from "../lib/state";
@@ -45,48 +46,42 @@ export function MarketStatePanel({ seriesMap, cot }: {
       .filter((s): s is MarketStateData => s != null);
   }, [seriesMap, cot]);
 
-  if (!states.length) return <p className="sub">Market state needs daily price history.</p>;
+  if (!states.length) return <p className="sub">{tr("Market state needs daily price history.")}</p>;
 
   return (
     <div>
       <div className="state-grid">
-        {states.map((s) => {
+        {localize(states.map((s) => {
           const meta = BAND_META[s.band];
           return (
             <div className="state-card" key={s.id}>
               <div className="state-head">
-                <span className="state-name">{s.name}</span>
+                <span className="state-name">{localize(s.name)}</span>
                 <span
                   className="sev-pill"
-                  title={`Composite ${s.score}/100 — mean of the supportive-direction condition scores`}
+                  title={tr(`Composite ${s.score}/100 — mean of the supportive-direction condition scores`)}
                   style={{ background: `color-mix(in srgb, var(${meta.cssVar}) 16%, transparent)` }}
                 >
                   <span className="dot" style={{ background: `var(${meta.cssVar})` }} />
-                  <span aria-hidden="true">{meta.icon}</span> {meta.label} · {s.score}
+                  <span aria-hidden="true">{localize(meta.icon)}</span> {localize(meta.label)}{tr(" · ")}{localize(s.score)}
                 </span>
               </div>
-              {s.conditions.map((c) => (
-                <div className="state-cond" key={c.key} title={c.detail}>
+              {localize(s.conditions.map((c) => (
+                <div className="state-cond" key={c.key} title={tr(c.detail)}>
                   <div className="state-cond-top">
-                    <span className="state-cond-label">{c.label}</span>
-                    <span className="state-cond-pct">{ordinal(Math.round(c.percentile))} pct</span>
+                    <span className="state-cond-label">{localize(c.label)}</span>
+                    <span className="state-cond-pct">{localize(ordinal(Math.round(c.percentile)))}{tr(" pct")}</span>
                   </div>
                   <ConditionBar pct={c.percentile} />
-                  <div className="state-cond-reading">{c.reading}</div>
+                  <div className="state-cond-reading">{localize(c.reading)}</div>
                 </div>
-              ))}
-              <div className="state-asof">{s.conditions.length}/4 conditions · inputs through {s.asOf}</div>
+              )))}
+              <div className="state-asof">{localize(s.conditions.length)}{tr("/4 conditions · inputs through ")}{localize(s.asOf)}</div>
             </div>
           );
-        })}
+        }))}
       </div>
-      <p className="sub" style={{ marginTop: 10 }}>
-        Each condition is the current value's percentile within its own ~3-year history (positioning:
-        full CFTC weekly history; Brent positioning uses the thin NYMEX Last Day contract as a proxy).
-        The composite averages oriented historical ranks (higher trend rank, lower volatility,
-        dollar-change and positioning ranks). This convention is an unvalidated heuristic; missing conditions change its composition. It describes relative conditions,
-        <strong> not a forecast or trading signal</strong>. Bands: &lt;35 headwinds · 35–65 mixed · &gt;65 constructive.
-      </p>
+      <p className="sub" style={{ marginTop: 10 }}>{tr("Each condition is the current value's percentile within its own ~3-year history (positioning: full CFTC weekly history; Brent positioning uses the thin NYMEX Last Day contract as a proxy). The composite averages oriented historical ranks (higher trend rank, lower volatility, dollar-change and positioning ranks). This convention is an unvalidated heuristic; missing conditions change its composition. It describes relative conditions,")}<strong>{tr(" not a forecast or trading signal")}</strong>{tr(". Bands: <35 headwinds · 35–65 mixed · >65 constructive.")}</p>
     </div>
   );
 }

@@ -13,15 +13,15 @@ function snapshot(): Snapshot {
 
 describe('Research timestamps and scheduled sessions', () => {
   it('keeps date-only observations free of invented midnight times', () => {
-    expect(displayInstant('2026-11-20', 'ET')).toBe('20 Nov 2026');
+    expect(displayInstant('2026-11-20', 'ET')).toBe('Nov 20, 2026');
     expect(displayDate('2026-02-30')).toBe('Not recorded');
     expect(displayInstant(null)).toBe('Not recorded');
     expect(elapsedLabel('2026-11-20', Date.parse('2026-11-21T12:00Z'))).toBe('Time not recorded');
   });
   it('renders real instants in explicit time zones, including DST and date boundaries', () => {
-    expect(displayInstant('2026-11-21T00:30:00Z', 'ET')).toBe('20 Nov 2026 · 19:30 ET');
-    expect(displayInstant('2026-07-15T20:00:00Z', 'ET')).toBe('15 Jul 2026 · 16:00 ET');
-    expect(displayInstant('2026-11-21T00:30:00Z')).toBe('21 Nov 2026 · 00:30 UTC');
+    expect(displayInstant('2026-11-21T00:30:00Z', 'ET')).toBe('Nov 20, 2026 · 19:30 ET');
+    expect(displayInstant('2026-07-15T20:00:00Z', 'ET')).toBe('Jul 15, 2026 · 16:00 ET');
+    expect(displayInstant('2026-11-21T00:30:00Z')).toBe('Nov 21, 2026 · 00:30 UTC');
   });
   it('does not label invalid or future check times as recent', () => {
     const now = Date.parse('2026-11-22T12:00:00Z');

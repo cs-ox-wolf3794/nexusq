@@ -1,5 +1,24 @@
 # NexusQ releases
 
+## 2.1.0 — 2026-11-23
+
+NexSum becomes the opening brief, with a more readable design and independent English (US)/Norwegian Bokmål and USD/NOK settings. Existing analysis and free sources are preserved.
+
+- Added NexSum as the opening daily brief, with dated evidence, a personal watchlist, changes since an explicit review, analyst research steps and linked investigations. All prior research-desk information remains available.
+- Added stock, capital-market and energy research questions and topic suggestions to global search. Fixed result rows spilling over the footer; results now have a bounded scroll area, with a continuous-scroll layout on short screens.
+- Replaced the sidebar slogan with a plain-language guide to observed, estimated and unexplained results and a link to methods and coverage.
+- Increased small type across the app, standardized label/company capitalization and softened the light palette. Both density settings retain readable text.
+- Preserved existing free sources, attribution models, source checks, provider credits and all analytical views. No upcoming earnings date is invented; missing guidance is distinct from an evidenced company policy.
+
+### Language and currency
+
+- Added persistent, independent language/currency controls, locale-aware dates and numbers, Norwegian research search, translated workspaces, methodology, explanations, alerts and chart labels.
+- Added free Norges Bank daily USD/NOK reference data, validated publication and automatic full/quote-run refresh. Failed refreshes retain dated rates; unusable or stale rates fall back explicitly to USD.
+- Converted displayed prices, quotes, watchlists, raw monetary charts/forecasts and power-cost scenarios. Fixed-rate display conversion leaves all model inputs, returns, beta estimates and attribution unchanged. Switching currencies preserves canonical scenario assumptions.
+- Preserved original-language disclosures, company summary wording, source titles and reported financial currencies, with clear labels. No automatic translation is presented as an issuer statement.
+- Added regression checks for preferences, Norwegian search and uncertainty wording, FX direction/units/freshness/retention, chart-data preservation and language-independent brief review signatures. US date expectations now follow en-US; timestamps keep explicit time zones.
+- Product version 2.1.0; analytical engine versions remain unchanged.
+
 ## 2.0.0 — 2026-11-22
 
 NexusQ 2.0 brings company-move investigation, energy exposure, market relationships and source evidence into one connected research experience. This is the first tagged product release; the earlier milestones below were previously untagged.

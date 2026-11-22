@@ -1,0 +1,72 @@
+/* NexSum uses the app's shared type, surface, status and focus tokens. */
+.nexsum { margin-top: 12px; }
+.nexsum-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+.nexsum-header .eyebrow { margin: 0 0 6px; color: var(--accent-deep); }
+.nexsum h1 { font-size: 2.5rem; line-height: 1.15; font-weight: 600; letter-spacing: -1px; margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 20px; }
+.nexsum h1>span { font-size: 1rem; font-weight: 400; color: var(--text-secondary); letter-spacing: 0; }
+.nexsum-edition { text-align: right; flex-shrink: 0; display: grid; gap: 4px; }
+.nexsum-edition time { font-size: .875rem; font-family: var(--font-number); }
+.nexsum-edition span { font-size: .8125rem; color: var(--text-secondary); }
+.nexsum-lead { display: grid; grid-template-columns: minmax(0,1fr) 260px; gap: 32px; padding: 26px 28px; border: 1px solid var(--border); border-top: 3px solid var(--accent); background: var(--surface-1); }
+.nexsum-lead .eyebrow { margin: 0 0 8px; }
+.app-shell .nexsum-lead h2 { font-size: clamp(1.5rem,2.2vw,2rem); line-height: 1.25; letter-spacing: -.5px; margin: 0 0 12px; max-width: 30ch; }
+.nexsum-lead p { color: var(--text-secondary); margin: 0; font-size: 1rem; line-height: 1.6; }
+.nexsum-lead-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 22px; margin-top: 20px; }
+.nexsum-publication { display: grid; align-content: center; gap: 18px; border-left: 1px solid var(--gridline); padding-left: 24px; margin: 0; }
+.nexsum-publication dt { color: var(--text-secondary); font-size: .8125rem; margin-bottom: 4px; }
+.nexsum-publication dd { margin: 0; color: var(--text-primary); font-size: .875rem; line-height: 1.6; }
+.nexsum-market-strip { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); border: 1px solid var(--gridline); border-top: 0; background: var(--surface-2); }
+.nexsum-market-strip button { border: 0; border-right: 1px solid var(--gridline); background: none; padding: 18px 20px; text-align: left; color: var(--text-primary); display: grid; gap: 5px; cursor: pointer; min-width: 0; }
+.nexsum-market-strip button:last-child { border-right: 0; }
+.nexsum-market-strip button:hover { background: var(--surface-hover); }
+.nexsum-market-strip button>span:first-child { font-size: .875rem; color: var(--text-secondary); }
+.nexsum-market-strip strong { font-family: var(--font-number); font-size: 1.125rem; line-height: 1.4; font-weight: 400; overflow-wrap: anywhere; }
+.nexsum-market-change { font-size: .875rem; }
+.nexsum-market-strip small { font-size: .8125rem; color: var(--text-secondary); }
+.nexsum-review { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--gridline); }
+.nexsum-review>div { display: grid; gap: 4px; }.nexsum-review strong { font-size: .875rem; font-weight: 500; }.nexsum-review span { font-size: .8125rem; color: var(--text-secondary); }
+.nexsum-review button { flex-shrink: 0; }.nexsum-notice { font-size: .875rem; color: var(--accent-deep); margin: 10px 0; }.nexsum-notice:empty { margin: 0; }
+.nexsum-layout { display: grid; grid-template-columns: minmax(0,1fr) 310px; gap: 28px; align-items: start; margin-top: 28px; }
+.nexsum-main,.nexsum-sidebar { min-width: 0; }
+.nexsum-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.nexsum-section-heading h2 { margin: 0; }.nexsum-section-heading>span { font-size: .8125rem; color: var(--text-secondary); }
+.nexsum-insights { display: grid; gap: 16px; }
+.nexsum-insight { border: 1px solid var(--gridline); padding: 24px; background: var(--surface-1); border-radius: var(--radius-panel); }
+.nexsum-insight.featured { border-left: 3px solid var(--series-2); }
+.nexsum-insight-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: center; margin-bottom: 12px; color: var(--text-secondary); }
+.nexsum-insight-meta .eyebrow { margin: 0; color: var(--accent-deep); }.nexsum-insight-meta time { font-size: .8125rem; }
+.nexsum-insight h3 { margin: 0 0 10px; font-size: 1.25rem; }
+.nexsum-insight p { font-size: 1rem; line-height: 1.65; color: var(--text-secondary); margin: 0 0 16px; overflow-wrap: anywhere; }
+.nexsum-boundary { padding: 12px 16px; border-left: 2px solid var(--baseline); background: var(--surface-2); }
+.nexsum-boundary>span { font-weight: 600; font-size: .875rem; }.nexsum-boundary p { font-size: .875rem; margin: 4px 0 0; }
+.nexsum-insight-actions { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.nexsum-insight-actions details { font-size: .875rem; max-width: 100%; }.nexsum-insight-actions summary { cursor: pointer; padding-block: 10px; color: var(--text-secondary); min-height: 44px; }.nexsum-insight-actions ul { padding-left: 18px; margin: 8px 0; }
+.nexsum-changed { color: var(--accent-deep); border: 1px solid var(--accent); border-radius: 3px; padding: 1px 6px; font-size: .8125rem; }
+.nexsum-sidebar { display: grid; gap: 20px; }
+.nexsum-sidebar>section { padding: 20px; background: var(--surface-1); border: 1px solid var(--gridline); border-radius: var(--radius-panel); }
+.nexsum-sidebar p { font-size: .875rem; color: var(--text-secondary); line-height: 1.6; margin: 8px 0 14px; }
+.nexsum-sidebar h2 { font-size: 1.125rem; margin: 0; }
+.nexsum-watch .nexsum-section-heading { margin-bottom: 4px; }.nexsum-watch ul { list-style: none; padding: 0; margin: 0; }
+.nexsum-watch li { display: flex; border-top: 1px solid var(--gridline); align-items: flex-start; gap: 4px; }
+.nexsum-watch-open { min-width: 0; flex: 1; display: grid; gap: 5px; padding: 14px 0; text-align: left; border: 0; background: none; color: var(--text-primary); cursor: pointer; }
+.nexsum-watch-open>span:first-child { display: grid; gap: 3px; }.nexsum-watch-open strong { font-size: .875rem; font-family: var(--font-number); font-weight: 400; }.nexsum-watch-open>span:first-child>span { font-size: .875rem; color: var(--text-secondary); }
+.nexsum-watch-open b { font-size: 1rem; font-family: var(--font-number); font-weight: 400; overflow-wrap: anywhere; }
+.nexsum-watch-open small { font-size: .8125rem; color: var(--status-warning); }.nexsum-watch-date { font-size: .8125rem; color: var(--text-secondary); }
+.nexsum-watch-remove { width: 36px; min-height: 44px; margin-top: 4px; border: 0; background: none; color: var(--text-secondary); font-size: 1.25rem; cursor: pointer; }
+.nexsum-watch-edit { border-top: 1px solid var(--gridline); padding-top: 8px; }.nexsum-watch-edit summary { cursor: pointer; color: var(--accent-deep); font-size: .875rem; padding: 10px 0; min-height: 44px; }
+.nexsum-watch-edit>label,.nexsum-watch-edit>span { display: block; font-size: .8125rem; color: var(--text-secondary); margin-top: 12px; }
+.nexsum-watch-edit>input { width: 100%; padding: 8px 10px; border: 1px solid var(--baseline); background: var(--page); color: var(--text-primary); margin-top: 6px; }
+.nexsum-watch-options { max-height: 260px; overflow: auto; margin-top: 12px; overscroll-behavior: contain; }
+.nexsum-watch-options label { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: .875rem; cursor: pointer; min-height: 44px; }.nexsum-watch-options input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--accent); }.nexsum-watch-options small { display: block; font-size: .8125rem; color: var(--text-secondary); }
+.nexsum-checkpoints .eyebrow,.nexsum-quality .eyebrow { margin-top: 0; }.nexsum-checkpoints dl { margin: 18px 0 0; }.nexsum-checkpoints dt { font-size: .875rem; color: var(--text-secondary); }.nexsum-checkpoints dd { margin: 5px 0 0; font-size: .875rem; font-weight: 600; }.nexsum-checkpoints a { font-size: .875rem; }
+.nexsum-coverage-note { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--gridline); }.nexsum-coverage-note strong { font-size: .875rem; font-weight: 500; }
+.nexsum-research-actions { border-block: 1px solid var(--gridline); padding: 24px 0; margin-top: 28px; }.nexsum-research-actions h2 { margin: 5px 0; }.nexsum-research-actions p { color: var(--text-secondary); font-size: .875rem; margin: 0; }
+.nexsum-research-actions ol { margin: 20px 0 0; padding-left: 22px; }.nexsum-research-actions li { padding-left: 8px; }.nexsum-research-actions li+li { margin-top: 6px; }.nexsum-research-actions button { display: grid; gap: 5px; text-align: left; width: 100%; color: var(--text-primary); background: none; border: 0; padding: 10px 0; cursor: pointer; }.nexsum-research-actions strong { font-size: 1rem; font-weight: 500; color: var(--accent-deep); }.nexsum-research-actions button>span { font-size: .875rem; color: var(--text-secondary); }
+.nexsum-method { margin-top: 24px; }.nexsum-method p { max-width: 90ch; line-height: 1.7; font-size: 1rem; color: var(--text-secondary); }
+.full-research-desk { margin-top: 8px; margin-bottom: 32px; }
+@media (max-width: 1200px) { .nexsum-layout { grid-template-columns: minmax(0,1fr) 280px; gap: 20px; }.nexsum-lead { gap: 24px; grid-template-columns: minmax(0,1fr) 230px; }.nexsum-header { align-items: flex-start; }.nexsum h1>span { width: 100%; } }
+@media (max-width: 900px) { .nexsum-layout { grid-template-columns: minmax(0,1fr); }.nexsum-sidebar { grid-template-columns: repeat(2,minmax(0,1fr)); }.nexsum-watch { grid-row: span 2; }.nexsum-lead { grid-template-columns: minmax(0,1fr); gap: 24px; }.nexsum-publication { border-left: 0; border-top: 1px solid var(--gridline); padding: 18px 0 0; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; }.nexsum-market-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }.nexsum-market-strip button:nth-child(2) { border-right: 0; }.nexsum-market-strip button:nth-child(n+3) { border-top: 1px solid var(--gridline); } }
+@media (max-width: 600px) { .nexsum-header { flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }.nexsum h1 { font-size: 2.125rem; }.nexsum-edition { text-align: left; }.nexsum-lead { padding: 20px; }.nexsum-publication { grid-template-columns: minmax(0,1fr); gap: 12px; }.nexsum-publication>div { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }.nexsum-publication dd { text-align: right; }.nexsum-market-strip button { padding: 14px; }.nexsum-market-strip strong { font-size: 1rem; }.nexsum-review { flex-wrap: wrap; }.nexsum-layout { margin-top: 24px; }.nexsum-section-heading { flex-wrap: wrap; gap: 4px; }.nexsum-insight { padding: 18px; }.nexsum-boundary { padding: 12px; }.nexsum-sidebar { grid-template-columns: minmax(0,1fr); }.nexsum-watch { grid-row: auto; }.nexsum-watch-remove { width: 44px; }.nexsum-insight-actions { display: block; } }
+.nexsum-jump { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: -8px 0 20px; }
+.nexsum-jump button { min-height: 44px; color: var(--accent-deep); font-size: .875rem; font-weight: 500; background: none; border: 0; border-bottom: 1px solid var(--baseline); padding: 6px 0; cursor: pointer; }
+.nexsum-jump button:hover { border-bottom-color: var(--accent); }

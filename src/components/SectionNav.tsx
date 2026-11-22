@@ -1,3 +1,4 @@
+import { l as localize, t as tr } from '../lib/i18n';
 const SECTIONS = [
   { id: "kpis", label: "Market pulse" },
   { id: "overlay", label: "Overlay" },
@@ -13,12 +14,12 @@ export function SectionNav({ sections = SECTIONS, preserveView = false }: {
   sections?: { id: string; label: string }[]; preserveView?: boolean;
 }) {
   return (
-    <nav className="section-nav" aria-label="Page sections">
-      {sections.map((s) => (
+    <nav className="section-nav" aria-label={tr("Page sections")}>
+      {localize(sections.map((s) => (
         <a key={s.id} href={`#${s.id}`} onClick={event => {
           if (preserveView) { event.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ block: "start" }); }
-        }}>{s.label}</a>
-      ))}
+        }}>{localize(s.label)}</a>
+      )))}
     </nav>
   );
 }

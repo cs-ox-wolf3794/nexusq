@@ -70,6 +70,9 @@ jobs:
         id: quotes
         continue-on-error: true
         run: npm run refresh:quotes
+      - name: Refresh indicative display exchange rate
+        if: steps.scope.outputs.mode == 'quotes' || steps.data.outcome != 'success'
+        run: node --import tsx scripts/refresh-fx.mjs
       - name: Record analytical refresh outcome
         if: steps.scope.outputs.mode == 'full'
         run: node scripts/record-refresh-status.mjs

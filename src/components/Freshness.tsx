@@ -1,3 +1,4 @@
+import { l as localize, t as tr } from '../lib/i18n';
 import type { Cadence } from "../lib/quality";
 import { displayDate } from "../lib/research-ui";
 export type { Cadence } from "../lib/quality";
@@ -11,7 +12,7 @@ export function Freshness({ date, cadence = "daily", prefix = "data through", ti
 }) {
   if (!date || !Number.isFinite(Date.parse(date))) return null;
   const formatted = displayDate(date);
-  return <span className="fresh fresh-info" title={title ?? "Observation date, not retrieval time. Consult Data status for source-specific quality."}>
-    <span className="fresh-label">{cadence === "annual" ? 'Annual observation' : prefix}</span> <time dateTime={date.slice(0,10)}>{cadence === "annual" ? date.slice(0,4) : formatted}</time>
+  return <span className="fresh fresh-info" title={tr(title ?? "Observation date, not retrieval time. Consult Data status for source-specific quality.")}>
+    <span className="fresh-label">{localize(cadence === "annual" ? 'Annual observation' : prefix)}</span> <time dateTime={date.slice(0,10)}>{localize(cadence === "annual" ? date.slice(0,4) : formatted)}</time>
   </span>;
 }

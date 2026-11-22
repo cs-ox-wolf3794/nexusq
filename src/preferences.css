@@ -1,0 +1,10 @@
+.locale-trigger{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;min-height:38px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface-1);color:var(--text-primary);font:inherit;font-size:.875rem;cursor:pointer}
+.preferences-dialog{box-sizing:border-box;width:min(560px,calc(100vw - 28px));max-height:calc(100dvh - 32px);margin:auto;padding:24px;border:1px solid var(--border);border-radius:12px;background:var(--surface-1);color:var(--text-primary);overflow:auto}
+.preferences-dialog::backdrop{background:var(--overlay-backdrop,rgba(8,20,35,.65))}
+.preferences-dialog header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}.preferences-dialog h2{margin:4px 0;font-size:1.4rem}.preferences-dialog h3{font-size:1rem;margin:0 0 10px}
+.preferences-dialog label{display:flex;flex-direction:column;gap:8px;margin:16px 0;font-weight:600}.preferences-dialog select{width:100%;min-height:44px;padding:8px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font:inherit}
+.preferences-dialog p{font-size:.9rem;line-height:1.6;color:var(--text-secondary)}.preference-basis{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px}.preferences-status{min-height:1.6em}.currency-notice{margin:12px 0 18px;padding:12px 16px;border-left:3px solid var(--accent);background:var(--surface-2);display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.85rem;line-height:1.6}.currency-notice>span:last-child{flex-basis:100%;color:var(--text-secondary)}.money-value small{font-size:.8em;color:var(--text-muted)}
+.workspace-tools{flex-wrap:wrap}
+.currency-notice details{flex-basis:100%;color:var(--text-secondary)}.currency-notice summary{cursor:pointer;font-size:.85rem}.currency-notice details p{margin:8px 0 0}
+@media(max-width:700px){.preferences-dialog{padding:18px}.locale-trigger{font-size:.8rem;padding:6px 8px;min-height:36px}.workspace-tools{gap:6px}.currency-notice{padding:10px 12px}}
+@media(max-width:700px){.workspace-tools>.density-control{display:none}}

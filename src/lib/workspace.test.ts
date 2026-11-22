@@ -10,7 +10,9 @@ describe('research navigation contracts',()=>{
   it('routes every legacy section to an existing workspace and pane',()=>{
     for(const [anchor,route] of Object.entries(SECTION_ROUTES)){
       expect(readWorkspace('#'+anchor)).toEqual(route);
-      expect(WORKSPACES[route.page].views.some(v=>v.id===route.view)).toBe(true);
+      const views=WORKSPACES[route.page].views;
+      if(views.length)expect(views.some(v=>v.id===route.view)).toBe(true);
+      else expect(route.view).toBe(''); // NexSum has sections without a tab bar.
     }
   });
   it('ignores unknown and inherited object keys rather than accepting invalid destinations',()=>{

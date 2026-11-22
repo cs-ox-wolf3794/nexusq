@@ -1,21 +1,45 @@
-# NexusQ 2.0
+# NexusQ 2.1
 
 [![CI](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml)
 [![Data refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml)
 
 **Market intelligence for capital markets — by Gygante Quantitative Systems.**
 
-[Open NexusQ](https://nexus.gygante.com) · [Release 2.0.0](https://github.com/cs-ox-wolf3794/nexusq/releases/tag/v2.0.0) · [Changelog and earlier milestones](CHANGELOG.md)
+[Open NexusQ](https://nexus.gygante.com) · [2.1 release notes](CHANGELOG.md#210--2026-11-23) · [Changelog and earlier milestones](CHANGELOG.md)
 
 NexusQ connects company returns, energy exposure and economic context in one research workspace. It helps analysts inspect the estimated energy contribution to a stock move, other modeled factors, the unexplained remainder and the supporting disclosures. Estimates, confirmed disclosures and possible explanations are explicitly separated.
 
-**NexusQ 2.0 is the official product release.** It keeps the existing free infrastructure and analytical capabilities, with a connected investigation experience and a shared design system across desktop, tablet and mobile. Product release status is not a guarantee of source completeness, causal attribution, forecast accuracy or a market-data service level.
+**NexusQ 2.1 builds on the official 2.0 release.** It keeps the existing free infrastructure and analytical capabilities, with a connected investigation experience and a shared design system across desktop, tablet and mobile. Product release status is not a guarantee of source completeness, causal attribution, forecast accuracy or a market-data service level.
+
+## NexSum and reading improvements
+
+NexusQ opens with **NexSum**, a deterministic daily research brief built entirely from the existing verified free-source snapshot. It preserves the full research desk and all analytical workspaces.
+
+- A dated common-close company screen, selected energy observations, an energy-related signal and source-validated guidance context link into existing investigations. Viewing, observation and calculation dates remain separate.
+- A browser-local watchlist (up to 12 companies or markets), explicit “Mark as reviewed” comparison and suggested research steps help analysts resume work. Refresh timestamps alone do not count as changed insights. Changes to selections, eligibility or underlying content can change the brief.
+- Eighteen curated questions cover stock moves, earnings and guidance, equity benchmarks, rates, volatility, oil, gas, storage, power costs, projects and exposure. Visible stock, capital-market and energy shortcuts lead to the existing analysis; the results scroll independently of the footer, with a continuous-scroll layout on short screens. Search retains companies, individual markets and every existing tool.
+- Shared readable type uses a 16px body, generally 14px essential controls/dates and 12–13px secondary chart/metadata labels, with relative CSS units. Compact mode reduces spacing, not essential text size. Labels use sentence case; tickers/acronyms and canonical company brands retain their capitalization. Original provider company names remain in evidence.
+- Light mode uses a muted blue-gray canvas, softer panels and ink text. Dark mode and the existing series/status semantics are retained.
+
+NexSum adds no causal attribution, earnings-calendar predictions, paid feed or external AI service. It follows the existing publication checks automatically. A verified upcoming earnings calendar is explicitly unavailable; next cash-open checkpoints use the existing exchange calendar. Guidance coverage gaps remain separate from an explicitly evidenced no-guidance policy. Selection rules and caveats are available inside the brief.
+
+## Language and display currency
+
+Open **Language & currency** (EN/NO · USD/NOK) in the top bar. English (US) and Norwegian Bokmål are independent of USD/NOK. Preferences are saved in this browser and synchronized across its open tabs. Routes, selected companies, horizons, watchlists and live scenario assumptions survive a switch. Dates and numbers follow the chosen language; UTC and ET remain explicitly labeled. Norwegian stock, earnings, rates and energy queries work in search.
+
+**Norsk:** Velg **Språk og valuta** øverst. Språk og visningsvaluta velges uavhengig. Analysen og valgene dine beholdes når du bytter.
+
+- Monetary prices, quotes, watchlists, raw price charts, forecast levels and electricity-cost scenarios can display NOK using the free [Norges Bank USD/NOK reference](https://www.norges-bank.no/en/topics/statistics/exchange_rates/?id=USD). The rate's observation date, retrieval time and source remain visible. It is an indicative daily reference, not an intraday or tradable quote.
+- Conversion uses one fixed dated NOK-per-USD rate. Historical price charts and future price scenarios are translated at that same rate; this is **not historical NOK investor performance or an FX forecast**. Returns, betas, percentage-point contributions, indices, quoted FX pairs and analytical inputs retain their original basis. Scenario inputs are stored canonically in USD so switching currency does not change the scenario.
+- Source disclosures, quoted statements, source titles and original-language company summaries retain their wording and reported currencies. Norwegian analytical explanations, navigation, controls, methodology and alerts surround these explicitly labeled originals. New, unrecognized source text is preserved rather than silently machine-translated.
+- The existing refresh workflow updates `fx.json` on full refreshes and quote-only runs. Identity, direction, unit multiplier and observation dates are validated. A failed check retains the last verified rate with a visible retained label; missing, future-dated or more-than-seven-day-old observations/retrievals disable conversion and retain explicitly labeled USD. An FX outage cannot stop the core publication.
+- Translation messages live in `src/lib/locales/`; preferences, financial display conversion and chart localization are separate from model calculations. No external translation service, paid feed or new runtime dependency is used.
 
 ## Find the analysis
 
 | Workspace | Analyst task | Included analysis |
 | --- | --- | --- |
-| **Research desk** | Choose a question or resume an investigation. | Eligible stock moves, market signals, global company/market/tool search and browser-local saved views. |
+| **NexSum** | Read the daily brief and resume an investigation. | Dated key insights, local watchlist, reviewed-brief comparison, analyst research steps and the full research desk with search, signals and saved views. |
 | **NexSI** | Explain stock moves and investigate AI/technology energy exposure. | Nasdaq-100 company screening; 1/5/20-session and recent major-drop attribution; energy, other modeled components and unexplained returns; event timing; earnings, guidance and company news; source coverage; data-center/power case studies and electricity-cost scenarios. |
 | **Nexus Signal** | Understand cross-asset market relationships. | Market pulse, dated quotes, snapshot signals, market state, overlays and correlations, forecasts, equity energy sensitivity, sovereign GDP/oil associations and historical signal validation. |
 | **Evidence & methods** | Assess whether an analysis can support a conclusion. | Observation and retrieval dates, source quality, analytical eligibility, forecast provenance, definitions, formulas, validation and limitations. |
@@ -49,7 +73,7 @@ Saved views and activity history are stored in the current browser, not a user a
 - **Sovereign exposure:** cycle-controlled GDP/oil associations, sample sizes, correlations and World Bank energy-trade context; fiscal-year mismatches are withheld where applicable.
 - **Forecasts and trust controls:** damped-drift uncertainty fans, dated external projections, source-aware QC, a daily signal/forecast ledger, coherent checksummed publications and visible failure states.
 
-Nexus Model, Nexus Scenario, Nexus Portfolio and Nexus Agent remain planned workspaces; their broader roadmap capabilities are not claimed as shipped features of 2.0.
+Nexus Model, Nexus Scenario, Nexus Portfolio and Nexus Agent remain planned workspaces; their broader roadmap capabilities are not claimed as shipped features of 2.1.
 
 ### Architecture
 
@@ -176,8 +200,8 @@ Guidance states distinguish quantitative, qualitative and limited outlooks, with
 
 ### Checks and release history
 
-Use Node.js 22 for the supported workflow. Run `npm test`, `npm run lint`, `npm run data:validate` and `npm run build` before publication. Membership-PDF integration checks also use the Python reader described above. The 2.0 release baseline includes 228 regression tests across 25 files; the CI result is authoritative as tests evolve. Browser checks cover desktop, tablet and 375-pixel phone layouts, connected investigation controls, timestamps, alerts and notifications.
+Use Node.js 22 for the supported workflow. Run `npm test`, `npm run lint`, `npm run data:validate` and `npm run build` before publication. Membership-PDF integration checks also use the Python reader described above. The 2.1 release baseline includes 252 regression tests across 27 files; the CI result is authoritative as tests evolve. Browser checks cover desktop, tablet and 375-pixel phone layouts, connected investigation controls, timestamps, alerts and notifications.
 
-See [CHANGELOG.md](CHANGELOG.md) for the 2.0 changes and a commit-linked history of earlier work. Older milestones are summarized as untagged development history, not invented prior releases. Analytical engine versions are separate from the product's 2.0.0 version.
+See [CHANGELOG.md](CHANGELOG.md) for the 2.1 and 2.0 changes and a commit-linked history of earlier work. Older milestones are summarized as untagged development history, not invented prior releases. Analytical engine versions are separate from the product's 2.1.0 version.
 
 The bundled IBM Plex fonts retain their [Open Font License](public/fonts/IBM-Plex-OFL.txt). Data-provider and redistribution requirements continue to apply; free access does not by itself confer redistribution rights.

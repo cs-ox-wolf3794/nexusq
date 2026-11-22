@@ -3,13 +3,14 @@ import { validDate, analysisEligibility } from './quality';
 import { nexsiStatus } from './nexsi-quality';
 import { externalForecastCurrent } from './forecast';
 import type { Snapshot } from './snapshot';
+import { locale, type Language } from './preferences';
 
 export type NoticeTone = 'critical' | 'warning' | 'info';
 export type DataException = { id: string; tone: NoticeTone; title: string; detail: string; nexsi?: boolean };
 
-export function displayDate(value: string | null | undefined) {
+export function displayDate(value: string | null | undefined, language: Language = locale()) {
   if (!value || !validDate(value.slice(0,10))) return 'Not recorded';
-  return new Intl.DateTimeFormat('en-GB', { day:'2-digit', month:'short', year:'numeric', timeZone:'UTC' }).format(new Date(value.slice(0,10)+'T00:00:00Z'));
+  return new Intl.DateTimeFormat(language, { day:'2-digit', month:'short', year:'numeric', timeZone:'UTC' }).format(new Date(value.slice(0,10)+'T00:00:00Z'));
 }
 export function displayInstant(value: string | null | undefined, zone: 'UTC' | 'ET' = 'UTC') {
   if (!value || !Number.isFinite(Date.parse(value))) return 'Not recorded';
@@ -17,8 +18,8 @@ export function displayInstant(value: string | null | undefined, zone: 'UTC' | '
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return displayDate(value);
   const timeZone = zone === 'ET' ? 'America/New_York' : 'UTC';
   const date = new Date(value);
-  const day = new Intl.DateTimeFormat('en-GB', {day:'2-digit',month:'short',year:'numeric',timeZone}).format(date);
-  const time = new Intl.DateTimeFormat('en-GB', {hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone}).format(date);
+  const day = new Intl.DateTimeFormat(locale(), {day:'2-digit',month:'short',year:'numeric',timeZone}).format(date);
+  const time = new Intl.DateTimeFormat(locale(), {hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone}).format(date);
   return `${day} · ${time} ${zone}`;
 }
 export function elapsedLabel(value: string | null | undefined, now: number) {
