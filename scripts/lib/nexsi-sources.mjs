@@ -47,7 +47,32 @@ export function parseHeadlines(xml, now = Date.now()) {
     const title = tag(block, "title"), url = tag(block, "link"), date = Date.parse(tag(block, "pubDate"));
     if (!title || !/^https:\/\//.test(url) || !Number.isFinite(date) || date > now + 300000 || now - date > 45 * 86400000) return [];
     return [{ title: title.slice(0, 220), url, publishedAt: new Date(date).toISOString(), source: new URL(url).hostname.replace(/^www\./, ""), kind: "headline" }];
-  }).slice(0, 8);
+  }).slice(0, 20);
+}
+/** Keep a bounded evidence archive so a feed rotation does not erase older moves. */
+export function mergeEvidence(previous, incoming, now = Date.now()) {
+  const canonical = value => {
+    const url = new URL(value);
+    if (url.protocol !== "https:") throw new Error("Unsafe evidence URL");
+    for (const key of [...url.searchParams.keys()]) if (/^utm_|^\.tsrc$|^guccounter$/.test(key)) url.searchParams.delete(key);
+    url.hash = "";
+    return url.href;
+  };
+  const records = new Map(), checked = new Date(now).toISOString();
+  for (const [list, fresh] of [[previous, false], [incoming, true]]) {
+    for (const event of list) {
+      const published = Date.parse(event.publishedAt);
+      if (!Number.isFinite(published) || published > now || now - published > 100 * 86400000 || !["filing", "headline"].includes(event.kind)) continue;
+      let key;
+      try { key = `${event.kind}:${canonical(event.url)}`; } catch { continue; }
+      const old = records.get(key);
+      records.set(key, { ...event, firstSeenAt: old?.firstSeenAt ?? event.firstSeenAt ?? event.lastSeenAt ?? checked,
+        lastSeenAt: fresh ? checked : event.lastSeenAt ?? null });
+    }
+  }
+  const sorted = [...records.values()].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  return ["filing", "headline"].flatMap(kind => sorted.filter(e => e.kind === kind).slice(0, kind === "filing" ? 80 : 300))
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }
 export async function companyHeadlines(symbol, now) {
   return parseHeadlines(await get(`https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(symbol)}&region=US&lang=en-US`, false, { retries: 1, timeout: 10000 }), now);
@@ -67,12 +92,14 @@ export function parseFilings(data, cik, now = Date.now()) {
   return recent.form.flatMap((form, i) => {
     const date = recent.acceptanceDateTime?.[i];
     const timestamp = Date.parse(date ?? "");
-    if (!(form in labels) || !Number.isFinite(timestamp) || timestamp > now || now - timestamp > 100 * 86400000) return [];
+    const baseForm = form.replace(/\/A$/, "");
+    if (!(baseForm in labels) || !Number.isFinite(timestamp) || timestamp > now || now - timestamp > 100 * 86400000) return [];
     const accession = recent.accessionNumber[i], document = recent.primaryDocument[i], items = recent.items?.[i] ?? "";
     if (!/^\d{10}-\d{2}-\d{6}$/.test(accession) || !/^[\w.-]+$/.test(document)) return [];
-    return [{ title: `${form} · ${labels[form]}${items.split(',').map(s => s.trim()).includes("2.02") ? " · earnings disclosure" : ""}`, source: "SEC EDGAR", kind: "filing", items,
+    return [{ title: `${form} · ${labels[baseForm]}${form.endsWith("/A") ? " · amendment" : ""}${items.split(',').map(s => s.trim()).includes("2.02") ? " · earnings disclosure" : ""}`, source: "SEC EDGAR", kind: "filing", items, form, issuerCik: Number(cik),
+      ...(validDate(recent.reportDate?.[i]) ? { reportDate: recent.reportDate[i] } : {}),
       publishedAt: new Date(timestamp).toISOString(), url: `https://www.sec.gov/Archives/edgar/data/${Number(cik)}/${accession.replaceAll("-", "")}/${document}` }];
-  }).slice(0, 10);
+  }).slice(0, 80);
 }
 export async function companyFilings(cik, now) {
   await new Promise(resolve => setTimeout(resolve, 250)); // two workers stay below SEC's published request limit

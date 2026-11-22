@@ -3,7 +3,10 @@ import type { Points } from "./transform";
 
 export interface NexsiMember { symbol: string; name: string; technology: boolean; group: string; included: boolean }
 export interface NexsiUniverse { asOf: string; retrievedAt: string; sources: string[]; members: NexsiMember[]; retained?: boolean }
-export interface NexsiEvent { title: string; url: string; publishedAt: string; source: string; kind: "filing" | "headline"; items?: string }
+export interface NexsiEvent {
+  title: string; url: string; publishedAt: string; source: string; kind: "filing" | "headline"; items?: string;
+  form?: string; issuerCik?: number; reportDate?: string; firstSeenAt?: string; lastSeenAt?: string | null;
+}
 export interface NexsiPriceSource {
   provider: string; url: string; returnBasis: string; note?: string;
   continuity?: { comparedThrough: string; observations: number };

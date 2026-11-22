@@ -25,6 +25,8 @@ describe("NexSI attribution", () => {
     expect(result.actual).toBeCloseTo(100 * Math.expm1(rows.slice(-20).reduce((s, r) => s + r.y, 0)), 12);
     expect(result.components.unexplained).toBeCloseTo(0, 8);
     expect(result.fit.through).toBe(dates[380]);
+    expect(result.factorReturns!.oil).toBeCloseTo(100 * Math.expm1(rows.slice(-20).reduce((s, r) => s + r.x[3], 0)), 12);
+    expect(result.factorReturns!.technology).toBeCloseTo(100 * Math.expm1(rows.slice(-20).reduce((s, r) => s + r.x[1], 0)), 12);
   });
   it("never fits on the event or later information", () => {
     const initial = attributeMove(rows, dates[350], dates[355], 5)!;

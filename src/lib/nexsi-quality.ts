@@ -27,6 +27,7 @@ export function validateNexsi(file: NexsiFile) {
   for (const c of file.companies) {
     if (c.provenance && (!/^https:\/\//.test(c.provenance.url) || !c.provenance.provider || !c.provenance.returnBasis)) throw new Error(`Invalid NexSI price provenance: ${c.symbol}`);
     for (const a of [...Object.values(c.moves), ...c.largestDrops].filter(a => a != null)) {
+      if (a.factorReturns && ["market", "technology", "rates", "oil", "gas"].some(k => !Number.isFinite(a.factorReturns![k as keyof typeof a.factorReturns]))) throw new Error(`Invalid NexSI factor returns: ${c.symbol}`);
       if (![a.actual, a.energy, ...a.energyCI, ...Object.values(a.components)].every(Number.isFinite)
         || a.energyCI[0] > a.energy || a.energyCI[1] < a.energy || a.fit.through !== a.start || a.fit.n < 126
         || a.start >= a.end || Math.abs(Object.values(a.components).reduce((s, v) => s + v, 0) - a.actual) > 1e-8

@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import { readJson, buildManifest } from "./lib/snapshot.mjs";
 import { mapLimit } from "./lib/http.mjs";
 import { companyPriceHistory } from "./lib/nexsi-prices.mjs";
-import { nasdaqUniverse, secDirectory, companyFilings, companyHeadlines, electricityRates } from "./lib/nexsi-sources.mjs";
+import { nasdaqUniverse, secDirectory, companyFilings, companyHeadlines, electricityRates, mergeEvidence } from "./lib/nexsi-sources.mjs";
 import { NEXSI_VERSION, factorRows, attributeMove, validateFactors } from "../src/lib/nexsi-model.ts";
 import { computeSignals } from "../src/lib/signals.ts";
 import { validateNexsi } from "../src/lib/nexsi-quality.ts";
@@ -66,7 +66,7 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
     const largestDrops = rows.length ? drops.map(d => attributeMove(rows, d.prior, d.date, 1)).filter(Boolean) : [];
     const eventIssues = [];
     let events = old?.events ?? [], eventCheckedAt = old?.eventCheckedAt ?? null;
-    if (!eventCheckedAt || now - Date.parse(eventCheckedAt) > 6 * 3600000 || old?.eventIssues?.length) {
+    if (!eventCheckedAt || now - Date.parse(eventCheckedAt) > 6 * 3600000 || old?.eventIssues?.length || !old?.events.every(e => e.firstSeenAt)) {
       const identity = directoryMap.get(symbol);
       const tasks = [companyHeadlines(symbol, now)];
       if (identity) {
@@ -81,7 +81,8 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
         else { eventIssues.push(`${kinds[i]} refresh: ${r.reason.message}`); events.push(...(old?.events ?? []).filter(e => e.kind === kinds[i])); }
       });
       if (!identity) events.push(...(old?.events ?? []).filter(e => e.kind === "filing"));
-      events = events.filter(e => now - Date.parse(e.publishedAt) <= 100 * DAY).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+      const newlyFetched = events.filter(e => !eventIssues.some(issue => issue.startsWith(e.kind)) && !(e.kind === "filing" && !identity));
+      events = mergeEvidence(old?.events ?? [], newlyFetched, now);
       eventCheckedAt = generated;
     }
     const s = { id: symbol, name: member.name, category: "equity", unit: "USD", source: source.provenance?.provider ?? "Unavailable", cadence: "daily", lastUpdated: asOf, points: source.points, adjustedPoints: p };

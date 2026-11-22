@@ -12,10 +12,11 @@ import { readTokens, type ThemeMode } from "./useTheme";
 import { HowToRead } from "./Guidance";
 import { Freshness } from "./Freshness";
 import { SectionNav } from "./SectionNav";
+import { MoveExplanation, MoveEvidence } from "./NexsiExplanation";
 
 const SECTIONS = [
   { id: "nexsi-overview", label: "Coverage" }, { id: "nexsi-screen", label: "Company screen" },
-  { id: "nexsi-company-analysis", label: "Stock impact" }, { id: "nexsi-projects", label: "Data centers" },
+  { id: "nexsi-company-analysis", label: "Stock impact" }, { id: "nexsi-evidence", label: "Sources" }, { id: "nexsi-projects", label: "Data centers" },
   { id: "nexsi-power-scenario", label: "Power scenario" }, { id: "nexsi-inputs", label: "Market inputs" },
   { id: "nexsi-methodology", label: "Methodology" },
 ];
@@ -112,9 +113,7 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
   if (!snapshot || !file || !selected) return <section className="card"><h2>NexSI · AI, energy & capital markets</h2><p>{!snapshot ? "Loading the validated company snapshot…" : "Company analysis is awaiting its first validated publication. No estimated values are substituted."}</p></section>;
   const currentCompanies = file.companies.filter(c => !suspended && !companyStatus(c, now) && c.moves[horizon]);
   const quote = snapshot.quotes?.quotes[selected.symbol];
-  const evidence = selected.events.filter(e => !move || (e.publishedAt.slice(0, 10) >= move.start && e.publishedAt.slice(0, 10) <= new Date(Date.parse(move.end) + 2 * 86400000).toISOString().slice(0, 10)));
   const totalOther = move ? move.components.market + move.components.technology + move.components.rates + move.components.baseline : null;
-  const dominant = move ? Object.entries(move.components).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0] : null;
   return <>
     <p className="data-stamp">NexSI analysis refreshed <strong>{stamp(file.generated)}</strong><span className={`qc-chip ${!suspended && file.status === "ok" ? "qc-ok" : "qc-warn"}`}>{!suspended && file.status === "ok" ? "✓ Sources current" : "⚠ Review sources"}</span></p>
     <SectionNav sections={SECTIONS} preserveView />
@@ -169,10 +168,7 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
             <div className="kpi-tile"><span className="kpi-name">Other modeled components</span><strong>{fmt(totalOther, " pp")}</strong><small>Market + relative tech + rates + baseline</small></div>
             <div className="kpi-tile"><span className="kpi-name">Unexplained remainder</span><strong>{fmt(move.components.unexplained, " pp")}</strong><small>Company events, omitted factors and model error</small></div>
           </div>
-          <div className="nexsi-reading"><h3>Reading this move</h3><p>{selected.symbol} {move.actual < 0 ? "fell" : "rose"} {Math.abs(move.actual).toFixed(2)}%. {dominant && <>The largest component by magnitude is <strong>{labels[dominant[0] as keyof typeof labels].toLowerCase()}</strong> ({fmt(dominant[1], " pp")}). </>}{move.energyCI[0] <= 0 && move.energyCI[1] >= 0 ? "The data do not distinguish the energy estimate from zero at the reported confidence level." : <>The fitted energy component is {fmt(move.energy, " pp")}; this conditional association does not establish a causal energy-price effect.</>}</p>
-            {move.energyShareOfDrop != null && <p>Model-implied energy share of this loss: <strong>{move.energyShareOfDrop.toFixed(1)}%</strong>. Components can offset one another, so a contribution can exceed 100% of the net move. This is not a verified causal share.</p>}
-            <p>The {fmt(move.components.unexplained, " pp")} remainder is not automatically attributable to earnings or news. Review the dated evidence below before forming a causal explanation.</p>
-          </div>
+          <MoveExplanation move={move} company={selected} factors={file.factors} />
           {move.warning && <p className="nexsi-alert">⚠ {move.warning}</p>}
           <div aria-label="Return component chart, percentage points"><EChart height={300} option={contributionOption} /></div>
           <HowToRead title="Exact contributions and model checks"><dl className="nexsi-contributions">{Object.entries(move.components).map(([k, v]) => <div key={k}><dt>{labels[k as keyof typeof labels]}</dt><dd>{fmt(v, " pp", 4)}</dd></div>)}<div><dt>Reconciled total</dt><dd>{fmt(move.actual, "%", 4)}</dd></div></dl>
@@ -184,11 +180,7 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
           <EChart height={220} option={historyOption} />
           {!issue && selected.signals.length ? <ul>{selected.signals.map((s, i) => <li key={i}><strong>{s.severity} · {s.label}</strong>: {s.detail}</li>)}</ul> : <p>{issue ? "Current signals suspended." : "No existing NexusQ threshold signal is active."}</p>}
         </HowToRead>
-        <div className="nexsi-evidence"><h3>Company evidence to investigate</h3><p className="sub">SEC filings and linked headlines are context, not proven causes. {move ? `Showing available items dated ${move.start} through two calendar days after ${move.end}.` : "Showing recent available items."} Free feeds are incomplete, particularly for older moves. Dates are not exchange-aligned event timestamps; even a same-day report may follow the close.</p>
-          {selected.eventIssues.length > 0 && <p className="nexsi-alert">⚠ {selected.eventIssues.join(" · ")}</p>}
-          {evidence.length ? <ul className="nexsi-sources">{evidence.map((e, i) => <li key={`${e.url}-${i}`}><span className="control-label">{e.kind === "filing" ? "Primary disclosure" : "Linked reporting"}{move && e.publishedAt.slice(0, 10) > move.end ? " · after the move" : ""}</span><a href={e.url} target="_blank" rel="noreferrer">{e.title} ↗</a><small>{e.source} · {stamp(e.publishedAt)}</small></li>)}</ul> : <p>No retrieved evidence falls in this window. That does not mean no company event occurred.</p>}
-          <p className="nexsi-foot">Evidence last checked {stamp(selected.eventCheckedAt)}. Filings can include routine disclosures; a headline may discuss several companies.</p>
-        </div>
+        <MoveEvidence company={selected} move={move} now={now} />
       </section>
     </section>
 
@@ -209,6 +201,7 @@ export function NexsiMethodology() {
     <p>Each contribution sums coefficient × factor log returns over the selected window. All components use the same observed-log-to-simple-return scale, so the displayed percentage-point components reconcile exactly to the adjusted stock return. The remainder is actual minus fitted contributions; it includes omitted drivers and model error. The energy estimate adds the oil and gas components.</p>
     <p>The approximate 95% parameter interval uses Newey–West covariance with Bartlett weights, floor(4 × (n/100)^(2/9)) lags, finite-sample correction and multiplier 1.98. It includes covariance between oil and gas coefficients. This is not a prediction interval, a causal confidence interval or simultaneous protection across 101 securities. Factor measurement error, changing exposures and model selection remain outside the interval. A factor move beyond five training standard deviations is flagged; a share-of-loss estimate is shown only for losses of at least 3% when the interval is entirely negative and no such extrapolation is present.</p>
     <p>Market and technology controls can absorb energy's indirect macroeconomic effects; the energy component is conditional, not the total economic effect. SPY and QQQ contain some screened stocks, causing mechanical overlap. IEF is a Treasury ETF return proxy, not a pure interest-rate shock. Futures are continuous vendor series with contract rolls and differing close times. This model cannot determine precisely why a stock moved.</p>
+    <p>Explanations distinguish modeled contributions, observed factor returns and unassigned company context. Observed technology performance is the change in the QQQ/SPY ratio; the fit uses its log return. Positive unexplained returns offset modeled losses; the residual is never assigned automatically to news. Primary filings and unreviewed ticker-feed headlines are separated, with New York publication timing and scheduled early closes. Evidence published after a move is follow-up context, not an established catalyst.</p>
     <p>Held-out checks refit before each of the latest 60 available sessions and compare squared errors with and without energy using realized factors. At least 20 checks are required. R² can be negative. This tests explanatory stability, not tradable forecasts. Existing dislocation and moving-average signals are reused without threshold changes. Historical data may be revised; these are not archived point-in-time input vintages.</p>
     <p>Analytical snapshots expire after 72 hours; daily stock/factor observations after seven days; membership publications after 45 days. Quotes target 15-minute checks on the existing free schedule, with visible provider timestamps and delay status. Daily attribution is updated on full refreshes and never applies a daily fit to an incomplete intraday move. Project disclosures are manually curated and dated; EIA commercial electricity averages expire 150 days after the reported month end and are regional context, not industrial contracts or site tariffs.</p>
     <p><a href="https://www.nasdaq.com/docs/global-indexes/NDX" target="_blank" rel="noreferrer">Nasdaq membership</a> · <a href="https://www.nasdaq.com/docs/global-indexes/NDXT" target="_blank" rel="noreferrer">Nasdaq technology subset</a> · <a href="https://www.sec.gov/search-filings/edgar-application-programming-interfaces" target="_blank" rel="noreferrer">SEC disclosure API</a> · <a href="https://www.eia.gov/opendata/documentation.php" target="_blank" rel="noreferrer">EIA electricity metadata</a></p>

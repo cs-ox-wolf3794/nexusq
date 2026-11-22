@@ -536,6 +536,22 @@ body::before {
 .nexsi-contributions > div { display: flex; justify-content: space-between; gap: 12px; }
 .nexsi-contributions dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nexsi-evidence { margin-top: 16px; }
+.nexsi-explanation { margin: 16px 0; }
+.nexsi-lead { border-left: 3px solid var(--accent); padding-left: 12px; }
+.nexsi-reasons { display: grid; gap: 10px; }
+.nexsi-reasons article { padding: 10px 12px; border: 1px solid var(--gridline); border-radius: 8px; }
+.nexsi-reasons h4 { margin: 0 0 6px; font-size: 12.5px; }
+.nexsi-reasons p, .nexsi-evidence-card p { margin: 6px 0; font-size: 12px; color: var(--text-secondary); }
+.nexsi-reasons .nexsi-foot { font-size: 11.5px; color: var(--text-muted); }
+.nexsi-drivers { width: 100%; border-collapse: collapse; font-size: 12px; }
+.nexsi-drivers th, .nexsi-drivers td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--gridline); vertical-align: top; }
+.nexsi-drivers thead th { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+.nexsi-drivers tbody th { width: 52%; font-weight: 400; }
+.nexsi-drivers small, .nexsi-drivers th > span { display: block; font-size: 11px; margin-top: 4px; color: var(--text-muted); }
+.nexsi-drivers td { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nexsi-drivers caption { text-align: left; color: var(--text-muted); font-size: 11px; padding: 4px 6px; }
+.nexsi-evidence-card { border: 1px solid var(--gridline); border-radius: 8px; padding: 10px 12px; }
+.nexsi-evidence-tags { display: flex; gap: 6px 10px; flex-wrap: wrap; color: var(--text-muted); font-size: 11px; }
 .nexsi-sources { list-style: none; padding: 0; display: grid; gap: 12px; }
 .nexsi-sources li { display: grid; gap: 4px; overflow-wrap: anywhere; line-height: 1.45; font-size: 12.5px; }
 .nexsi-sources small { color: var(--text-muted); font-size: 11px; }
@@ -567,4 +583,10 @@ body::before {
   .nexsi-company-heading > div:last-child { text-align: left; }
   .nexsi-metrics { gap: 8px; }
   .nexsi-factor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nexsi-drivers thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .nexsi-drivers tbody, .nexsi-drivers tr { display: block; }
+  .nexsi-drivers tr { padding: 8px 0; border-bottom: 1px solid var(--gridline); }
+  .nexsi-drivers tbody th { display: block; width: auto; border: 0; padding: 4px 0; }
+  .nexsi-drivers td { display: flex; justify-content: space-between; gap: 8px; border: 0; padding: 4px 0; }
+  .nexsi-drivers td::before { content: attr(data-label); color: var(--text-muted); font-size: 11px; white-space: normal; }
 }

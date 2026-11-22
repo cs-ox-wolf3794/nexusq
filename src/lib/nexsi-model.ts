@@ -15,6 +15,8 @@ export interface Attribution {
   energy: number; energyCI: [number, number]; energyShareOfDrop: number | null;
   fit: Omit<FactorFit, "coefficients" | "covariance" | "means" | "deviations">;
   extrapolation: boolean; warning: string | null;
+  /** Observed simple returns of the model inputs; technology is the QQQ/SPY ratio. */
+  factorReturns?: Record<FactorKey, number>;
 }
 
 function returns(points: Points) {
@@ -125,6 +127,7 @@ export function attributeMove(rows: FactorRow[], start: string, end: string, exp
   const energyCI: [number, number] = [energy - half, energy + half];
   const { coefficients: _c, covariance: _v, means: _m, deviations: _d, ...diagnostics } = fit;
   return { start, end, sessions: event.length, actual, components, energy, energyCI,
+    factorReturns: Object.fromEntries(FACTOR_KEYS.map((key, j) => [key, Math.expm1(sums[j]) * 100])) as Record<FactorKey, number>,
     energyShareOfDrop: actual <= -3 && energyCI[1] < 0 && !extrapolation ? energy / actual * 100 : null,
     fit: diagnostics, extrapolation, warning: extrapolation ? "A factor move exceeds five training standard deviations; contribution estimates are fragile." : energyCI[0] <= 0 && energyCI[1] >= 0 ? "Energy estimate is statistically inconclusive: its parameter interval includes zero." : null };
 }

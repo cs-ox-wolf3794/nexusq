@@ -34,8 +34,9 @@ export async function validateSnapshot(directory) {
         const sameNumbers = recalculated && ["actual", "energy"].every(k => Math.abs(recalculated[k] - a[k]) < 1e-8)
           && Object.keys(a.components).every(k => Math.abs(recalculated.components[k] - a.components[k]) < 1e-8)
           && a.energyCI.every((v, i) => Math.abs(recalculated.energyCI[i] - v) < 1e-8);
+        const sameInputs = !a.factorReturns || recalculated && Object.keys(recalculated.factorReturns).every(k => Math.abs(recalculated.factorReturns[k] - a.factorReturns[k]) < 1e-8);
         // Allow harmless floating-point differences between Windows and Linux/V8 versions.
-        if (!sameNumbers || recalculated.fit.through !== a.fit.through || recalculated.fit.n !== a.fit.n) throw new Error(`NexSI attribution not reproducible: ${company.symbol}`);
+        if (!sameNumbers || !sameInputs || recalculated.fit.through !== a.fit.through || recalculated.fit.n !== a.fit.n) throw new Error(`NexSI attribution not reproducible: ${company.symbol}`);
       }
     }
   }
