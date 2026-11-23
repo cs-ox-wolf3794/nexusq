@@ -32,6 +32,11 @@ await mapLimit(instruments, 3, async ([id, symbol]) => {
 });
 await writeFile(path.join(directory, "quotes.json"), JSON.stringify({
   generated: new Date().toISOString(), targetMinutes: 15, quotes, failures,
+  refresh: {
+    trigger: process.env.GITHUB_EVENT_NAME ?? 'local',
+    startedAt: process.env.REFRESH_STARTED_AT ?? null,
+    runUrl: process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID ? `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` : null,
+  },
   note: "Best-effort quote checks; exchange/provider delay and GitHub scheduling prevent a guaranteed 15-minute service. Quotes are not used in daily analytics.",
 }));
 await buildManifest(directory);

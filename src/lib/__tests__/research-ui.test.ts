@@ -58,8 +58,8 @@ describe('Operational exceptions and local activity', () => {
   });
   it('allows the first scheduled weekday check its grace period after an overnight pause', () => {
     expect(quoteCheckOverdue('2026-11-20T23:52:00Z', Date.parse('2026-11-23T12:00:00Z'))).toBe(false);
-    expect(quoteCheckOverdue('2026-11-20T23:52:00Z', Date.parse('2026-11-23T12:17:00Z'))).toBe(false);
-    expect(quoteCheckOverdue('2026-11-20T23:52:00Z', Date.parse('2026-11-23T12:18:00Z'))).toBe(true);
+    expect(quoteCheckOverdue('2026-11-20T23:53:00Z', Date.parse('2026-11-23T12:18:00Z'))).toBe(false);
+    expect(quoteCheckOverdue('2026-11-20T23:53:00Z', Date.parse('2026-11-23T12:19:00Z'))).toBe(true);
     expect(quoteCheckOverdue('2026-11-23T12:07:00Z', Date.parse('2026-11-23T12:18:00Z'))).toBe(false);
   });
   it('still reports failed source updates outside market hours and separates withholding from partial coverage', () => {

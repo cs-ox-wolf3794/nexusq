@@ -1,5 +1,14 @@
 # NexusQ releases
 
+## 2.1.2 — 2026-11-23
+
+- Re-registered the inactive scheduled-refresh trigger through the authenticated repository maintainer account and re-enabled the workflow. Manual runs had worked while no scheduled run was created; the previous manual-only verification did not establish unattended delivery.
+- Re-registered five-minute quote checks at 12:03–23:58 UTC weekdays and full refreshes at 06:19, 16:19, 18:19 and 22:19 UTC weekdays, plus Saturday 06:19. Kept the existing free infrastructure and source contracts.
+- Recorded each quote refresh's actual trigger and workflow run in the data publication. Post-deployment verification now fails on missing quotes or a market-hours 15-minute breach, while leaving published data and explicit source warnings available.
+- Corrected displayed schedule times and restored all 119 quote updates during live trading. Company records were present; the reported missing portfolio was the list of delayed quote updates, not missing constituents.
+
+Scheduled-run verification is recorded below after the repaired trigger has fired; a manual recovery run is not evidence of scheduled operation.
+
 ## 2.1.1 — 2026-11-23
 
 Norwegian usability, company-news coverage and production-freshness audit.

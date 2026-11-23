@@ -66,8 +66,8 @@ export function QuotePanel({ snapshot, now }: { snapshot: Snapshot | null; now: 
   return <section className="card" aria-label={tr("Latest market quotes")}>
     <div className="card-head"><h2>{tr("Latest ETF quotes")}</h2><span className="sub">{tr("Price-age target: within 15 minutes")}</span></div>
     <p className="sub">{tr("Yahoo Finance quotes, shown separately from completed daily observations. Delivery is best effort; exchange delays vary. These quotes do not update the daily signals, betas or forecasts.")}</p>
-    {localize(quoteCheckOverdue(file.generated,now) && <ResearchAlert title={tr("Scheduled quote checks are overdue")}>{tr("Quote checks have not run in the last 15 minutes. Checks are scheduled every 5 minutes on weekdays, from 12:02 to 23:57 UTC.")}</ResearchAlert>)}
-    {localize(!quoteScheduleActive(now) && now-Date.parse(file.generated)>30*60000 && <p className="quote-schedule-note">{tr("Outside the quote-refresh schedule · weekdays, every 5 minutes from 12:02 to 23:57 UTC. The last reported quotes remain visible with their original observation times.")}</p>)}
+    {localize(quoteCheckOverdue(file.generated,now) && <ResearchAlert title={tr("Scheduled quote checks are overdue")}>{tr("Quote checks have not run in the last 15 minutes. Checks are scheduled every 5 minutes on weekdays, from 12:03 to 23:58 UTC.")}</ResearchAlert>)}
+    {localize(!quoteScheduleActive(now) && now-Date.parse(file.generated)>30*60000 && <p className="quote-schedule-note">{tr("Outside the quote-refresh schedule · weekdays, every 5 minutes from 12:03 to 23:58 UTC. The last reported quotes remain visible with their original observation times.")}</p>)}
     {localize(file.failures.length > 0 && <ResearchAlert title={tr("Quote updates incomplete")}>{localize(file.failures.length)}{tr(" quote sources could not be refreshed. Retained prices preserve their observation dates.")}</ResearchAlert>)}
     <div className="quote-grid">{localize(["XLE", "ICLN", "TAN", "GOLD"].map((id) => {
       const quote = file.quotes[id];
@@ -89,3 +89,4 @@ export function QuotePanel({ snapshot, now }: { snapshot: Snapshot | null; now: 
     </details>
   </section>;
 }
+

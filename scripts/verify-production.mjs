@@ -34,6 +34,7 @@ const health=quoteHealth(quotes,now,expected);
 const coverage={};for(const company of nexsi.companies){const status=companyNewsCoverage(company,company.moves[1]??{start:company.asOf,end:company.asOf},now).status;coverage[status]=(coverage[status]??0)+1;}
 const lines=[`Live publication verified: ${manifest.revision}`,`${Object.keys(files).length} data files matched their published checksums.`,
   `Quotes: ${Object.keys(quotes.quotes).length}/${health.expected}; checked ${quotes.generated}; ${quotes.failures.length} retrieval failures; ${health.missing.length} missing.`,
+  `Quote refresh trigger: ${quotes.refresh?.trigger??'not recorded'}${quotes.refresh?.runUrl?`; ${quotes.refresh.runUrl}`:''}.`,
   health.open?`US market scheduled open: ${health.withinTarget}/${health.expected} quotes within 15 minutes; ${health.delayed.length} delayed or invalid.`:'US market scheduled closed: intraday 15-minute target not evaluated. This run does not certify sustained market-hours delivery.',
   `NexSI: ${nexsi.generated}; ${nexsi.status}; ${nexsi.companies.filter(c=>c.moves[1]).length} daily models; ${nexsiStatus(nexsi,now)??'current analytical snapshot'}.`,
   `Company-news coverage: ${JSON.stringify(coverage)}. Empty source windows do not prove no relevant news.`,
@@ -42,3 +43,6 @@ const lines=[`Live publication verified: ${manifest.revision}`,`${Object.keys(fi
 console.log(lines.join('\n'));
 if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`### Live production verification\n\n${lines.join('\n\n')}\n`);
 if(health.delayed.length||health.missing.length||quotes.failures.length||nexsi.status!=='ok'||nexsiStatus(nexsi,now))console.warn('::warning::Live data has freshness or source exceptions. Review the published status; successful deployment is not evidence of 15-minute compliance.');
+// Verification runs after publication: keep healthy data live, but never give a
+// green verification result to a market-hours price-age or quote-coverage breach.
+if(health.missing.length||(health.open&&(health.delayed.length||quotes.failures.length)))throw Error('Production quote coverage or the 15-minute market-hours target failed verification.');

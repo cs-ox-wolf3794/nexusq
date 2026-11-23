@@ -49,7 +49,7 @@ export function quoteScheduleActive(now: number) {
 }
 export function quoteCheckOverdue(checkedAt: string, now: number) {
   if (!quoteScheduleActive(now)) return false;
-  const firstScheduled = new Date(now); firstScheduled.setUTCHours(12,2,0,0);
+  const firstScheduled = new Date(now); firstScheduled.setUTCHours(12,3,0,0);
   if(!Number.isFinite(Date.parse(checkedAt)))return true;
   return now - Math.max(Date.parse(checkedAt), firstScheduled.getTime()) > 15*60000;
 }
@@ -66,7 +66,7 @@ export function dataExceptions(snapshot: Snapshot | null, now: number, error: st
   else if(snapshot.nexsi?.status==='degraded')out.push({id:'nexsi-sources',tone:'warning',title:'NexSI source coverage incomplete',detail:'Available company models remain visible. Inspect company-specific gaps and retained evidence.',nexsi:true});
   if(snapshot.quotes?.failures.length)out.push({id:'quotes-failed',tone:'warning',title:`${snapshot.quotes.failures.length} quote updates failed`,detail:'Affected quotes retain their last observation time. Quotes are separate from daily attribution.'});
   if(!snapshot.quotes)out.push({id:'quotes-missing',tone:'warning',title:'Intraday quotes unavailable',detail:'Daily analytical observations remain available.'});
-  else if(quoteCheckOverdue(snapshot.quotes.generated,now))out.push({id:'quote-schedule',tone:'warning',title:'Scheduled quote checks are overdue',detail:`Last checked ${displayInstant(snapshot.quotes.generated)}. Free quote checks are scheduled every 5 minutes on weekdays, 12:02–23:57 UTC; scheduling and provider delays can exceed the 15-minute price target.`});
+  else if(quoteCheckOverdue(snapshot.quotes.generated,now))out.push({id:'quote-schedule',tone:'warning',title:'Scheduled quote checks are overdue',detail:`Last checked ${displayInstant(snapshot.quotes.generated)}. Free quote checks are scheduled every 5 minutes on weekdays, 12:03–23:58 UTC; scheduling and provider delays can exceed the 15-minute price target.`});
   const expected=[...snapshot.catalog.series.filter(s=>s.source==='Yahoo Finance').map(s=>s.id),...(snapshot.impact?.companies??[]).map(c=>c.id),...(snapshot.nexsi?.universe.members??[]).map(c=>c.symbol)];
   const quotes=quoteHealth(snapshot.quotes,now,expected);
   if(quotes.missing.length&&snapshot.quotes)out.push({id:'quotes-coverage',tone:'warning',title:`${quotes.missing.length} expected quotes missing`,detail:quotes.missing.join(', ')});
@@ -80,3 +80,4 @@ export type ActivityRecord={id:string;at:string;title:string;detail:string;tone:
 export function readActivity(value:string|null):ActivityRecord[] {
   try {const rows:unknown=JSON.parse(value??'[]');return Array.isArray(rows)?rows.filter((x):x is ActivityRecord=>!!x&&typeof x.id==='string'&&x.id.length<250&&typeof x.title==='string'&&x.title.length<250&&typeof x.detail==='string'&&x.detail.length<2000&&Number.isFinite(Date.parse(x.at))&&['critical','warning','info'].includes(x.tone)).slice(0,40):[];} catch{return [];}
 }
+

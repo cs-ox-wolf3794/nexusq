@@ -54,9 +54,9 @@
   "{0} additional summary items in the linked disclosures.": "Ytterligere {0} opplysninger finnes i de tilknyttede kildene.",
   "Loading the verified exchange rate…": "Henter kontrollert valutakurs …",
   "Price-age target: within 15 minutes": "Mål: kurser som er høyst 15 minutter gamle",
-  "Quote checks have not run in the last 15 minutes. Checks are scheduled every 5 minutes on weekdays, from 12:02 to 23:57 UTC.": "Ingen kurskontroll er gjennomført de siste 15 minuttene. Kontroller er planlagt hvert 5. minutt på hverdager fra 12:02 til 23:57 UTC.",
-  "Outside the quote-refresh schedule · weekdays, every 5 minutes from 12:02 to 23:57 UTC. The last reported quotes remain visible with their original observation times.": "Utenfor tidsplanen for kursoppdatering: hvert 5. minutt på hverdager fra 12:02 til 23:57 UTC. Siste rapporterte kurser vises med sine opprinnelige observasjonstidspunkter.",
-  "Last checked {0}. Free quote checks are scheduled every 5 minutes on weekdays, 12:02–23:57 UTC; scheduling and provider delays can exceed the 15-minute price target.": "Sist kontrollert {0}. Kurskontroller er planlagt hvert 5. minutt på hverdager, 12:02–23:57 UTC. Forsinkelser i kjøringen eller hos leverandøren kan føre til at kursene blir mer enn 15 minutter gamle.",
+  "Quote checks have not run in the last 15 minutes. Checks are scheduled every 5 minutes on weekdays, from 12:03 to 23:58 UTC.": "Ingen kurskontroll er gjennomført de siste 15 minuttene. Kontroller er planlagt hvert 5. minutt på hverdager fra 12:03 til 23:58 UTC.",
+  "Outside the quote-refresh schedule · weekdays, every 5 minutes from 12:03 to 23:58 UTC. The last reported quotes remain visible with their original observation times.": "Utenfor tidsplanen for kursoppdatering: hvert 5. minutt på hverdager fra 12:03 til 23:58 UTC. Siste rapporterte kurser vises med sine opprinnelige observasjonstidspunkter.",
+  "Last checked {0}. Free quote checks are scheduled every 5 minutes on weekdays, 12:03–23:58 UTC; scheduling and provider delays can exceed the 15-minute price target.": "Sist kontrollert {0}. Kurskontroller er planlagt hvert 5. minutt på hverdager, 12:03–23:58 UTC. Forsinkelser i kjøringen eller hos leverandøren kan føre til at kursene blir mer enn 15 minutter gamle.",
   "{0} expected quotes missing": "{0} forventede kurser mangler",
   "{0} quotes outside the 15-minute target": "{0} kurser oppfyller ikke 15-minuttersmålet",
   "US cash market is scheduled open. Observation or retrieval is older than 15 minutes, invalid, or retained after failure: {0}.": "Det amerikanske aksjemarkedet er innenfor planlagt åpningstid. Observasjonen eller innhentingen er over 15 minutter gammel, ugyldig eller beholdt etter en mislykket oppdatering: {0}.",
@@ -93,3 +93,4 @@
   "Official newsroom headlines are available below. The full announcement text has not been summarized.": "Overskrifter fra selskapets eget nyhetsrom vises nedenfor. Den fullstendige meldingsteksten er ikke oppsummert.",
   "No suitable document has been retrieved for this window.": "Det er ikke hentet noe egnet dokument for denne perioden."
 }
+
