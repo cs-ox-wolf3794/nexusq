@@ -14,7 +14,7 @@ Full refresh targets: weekdays 06:19, 16:19, 18:19 and 22:19 UTC, plus Saturday 
 
 ## Duplicate prevention and truthful status
 
-The Worker verifies manifest/file checksums, checks active GitHub work, then sends an expiring HMAC-signed ticket. The backup entry point verifies the signature, time window and recently used nonce, and rechecks whether newer data already covers the request. A backup-level lock and the common refresh lock prevent overlapping writers. Failed API inspection stops dispatch instead of flooding the queue. Work older than 22 minutes is reported as stalled; it is not silently cancelled.
+The Worker verifies manifest/file checksums, checks active GitHub work, then sends an expiring HMAC-signed ticket. The backup entry point verifies the signature, first run attempt, time window and recently used nonce, and rechecks whether newer data already covers the request. Manual reruns require a new scheduler ticket or the ordinary manual-recovery pipeline; they cannot inherit automatic credit from an earlier failed request. A backup-level lock and the common refresh lock prevent overlapping writers. Failed API inspection stops dispatch instead of flooding the queue. Work older than 22 minutes is reported as stalled; it is not silently cancelled.
 
 `quotes.json.refresh.lastAutomaticAt`, `lastAutomaticSource` and `lastAutomaticRunUrl` identify a completed automatic publication. `lastScheduledAt` continues to represent GitHub cron only. Manual recovery preserves both histories. Accepted dispatch, enabled cron, successful build and fresh retrieval timestamps are not proof of fresh market observations. Production verification separately checks all quote observation/retrieval times, missing quotes, analytical coverage and source/QC health.
 

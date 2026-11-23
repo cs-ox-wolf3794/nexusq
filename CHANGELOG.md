@@ -1,11 +1,23 @@
 # NexusQ releases
 
-### 23 November — independent scheduler rollout (incident open)
+### 23 November — independent backup recovery verified
 
-- Approved and prepared a free Cloudflare backup for the existing GitHub pipeline, without changing app hosting or market-data sources. It checks live checksums, detects due quote/full refreshes and avoids competing work.
+- Deployed the approved free Cloudflare backup for the existing GitHub pipeline, without changing app hosting or market-data sources. It checks live checksums every five minutes, detects due quote/full refreshes and avoids competing work.
 - Added a signed, expiring backup entry point, replay checks, duplicate suppression and distinct automatic-origin metadata. Manual recovery cannot reset the automatic-publication timestamp; Cloudflare recovery does not reset GitHub's own scheduled timestamp.
-- Added English/Bokmål automatic-publication provenance to the quote panel and preserved individual price-age warnings. All 289 tests, type checks, lint, data-contract validation, app build and Worker deployment validation pass.
-- Deployment is being provisioned with encrypted secrets and repository-scoped Actions access. Repeated live automatic refreshes and controlled backup recovery remain acceptance requirements, not completed claims.
+- Added English/Bokmål automatic-publication provenance to the quote panel and preserved individual price-age warnings. All 292 tests pass; type checks, lint, data-contract validation, app build and a native Workers-runtime integration test also pass. GitHub CI now runs the runtime integration test independently of the app tests.
+- Stored signing secrets encrypted in GitHub and Cloudflare; the backup uses dedicated repository-scoped Actions access. Replayed/expired tickets, invalid signatures and manual reruns cannot receive automatic-publication credit.
+- The first real cron event at 18:35 UTC exposed Cloudflare's rejection of Node's `redirect:error` fetch option. Switched to `redirect:manual` with explicit non-2xx rejection, preserving credential/host protection. The native-runtime test covers signed dispatch, checked publication, fresh-data no-op and redirect rejection.
+- Verified three actual automatic publications with the primary GitHub schedule disabled: full recovery [45240921089](https://github.com/cs-ox-wolf3794/nexusq/actions/runs/45240921089), then normal quote recoveries [45242654333](https://github.com/cs-ox-wolf3794/nexusq/actions/runs/45242654333) and [45243511235](https://github.com/cs-ox-wolf3794/nexusq/actions/runs/45243511235). The full recovery used a bounded operator request serviced by actual cron; that temporary request was removed after success.
+
+| Live verification (UTC) | Quote publication (UTC) | Quotes within target | Oldest observed quote at check |
+| --- | --- | --- | --- |
+| 18:43:30 | 18:42:12 | 119/119 | 3.04 minutes |
+| 18:52:08 | 18:51:06 | 119/119 | 1.99 minutes |
+| 18:57:12 | 18:56:13 | 119/119 | 2.86 minutes |
+
+Each check verified all 38 file checksums, 101/101 securities, 99 eligible daily models and no core or supplementary source failures. Company-news coverage remained explicit: 34 confirmed, 2 filing-only and 65 reporting-only; this does not establish exhaustive news coverage. The 18:45 cron correctly skipped fresh data. The open Norwegian client picked up the automatic publication and cleared the refresh warning without another reload. Observed Worker CPU was 2–6 ms, within the free 10 ms allowance.
+
+**Delivery restored with verified independent recovery.** The primary scheduled workflow was re-enabled at 18:57 UTC and its active state was confirmed with a fresh API read after an initially stale restoration response. GitHub's original scheduling fault remains unresolved; its internal cause has not been established. The backup covers a missing trigger, while GitHub runners, Pages, credentials and upstream providers remain dependencies. Renew the dedicated token before its chosen expiry. Historical incident entries below describe the state at their stated times.
 
 ## 2.1.2 — 2026-11-23
 

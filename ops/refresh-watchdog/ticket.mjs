@@ -22,3 +22,8 @@ export async function verifyTicket(secret, ticket, now, usedNonces=[]) {
   if(!await crypto.subtle.verify('HMAC',key,bytes,encoder.encode(message(ticket))))throw Error('Backup ticket signature rejected');
   return {source:'cloudflare',mode:ticket.mode,nonce:ticket.nonce,scheduledAt:ticket.scheduledAt};
 }
+
+export async function verifyBackupDispatch(secret,ticket,{eventName,runAttempt,now,usedNonces=[]}) {
+  if(eventName!=='workflow_dispatch'||String(runAttempt)!=='1')throw Error('Backup requires a new signed dispatch, not a manual rerun');
+  return verifyTicket(secret,ticket,now,usedNonces);
+}

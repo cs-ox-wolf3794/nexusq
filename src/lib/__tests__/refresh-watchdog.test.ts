@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { dueWork, runningWork, readPublication } from '../../../ops/refresh-watchdog/core.mjs';
-import { signTicket, verifyTicket } from '../../../ops/refresh-watchdog/ticket.mjs';
+import { signTicket, verifyTicket, verifyBackupDispatch } from '../../../ops/refresh-watchdog/ticket.mjs';
 import worker, { checkAndRecover } from '../../../ops/refresh-watchdog/worker.mjs';
 import { refreshProvenance } from '../../../scripts/lib/refresh-provenance.mjs';
 
@@ -106,6 +106,13 @@ describe('Authenticated automatic origin',()=>{
     await expect(verifyTicket(secret,ticket,now+11*60000)).rejects.toThrow('expired');
     await expect(verifyTicket(secret,ticket,now-2*60000)).rejects.toThrow('future');
     await expect(verifyTicket(secret,ticket,now,[nonce])).rejects.toThrow('already used');
+  });
+  it('does not credit a manual rerun of a failed backup as a new automatic check',async()=>{
+    const ticket=await signTicket(secret,fields);
+    const context={eventName:'workflow_dispatch',runAttempt:'1',now,usedNonces:[]};
+    expect((await verifyBackupDispatch(secret,ticket,context)).source).toBe('cloudflare');
+    await expect(verifyBackupDispatch(secret,ticket,{...context,runAttempt:'2'})).rejects.toThrow('manual rerun');
+    await expect(verifyBackupDispatch(secret,ticket,{...context,eventName:'push'})).rejects.toThrow('new signed dispatch');
   });
   it('never gives manual refreshes automatic credit and preserves the last actual origin',()=>{
     const manual={GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REPOSITORY:'cs-ox-wolf3794/nexusq',GITHUB_RUN_ID:'123'};

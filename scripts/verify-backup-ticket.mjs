@@ -1,10 +1,9 @@
 import { appendFile, readFile } from 'node:fs/promises';
-import { verifyTicket } from '../ops/refresh-watchdog/ticket.mjs';
+import { verifyBackupDispatch } from '../ops/refresh-watchdog/ticket.mjs';
 
-if(process.env.GITHUB_EVENT_NAME!=='workflow_dispatch')throw Error('Backup entry point requires an authenticated dispatch');
 const previous=JSON.parse(await readFile('public/data/quotes.json','utf8'));
 const ticket=JSON.parse(process.env.WATCHDOG_TICKET??'null');
-const verified=await verifyTicket(process.env.WATCHDOG_SIGNING_KEY,ticket,Date.now(),previous.refresh?.usedBackupNonces??[]);
+const verified=await verifyBackupDispatch(process.env.WATCHDOG_SIGNING_KEY,ticket,{eventName:process.env.GITHUB_EVENT_NAME,runAttempt:process.env.GITHUB_RUN_ATTEMPT,now:Date.now(),usedNonces:previous.refresh?.usedBackupNonces??[]});
 if(!process.env.GITHUB_OUTPUT)throw Error('GitHub output channel unavailable');
 const fullStatus=JSON.parse(await readFile('public/data/refresh-status.json','utf8'));
 const quoteAge=Date.now()-Date.parse(previous.generated);
