@@ -32,6 +32,8 @@ The backup still depends on GitHub Actions runners, GitHub Pages and the existin
 
 ## Operations
 
+`npm run test:runtime` exercises the actual Workers runtime locally, including native fetch options, publication integrity, HMAC signing, duplicate avoidance and redirect rejection. All outgoing requests are intercepted and use synthetic credentials. CI runs this alongside the application regression suite.
+
 Inspect Cloudflare scheduled logs and GitHub `Cloudflare backup refresh` / `Deploy` runs. Expired token or missing secret errors require credential renewal; an HTTP 401/403/429 is not a successful check. A stalled refresh requires inspecting the run before cancelling it. A deployment failure requires checking the build and manifest, not resetting data timestamps.
 
 To pause recovery without changing data, deploy `ENABLED=false` in the same configuration. Keep GitHub scheduling and manual recovery available. To recover manually, run `Refresh data snapshots` with `quotes` or `full`; the resulting publication must remain identified as manual.

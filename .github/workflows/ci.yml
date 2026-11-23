@@ -6,6 +6,18 @@ on:
   pull_request:
 
 jobs:
+  watchdog-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ops/refresh-watchdog/package-lock.json
+      - run: npm ci --prefix ops/refresh-watchdog
+      - name: Verify the Cloudflare runtime without production credentials
+        run: npm run test:runtime --prefix ops/refresh-watchdog
   test:
     runs-on: ubuntu-latest
     steps:
