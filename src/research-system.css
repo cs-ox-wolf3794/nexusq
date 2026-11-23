@@ -211,6 +211,7 @@ button,input,select { font-family: inherit; }
 body { font-size: var(--type-body); }
 .app-shell { --text-muted: var(--text-secondary); }
 .eyebrow,.rail-caption,.control-label,.section-label,.type-label { font-family: var(--font-ui); letter-spacing: .15px; }
+.activity-content .section-label { flex-wrap: wrap; gap: 6px 16px; }
 .rail-brand small { font-size: var(--type-meta); line-height: 1.4; max-width: 145px; }
 .workspace-topbar { flex-wrap: wrap; padding-block: 12px; }
 .workspace-tools { flex-wrap: wrap; }

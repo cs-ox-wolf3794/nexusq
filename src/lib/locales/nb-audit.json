@@ -82,5 +82,8 @@
   "managed money net short {0}% of OI — crowded": "Forvalternes netto salgsposisjon: {0} % av åpne kontrakter — høy posisjonering",
   "{0} source issues; {1} companies with evidence-source issues; see per-company coverage and evidence status": "{0} kildeavvik; {1} selskaper med avvik i dokumentasjonskildene; se dekning og dokumentasjonsstatus for hvert selskap",
   "1 additional summary items in the linked disclosures.": "Én ytterligere opplysning finnes i de tilknyttede kildene.",
-  "%.": " %."
+  "%.": " %.",
+  "NexSI: {0}": "NexSI: {0}",
+  "{0} source issues; see per-company coverage and evidence status": "{0} kildeavvik; se dekning og dokumentasjonsstatus for hvert selskap",
+  "No active operational exceptions. This does not certify provider accuracy or complete company-news coverage.": "Ingen aktive driftsavvik. Dette er ingen garanti for korrekte data fra leverandørene eller fullstendig dekning av selskapsnyheter."
 }

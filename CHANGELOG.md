@@ -13,8 +13,11 @@ Norwegian usability, company-news coverage and production-freshness audit.
 - Added post-deployment verification of all live data checksums, quote coverage/freshness, NexSI models and news coverage, and QC status. Closed-market runs explicitly do not certify the intraday target. Free-provider and GitHub scheduling/deployment delays remain limitations.
 - Product version 2.1.1; attribution and signal-model formulas are unchanged.
 - Live verification found and repaired a legacy HTTP link in Yahoo's Diamondback news feed, using the same publisher's HTTPS endpoint. Other insecure links still fail validation. QC now includes per-company evidence-source failures in its count.
+- Fixed the activity-history heading wrapping on narrow Norwegian screens and localized retained NexSI source-status messages.
 
 Verification before publication: 265 tests across 28 files, type checks, lint, data-contract validation and production build passed. Repeated full-source refreshes resolved transient retrieval/budget failures; the final local run reported 101 securities, 99 eligible daily models and no source errors. News coverage was 34 securities with company announcements, 2 with filing-only context and 65 with reported-news context. All had successful feed checks; this is not exhaustive or uniformly primary-source news coverage. Guidance coverage was preserved, including limited outlooks, no-numerical-guidance assessments and company policy. Sustained market-hours delivery cannot be certified from a closed-market run.
+
+Production verification on 23 November: the [full refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/runs/45143534818) and [quote-only refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/runs/45142528349) completed through publication. The final full snapshot at 09:03 UTC contained 119/119 quotes, 101 NexSI securities, 99 daily models, no missing feed checks and no core or supplementary source exceptions. All 38 live data files matched the publication manifest. The market was closed: these manually initiated workflow runs verify the automated processing path, not scheduled market-hours cadence or sustained 15-minute delivery.
 
 ## 2.1.0 — 2026-11-23
 
