@@ -8,7 +8,7 @@ export async function checkAndRecover(event, env, fetcher=fetch, now=Date.now())
   if(!env.GITHUB_ACTIONS_TOKEN||!env.WATCHDOG_SIGNING_KEY)throw Error('Watchdog secrets are not configured');
   let publication,publicationIssue;
   try {publication=await readPublication(fetcher,now);} catch(error){publicationIssue=error.message;}
-  const due=dueWork(now,publication?.quotes,publication?.fullStatus);
+  const due=dueWork(now,publication?.quotes,publication?.fullStatus,env.FULL_REFRESH_REQUESTED_AT);
   if(!due.mode)return {action:'no_refresh',reason:due.reason,revision:publication?.revision,publicationIssue};
   const api=async (path,options={})=>{
     const response=await fetcher(`https://api.github.com/repos/${REPOSITORY}/${path}`,{

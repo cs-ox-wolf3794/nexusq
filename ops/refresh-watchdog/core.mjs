@@ -5,15 +5,20 @@ const MINUTE=60000;
 const liveAge=(value,now)=>{const age=now-Date.parse(value??'');return Number.isFinite(age)&&age>=-MINUTE?age:Infinity;};
 
 /** UTC operating window includes both US DST regimes. Full refreshes catch up for two hours. */
-export function dueWork(now, quotes, fullStatus) {
+export function dueWork(now, quotes, fullStatus, fullRequestedAt) {
   const date=new Date(now),day=date.getUTCDay(),hour=date.getUTCHours();
   const quoteWindow=day>=1&&day<=5&&hour>=12;
   const hours=day>=1&&day<=5?[6,16,18,22]:day===6?[6]:[];
   const slots=hours.map(hour=>Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate(),hour,19));
+  // Optional operator request: the next real cron handles one full recovery.
+  // It expires after two hours and is satisfied by a successful publication.
+  const requested=Date.parse(fullRequestedAt??'');
+  if(Number.isFinite(requested))slots.push(requested);
+  slots.sort((a,b)=>a-b);
   const due=slots.filter(slot=>slot<=now&&now-slot<=2*60*MINUTE).at(-1);
   const completed=fullStatus?.outcome==='success'?Date.parse(fullStatus.attemptedAt):NaN;
   const retryDue=liveAge(fullStatus?.attemptedAt,now)>=10*MINUTE;
-  if(due!==undefined&&!(completed>=due&&completed<=now+MINUTE)&&retryDue)return {mode:'full',reason:'Full source refresh is overdue'};
+  if(due!==undefined&&!(completed>=due&&completed<=now+MINUTE)&&retryDue)return {mode:'full',reason:due===requested?'One-time full recovery requested':'Full source refresh is overdue'};
   if(quoteWindow&&liveAge(quotes?.generated,now)>=4*MINUTE)return {mode:'quotes',reason:'Quote publication is due'};
   return {mode:null,reason:quoteWindow?'Recent quote publication':'Outside refresh window'};
 }

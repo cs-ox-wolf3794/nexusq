@@ -50,6 +50,13 @@ describe('Independent scheduler decisions',()=>{
     expect(dueWork(Date.parse('2026-11-21T06:20Z')).mode).toBe('full');
     expect(dueWork(Date.parse('2026-11-21T09:00Z')).mode).toBeNull();
   });
+  it('handles a one-time full recovery only after its date, until success or expiry',()=>{
+    expect(dueWork(now,quote(0),status,at(-1))).toMatchObject({mode:'full',reason:'One-time full recovery requested'});
+    expect(dueWork(now,quote(0),{outcome:'success',attemptedAt:at(0)},at(-1)).mode).toBeNull();
+    expect(dueWork(now,quote(0),status,at(1)).mode).toBeNull();
+    expect(dueWork(now,quote(0),status,at(-121)).mode).toBeNull();
+    expect(dueWork(now,quote(0),status,'invalid').mode).toBeNull();
+  });
   it('suppresses competing refreshes and active publication, and exposes stalled work',()=>{
     const run={id:1,head_branch:'main',status:'queued',created_at:at(-3),path:'.github/workflows/backup-refresh.yml'};
     expect(runningWork([run],now)).toMatchObject({blocked:true,stalled:false,runId:1});
