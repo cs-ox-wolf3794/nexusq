@@ -1,6 +1,7 @@
 import { l as localize, t as tr } from '../lib/i18n';
 import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { WORKSPACES, type WorkspacePage, type WorkspaceRoute } from '../lib/workspace';
+import { AnalysisBoundary } from './AnalysisBoundary';
 
 export function WorkspaceNav({page,onNavigate}:{page:WorkspacePage;onNavigate:(route:WorkspaceRoute)=>void}) {
   return <aside className="app-rail"><a className="rail-brand" href="#page=home" onClick={e=>{e.preventDefault();onNavigate({page:'home',view:''});}} aria-label={tr("NexusQ daily brief")}><img src={`${import.meta.env.BASE_URL}nexusq.svg`} alt={tr("")}/><span>{tr("NEXUS")}<span className="brand-q">{tr("Q")}</span><small>{tr("Gygante Quantitative Systems")}</small></span></a>
@@ -18,12 +19,12 @@ export function WorkspaceTabs({page,value,onChange}:{page:WorkspacePage;value:st
 export function WorkspacePanel({page,id,active,children}:{page:WorkspacePage;id:string;active:boolean;children:ReactNode}){
   const [visited,setVisited]=useState(active);
   useEffect(()=>{if(active)setVisited(true);},[active]);
-  return <div className="workspace-panel" role="tabpanel" id={`panel-${page}-${id}`} aria-labelledby={`tab-${page}-${id}`} hidden={!active} tabIndex={0}>{localize(active||visited?<Suspense fallback={<p role="status" className="research-empty">{tr("Loading this analysis…")}</p>}>{localize(children)}</Suspense>:null)}</div>;
+  return <div className="workspace-panel" role="tabpanel" id={`panel-${page}-${id}`} aria-labelledby={`tab-${page}-${id}`} hidden={!active} tabIndex={0}>{localize(active||visited?<AnalysisBoundary><Suspense fallback={<p role="status" className="research-empty">{tr("Loading this analysis…")}</p>}>{localize(children)}</Suspense></AnalysisBoundary>:null)}</div>;
 }
 export function RetainedView({active,children}:{active:boolean;children:ReactNode}){
   const [visited,setVisited]=useState(active);
   useEffect(()=>{if(active)setVisited(true);},[active]);
-  return <div hidden={!active}>{localize(active||visited?<Suspense fallback={<p role="status" className="research-empty">{tr("Loading the workspace…")}</p>}>{localize(children)}</Suspense>:null)}</div>;
+  return <div hidden={!active}>{localize(active||visited?<AnalysisBoundary><Suspense fallback={<p role="status" className="research-empty">{tr("Loading the workspace…")}</p>}>{localize(children)}</Suspense></AnalysisBoundary>:null)}</div>;
 }
 export function WorkspaceIntro({eyebrow,title,description,children}:{eyebrow:string;title:string;description:string;children?:ReactNode}){
   return <header className="workspace-intro"><div><p className="eyebrow">{localize(eyebrow)}</p><h1>{localize(title)}</h1><p className="workspace-description">{localize(description)}</p></div>{localize(children)}</header>;

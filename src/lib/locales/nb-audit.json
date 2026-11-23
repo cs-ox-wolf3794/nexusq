@@ -85,5 +85,9 @@
   "%.": " %.",
   "NexSI: {0}": "NexSI: {0}",
   "{0} source issues; see per-company coverage and evidence status": "{0} kildeavvik; se dekning og dokumentasjonsstatus for hvert selskap",
-  "No active operational exceptions. This does not certify provider accuracy or complete company-news coverage.": "Ingen aktive driftsavvik. Dette er ingen garanti for korrekte data fra leverandørene eller fullstendig dekning av selskapsnyheter."
+  "No active operational exceptions. This does not certify provider accuracy or complete company-news coverage.": "Ingen aktive driftsavvik. Dette er ingen garanti for korrekte data fra leverandørene eller fullstendig dekning av selskapsnyheter.",
+  "This analysis could not load": "Analysen kunne ikke lastes inn",
+  "The connection may have failed, or a new app version may have been published. Other workspaces remain available.": "Forbindelsen kan ha blitt brutt, eller appen kan ha blitt oppdatert. Du kan fortsatt bruke de andre arbeidsområdene.",
+  "Reload the latest app": "Last inn appen på nytt",
+  "Your investigation link and saved preferences remain. Reloading resets unsaved scenario inputs.": "Analyselenken og de lagrede innstillingene beholdes. Scenarioverdier som ikke er lagret, tilbakestilles når appen lastes inn på nytt."
 }
