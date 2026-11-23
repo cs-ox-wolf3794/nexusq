@@ -35,6 +35,7 @@ const coverage={};for(const company of nexsi.companies){const status=companyNews
 const lines=[`Live publication verified: ${manifest.revision}`,`${Object.keys(files).length} data files matched their published checksums.`,
   `Quotes: ${Object.keys(quotes.quotes).length}/${health.expected}; checked ${quotes.generated}; ${quotes.failures.length} retrieval failures; ${health.missing.length} missing.`,
   `Quote refresh trigger: ${quotes.refresh?.trigger??'not recorded'}${quotes.refresh?.runUrl?`; ${quotes.refresh.runUrl}`:''}.`,
+  `Last verified scheduled quote publication: ${quotes.refresh?.lastScheduledAt??'not recorded'}${quotes.refresh?.lastScheduledRunUrl?`; ${quotes.refresh.lastScheduledRunUrl}`:''}. Manual recovery does not verify unattended operation.`,
   health.open?`US market scheduled open: ${health.withinTarget}/${health.expected} quotes within 15 minutes; ${health.delayed.length} delayed or invalid.`:'US market scheduled closed: intraday 15-minute target not evaluated. This run does not certify sustained market-hours delivery.',
   `NexSI: ${nexsi.generated}; ${nexsi.status}; ${nexsi.companies.filter(c=>c.moves[1]).length} daily models; ${nexsiStatus(nexsi,now)??'current analytical snapshot'}.`,
   `Company-news coverage: ${JSON.stringify(coverage)}. Empty source windows do not prove no relevant news.`,

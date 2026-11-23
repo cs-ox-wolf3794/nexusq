@@ -51,6 +51,17 @@ describe('Research timestamps and scheduled sessions', () => {
 });
 
 describe('Operational exceptions and local activity', () => {
+  it('does not let a fresh manual recovery conceal a missing or stalled scheduler', () => {
+    const s=snapshot(), now=Date.parse('2026-11-23T16:00:00Z');
+    s.quotes!.generated='2026-11-23T15:59:00Z';
+    s.quotes!.refresh={trigger:'workflow_dispatch',startedAt:null,runUrl:null,lastScheduledAt:null};
+    expect(dataExceptions(s,now,null).find(e=>e.id==='quote-schedule')?.title).toBe('Automatic quote refresh is unverified');
+    s.quotes!.refresh.lastScheduledAt='2026-11-23T15:55:00Z';
+    expect(dataExceptions(s,now,null).some(e=>e.id==='quote-schedule')).toBe(false);
+    s.quotes!.refresh.lastScheduledAt='2026-11-20T23:58:00Z';
+    expect(dataExceptions(s,now,null).some(e=>e.id==='quote-schedule')).toBe(true);
+    expect(dataExceptions(s,Date.parse('2026-11-22T16:00:00Z'),null).some(e=>e.id==='quote-schedule')).toBe(false);
+  });
   it('keeps a closed-weekend quote schedule neutral but reports an overdue scheduled check', () => {
     const s = snapshot(); s.quotes!.generated = '2026-11-20T23:30:00Z';
     expect(dataExceptions(s, Date.parse('2026-11-22T20:00:00Z'), null).some(e => e.id === 'quote-schedule')).toBe(false);

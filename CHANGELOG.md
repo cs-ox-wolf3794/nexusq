@@ -8,7 +8,8 @@
 - Corrected displayed schedule times and restored all 119 quote updates during live trading. Company records were present; the reported missing portfolio was the list of delayed quote updates, not missing constituents.
 - Separated scheduled triggering into `scheduled-refresh.yml`, calling the existing refresh pipeline with the same permissions and source secrets. The original pipeline remains available for manual recovery. This creates a distinct schedule registration after re-enabling the old one did not produce runs.
 - Fixed NexSI's headline price and NexSum's company watchlist still showing only the previous close after quote updates. Latest reported quotes now appear prominently with observation time and freshness, including in the company screen. Daily returns, modeled energy contributions and completed-close context retain their original basis. Delayed quotes cannot produce a claim about the current move; invalid, wrong-currency or older quotes cannot replace a more recent close.
-- Added regression checks for current, stale, retained, invalid, missing-history and same-session quotes. All 270 tests, type checks, lint and the production build passed.
+- Added regression checks for current, stale, retained, invalid, missing-history and same-session quotes. All 270 tests, type checks, lint and the production build passed; the additional scheduler-status regression passed with the timestamp tests.
+- Keep the last actual scheduled publication separately from manual recovery. A manually recovered quote no longer clears an unverified automatic-refresh alert; the UI preserves quote-level freshness independently.
 
 Scheduled-run verification is recorded below after the repaired trigger has fired; a manual recovery run is not evidence of scheduled operation.
 
