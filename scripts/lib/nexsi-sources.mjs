@@ -46,8 +46,15 @@ export function parseHeadlines(xml, now = Date.now()) {
   if(items.length!==[...xml.matchAll(/<item\b/g)].length)throw new Error('Company headline RSS contains incomplete records');
   const tag = (block, name) => decode(block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`))?.[1] ?? "");
   return items.flatMap(([, block]) => {
-    const title = tag(block, "title"), url = tag(block, "link"), date = Date.parse(tag(block, "pubDate"));
+    const title = tag(block, "title"), date = Date.parse(tag(block, "pubDate"));
+    let url = tag(block, "link");
+    // Yahoo still syndicates this publisher's legacy HTTP URLs. Its HTTPS
+    // endpoint is available; change only the scheme, preserving the source path.
+    // Other insecure or malformed links continue to fail coverage explicitly.
+    if (/^http:\/\/www\.intellinews\.com\//i.test(url)) url = url.replace(/^http:/i, 'https:');
     if (!title || !/^https:\/\//.test(url) || !Number.isFinite(date))throw new Error('Company headline RSS record lacks a verifiable title, URL or date');
+    const parsed = new URL(url);
+    if (parsed.username || parsed.password) throw new Error('Company headline RSS record has an unsafe URL');
     if (date > now + 300000 || now - date > 45 * 86400000) return [];
     return [{ title: title.slice(0, 220), url, publishedAt: new Date(date).toISOString(), source: new URL(url).hostname.replace(/^www\./, ""), kind: "headline" }];
   }).slice(0, 20);

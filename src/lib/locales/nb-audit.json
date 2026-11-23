@@ -79,5 +79,8 @@
   "managed money net long {0}% of OI — crowded": "Forvalternes netto kjøpsposisjon: {0} % av åpne kontrakter — høy posisjonering",
   "managed money net short {0}% of OI — light": "Forvalternes netto salgsposisjon: {0} % av åpne kontrakter — lav posisjonering",
   "managed money net short {0}% of OI — moderate": "Forvalternes netto salgsposisjon: {0} % av åpne kontrakter — moderat posisjonering",
-  "managed money net short {0}% of OI — crowded": "Forvalternes netto salgsposisjon: {0} % av åpne kontrakter — høy posisjonering"
+  "managed money net short {0}% of OI — crowded": "Forvalternes netto salgsposisjon: {0} % av åpne kontrakter — høy posisjonering",
+  "{0} source issues; {1} companies with evidence-source issues; see per-company coverage and evidence status": "{0} kildeavvik; {1} selskaper med avvik i dokumentasjonskildene; se dekning og dokumentasjonsstatus for hvert selskap",
+  "1 additional summary items in the linked disclosures.": "Én ytterligere opplysning finnes i de tilknyttede kildene.",
+  "%.": " %."
 }

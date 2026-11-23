@@ -468,7 +468,7 @@ if (Object.keys(cot.markets).length === COT_MARKETS.length) {
 try {
   const { refreshNexsi } = await import("./refresh-nexsi.mjs");
   const nexsi = await refreshNexsi(OUT_DIR, GENERATED);
-  if (nexsi.status !== "ok") enrichmentIssues.push({ source: "NexSI", detail: `${nexsi.failures.length} source issues; see per-company coverage and evidence status` });
+  if (nexsi.status !== "ok") enrichmentIssues.push({ source: "NexSI", detail: `${nexsi.failures.length} source issues; ${nexsi.companies.filter(c => c.eventIssues.length).length} companies with evidence-source issues; see per-company coverage and evidence status` });
 } catch (error) {
   enrichmentIssues.push({ source: "NexSI", detail: error.message });
   const prior = await readJson(OUT_DIR, "nexsi.json");

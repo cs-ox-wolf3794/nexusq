@@ -43,6 +43,12 @@ describe("NexSI public source contracts", () => {
     expect(()=>parseHeadlines('<rss><item><title>Missing date</title><link>https://example.com/</link></item></rss>',now)).toThrow('record');
     expect(parseHeadlines('<rss><channel></channel></rss>',now)).toEqual([]);
   });
+  it("repairs the verified publisher's legacy HTTP scheme without accepting arbitrary insecure links", () => {
+    const rss=(url:string)=>`<rss><item><title>Company transaction</title><link>${url}</link><pubDate>Fri, 20 Nov 2026 12:00:00 GMT</pubDate></item></rss>`;
+    expect(parseHeadlines(rss('http://www.intellinews.com/company-transaction/'),now)[0].url).toBe('https://www.intellinews.com/company-transaction/');
+    expect(()=>parseHeadlines(rss('http://www.intellinews.com.evil.test/story'),now)).toThrow('record');
+    expect(()=>parseHeadlines(rss('https://user:secret@example.com/story'),now)).toThrow('unsafe');
+  });
   it("converts EIA cents/kWh to USD/MWh once and selects latest completed state observation", () => {
     const row = { stateid: "TX", sectorid: "COM", period: "2026-08", price: "9.5", "price-units": "cents per kilowatthour" };
     const json = { response: { frequency: "monthly", total: "3", data: [row, { ...row, period: "2026-09", price: "10.1" }, { ...row, stateid: "ENC" }] } };
