@@ -12,7 +12,7 @@ export async function checkAndRecover(event, env, fetcher=fetch, now=Date.now())
   if(!due.mode)return {action:'no_refresh',reason:due.reason,revision:publication?.revision,publicationIssue};
   const api=async (path,options={})=>{
     const response=await fetcher(`https://api.github.com/repos/${REPOSITORY}/${path}`,{
-      ...options,redirect:'error',signal:AbortSignal.timeout(12000),
+      ...options,redirect:'manual',signal:AbortSignal.timeout(12000),
       headers:{'Accept':'application/vnd.github+json','Authorization':`Bearer ${env.GITHUB_ACTIONS_TOKEN}`,'User-Agent':'NexusQ-refresh-watchdog','Content-Type':'application/json'},
     });
     if(!response.ok)throw Error(`GitHub ${options.method??'GET'} HTTP ${response.status}`);

@@ -20,6 +20,8 @@ function fixture(minutes=-5, runs: object[]=[]) {
   const files=Object.fromEntries(Object.entries(texts).map(([key,value])=>[key,hash(value)]));
   const manifest={schemaVersion:1,files,revision:hash(JSON.stringify(files))};
   const fetcher=vi.fn(async (input: RequestInfo | URL, options?: RequestInit)=>{
+    // Workers supports manual redirects, not Node's redirect:error mode.
+    if(options?.redirect!=='manual')throw Error('Edge fetch requires manual redirect handling');
     const url=new URL(String(input));
     if(url.pathname.endsWith('/manifest.json'))return Response.json(manifest);
     const name=url.pathname.split('/').at(-1)!;
@@ -78,6 +80,13 @@ describe('Publication checks before recovery',()=>{
     const f=fixture(); f.texts['quotes.json']='{}';
     await expect(readPublication(f.fetcher,now)).rejects.toThrow('checksum');
     await expect(readPublication(fixture(2).fetcher,now)).rejects.toThrow('Invalid quote');
+  });
+  it('rejects redirects without forwarding credentials or trusting a different publication',async()=>{
+    await expect(readPublication(async()=>new Response(null,{status:302,headers:{Location:'https://example.com'}}),now)).rejects.toThrow('HTTP 302');
+    const f=fixture();
+    const redirected=vi.fn((url: RequestInfo | URL,options?: RequestInit)=>String(url).includes('api.github.com')?Promise.resolve(new Response(null,{status:302})):f.fetcher(url,options));
+    await expect(checkAndRecover(event,env,redirected,now)).rejects.toThrow('HTTP 302');
+    expect(redirected.mock.calls.some(([,options])=>options?.method==='POST')).toBe(false);
   });
 });
 

@@ -33,7 +33,7 @@ export function runningWork(runs, now) {
 
 export async function readPublication(fetcher, now) {
   const get=async path=>{
-    const response=await fetcher(`${ORIGIN}/data/${path}`,{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(12000)});
+    const response=await fetcher(`${ORIGIN}/data/${path}`,{cache:'no-store',redirect:'manual',signal:AbortSignal.timeout(12000)});
     if(!response.ok)throw Error(`Publication HTTP ${response.status}`);
     return response.text();
   };

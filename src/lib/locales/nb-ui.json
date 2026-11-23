@@ -677,6 +677,7 @@
   "Other market observations retain their published dates.": "Andre markedsobservasjoner beholder sine publiserte datoer.",
   "Completed return": "Avkastning ved sluttkurs",
   "Last automatic publication": "Siste automatiske publisering",
+  "Not verified": "Ikke bekreftet",
   "Cloudflare backup scheduler": "Reserveplanlegger hos Cloudflare",
   "GitHub scheduler": "Planlegger hos GitHub",
   ". Automatic publication and individual quote freshness are checked separately.": ". Automatisk publisering og alderen på hver enkelt kurs kontrolleres hver for seg.",
