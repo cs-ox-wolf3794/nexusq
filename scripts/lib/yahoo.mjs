@@ -46,9 +46,12 @@ export function parseYahooDaily(result, now = Date.now(), expectedSymbol) {
   return { points, adjustedPoints, priceBasis: "close", returnBasis: "Yahoo adjusted close (splits and distributions)" };
 }
 
-export function parseQuote(result, id, symbol, now = Date.now()) {
+/** @param {{id: string, symbol: string, unit: string}} [energy] */
+export function parseQuote(result, id, symbol, now = Date.now(), energy = undefined) {
   const meta = result.meta;
-  if (meta?.symbol !== symbol || meta.currency !== "USD" || !Number.isFinite(meta.regularMarketPrice) || meta.regularMarketPrice <= 0
+  // Oil futures can legitimately trade at zero or below. Equities still require positive prices.
+  if (energy && (id !== energy.id || symbol !== energy.symbol || meta?.instrumentType !== 'FUTURE' || meta.exchangeName !== 'NYM')) throw new Error('energy futures identity/exchange mismatch');
+  if (meta?.symbol !== symbol || meta.currency !== "USD" || !Number.isFinite(meta.regularMarketPrice) || (!energy && meta.regularMarketPrice <= 0)
     || !Number.isFinite(meta.regularMarketTime) || meta.regularMarketTime <= 0 || meta.regularMarketTime * 1000 > now + 60000) throw new Error("invalid quote identity/price/timestamp");
   const regular = meta.currentTradingPeriod?.regular;
   if (!regular || !Number.isFinite(regular.start) || !Number.isFinite(regular.end) || regular.end <= regular.start) throw new Error("quote session unavailable");
@@ -56,7 +59,8 @@ export function parseQuote(result, id, symbol, now = Date.now()) {
     id, symbol, name: meta.shortName ?? symbol, price: meta.regularMarketPrice, currency: meta.currency,
     observedAt: new Date(meta.regularMarketTime * 1000).toISOString(), checkedAt: new Date(now).toISOString(),
     sessionStart: new Date(regular.start * 1000).toISOString(), sessionEnd: new Date(regular.end * 1000).toISOString(),
-    source: "Yahoo Finance", delayMinutes: Number.isFinite(meta.exchangeDataDelayedBy) ? meta.exchangeDataDelayedBy : null,
+    source: "Yahoo Finance", delayMinutes: Number.isFinite(meta.exchangeDataDelayedBy) && meta.exchangeDataDelayedBy >= 0 ? meta.exchangeDataDelayedBy : null,
+    ...(energy ? { instrumentType: 'future', exchange: 'NYMEX', unit: energy.unit } : {}),
     status: "available",
   };
 }

@@ -1,4 +1,4 @@
-# NexusQ 2.1.2
+# NexusQ 2.1.3
 
 [![CI](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml)
 [![Scheduled data refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/scheduled-refresh.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/scheduled-refresh.yml)
@@ -6,11 +6,20 @@
 
 **Market intelligence for capital markets — by Gygante Quantitative Systems.**
 
-[Open NexusQ](https://nexus.gygante.com) · [2.1.2 release notes](CHANGELOG.md#212--2026-11-23) · [Changelog and earlier milestones](CHANGELOG.md)
+[Open NexusQ](https://nexus.gygante.com) · [2.1.3 release notes](CHANGELOG.md#213--2026-11-23) · [Changelog and earlier milestones](CHANGELOG.md)
 
 NexusQ connects company returns, energy exposure and economic context in one research workspace. It helps analysts inspect the estimated energy contribution to a stock move, other modeled factors, the unexplained remainder and the supporting disclosures. Estimates, confirmed disclosures and possible explanations are explicitly separated.
 
 **NexusQ 2.1 builds on the official 2.0 release.** It keeps the existing free infrastructure and analytical capabilities, with a connected investigation experience and a shared design system across desktop, tablet and mobile. Product release status is not a guarantee of source completeness, causal attribution, forecast accuracy or a market-data service level.
+
+## Current energy quotes and official history
+
+NexSum and Nexus Signal show a separate, free Yahoo Finance quote layer for **Brent (BZ=F), WTI (CL=F) and Henry Hub (NG=F)** beside the dated FRED spot observations. These are rolling **NYMEX futures**, not current spot prices. Brent BZ is the NYMEX financial contract linked to the ICE Brent index at settlement; it is not an ICE exchange quote. Contract definitions link to CME; quote records link to Yahoo and official history to FRED/EIA.
+
+- Original provider contract labels, units, observation times, retrieval times and disclosed delays remain visible. Delivery month is not invented when the provider omits it. An omitted delay remains unknown. Contract rolls and spot/futures differences mean the two displayed prices are not a same-day change or a measured spread.
+- Checks use the existing five-minute weekday window, **12:03–23:58 UTC**, plus the independently scheduled Cloudflare backup. Futures trade outside this window. Quotes are delayed and delivery is best effort; there is no real-time or guaranteed 15-minute energy-feed service. Individual quote ages over 15 minutes, failed updates and missing coverage are explicitly labeled; operational alerts distinguish them from the US stock/ETF price target.
+- Futures identity, USD currency, NYMEX venue, timestamps and session metadata are validated. Regressing observations are rejected. Failed updates preserve the prior observation/retrieval times and a retained status. Nonpositive futures prices are allowed; positive-price checks remain in place for equities.
+- Separate quote identifiers keep **FRED histories, signals, forecasts and existing completed-session NexSI models unchanged**. English/Norwegian labels and USD/NOK display use the same language and dated conversion settings as the rest of the app; original contract names and source disclosures remain intact.
 
 ## NexSum and reading improvements
 

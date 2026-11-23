@@ -1,5 +1,6 @@
 import { easternTime, scheduledEquityClose } from './nexsi-explanation';
 import type { QuoteFile } from './snapshot';
+import { isEnergyQuote } from './energy-quotes';
 
 export function scheduledUsMarketOpen(now:number) {
   if(!Number.isFinite(now))return false;
@@ -11,7 +12,7 @@ export function scheduledUsMarketOpen(now:number) {
 /** Price age is measured at observation, never reset by a successful retrieval. */
 export function quoteHealth(file:QuoteFile|null,now:number,expected:string[]=[]) {
   const open=scheduledUsMarketOpen(now);
-  const ids=[...new Set([...expected,...Object.keys(file?.quotes??{})])];
+  const ids=[...new Set([...expected,...Object.keys(file?.quotes??{})])].filter(id=>!isEnergyQuote(id));
   const missing=ids.filter(id=>!file?.quotes[id]);
   const delayed=open?ids.filter(id=>{
     const q=file?.quotes[id];if(!q)return false;

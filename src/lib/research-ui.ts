@@ -5,6 +5,7 @@ import { externalForecastCurrent } from './forecast';
 import type { Snapshot } from './snapshot';
 import { locale, type Language } from './preferences';
 import { quoteHealth } from './quote-health';
+import { ENERGY_INSTRUMENTS, energyQuoteState } from './energy-quotes';
 
 export type NoticeTone = 'critical' | 'warning' | 'info';
 export type DataException = { id: string; tone: NoticeTone; title: string; detail: string; nexsi?: boolean };
@@ -72,6 +73,11 @@ export function dataExceptions(snapshot: Snapshot | null, now: number, error: st
   const quotes=quoteHealth(snapshot.quotes,now,expected);
   if(quotes.missing.length&&snapshot.quotes)out.push({id:'quotes-coverage',tone:'warning',title:`${quotes.missing.length} expected quotes missing`,detail:quotes.missing.join(', ')});
   if(quotes.delayed.length)out.push({id:'quotes-delayed',tone:'warning',title:`${quotes.delayed.length} quotes outside the 15-minute target`,detail:`US cash market is scheduled open. Observation or retrieval is older than 15 minutes, invalid, or retained after failure: ${quotes.delayed.join(', ')}.`});
+  const energyIssues=ENERGY_INSTRUMENTS.filter(item=>{
+    const state=energyQuoteState(snapshot.quotes?.quotes[item.id],item,now).state;
+    return state!=='recent'&&(state!=='delayed'||quoteScheduleActive(now));
+  });
+  if(energyIssues.length)out.push({id:'energy-quotes',tone:'warning',title:'Energy futures quotes need review',detail:`Missing, invalid, retained or older than 15 minutes during the refresh window: ${energyIssues.map(item=>item.symbol).join(', ')}. Futures may be closed or provider-delayed. FRED history is separate; inspect individual timestamps.`});
   const expired=Object.values(snapshot.forecasts?.series??{}).filter(f=>f.kind==='external'&&!externalForecastCurrent(f,now));
   if(expired.length)out.push({id:'forecasts',tone:'warning',title:`${expired.length} external forecasts withheld`,detail:'Their source versions have expired. Current charts exclude these projections; original source details remain available.'});
   return out;

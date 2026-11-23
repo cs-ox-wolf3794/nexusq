@@ -593,7 +593,7 @@ export default function App() {
           <span>{tr("Data: FRED · Yahoo Finance · Nasdaq · World Bank · IMF · EIA")}</span>
         </div>
         <details className="platform-roadmap"><summary>{tr("Platform roadmap")}</summary><p>{tr("Nexus Model · Nexus Scenario · Nexus Portfolio · Nexus Agent — planned workspaces, not currently available.")}</p></details>
-        <div className="footer-fine">{tr("NexusQ 2.1.2 · model output, not investment advice · © 2026 Gygante Quantitative Systems")}</div>
+        <div className="footer-fine">{tr("NexusQ 2.1.3 · model output, not investment advice · © 2026 Gygante Quantitative Systems")}</div>
       </footer>
       </div>
     </div></FxContext.Provider>

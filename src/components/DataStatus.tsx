@@ -5,6 +5,8 @@ import type { Snapshot } from "../lib/snapshot";
 import { quoteStatus } from "../lib/snapshot";
 import { analysisEligibility, freshness, observationEnd, sourcePolicy } from "../lib/quality";
 import { externalForecastCurrent } from "../lib/forecast";
+import { EnergyQuotes } from './EnergyQuotes';
+import { isEnergyQuote } from '../lib/energy-quotes';
 import { Money } from './Preferences';
 
 const stamp = displayInstant;
@@ -62,8 +64,8 @@ export function DataStatus({ snapshot, now, error }: { snapshot: Snapshot | null
 
 export function QuotePanel({ snapshot, now }: { snapshot: Snapshot | null; now: number }) {
   const file = snapshot?.quotes;
-  if (!file) return <p className="sub">{tr("Intraday quotes unavailable. Daily analytical observations are shown below.")}</p>;
-  return <section className="card" aria-label={tr("Latest market quotes")}>
+  if (!file) return <><EnergyQuotes snapshot={snapshot} now={now}/><p className="sub">{tr("Intraday quotes unavailable. Daily analytical observations are shown below.")}</p></>;
+  return <><EnergyQuotes snapshot={snapshot} now={now}/><section className="card" aria-label={tr("Latest market quotes")}>
     <div className="card-head"><h2>{tr("Latest ETF quotes")}</h2><span className="sub">{tr("Price-age target: within 15 minutes")}</span></div>
     <p className="sub">{tr("Yahoo Finance quotes, shown separately from completed daily observations. Delivery is best effort; exchange delays vary. These quotes do not update the daily signals, betas or forecasts.")}</p>
     {file.refresh && <p className="sub">{tr("Last automatic publication")}{tr(": ")}{localize(stamp(file.refresh.lastAutomaticAt ?? file.refresh.lastScheduledAt))}{tr(" · ")}{tr(file.refresh.lastAutomaticSource === 'cloudflare' ? 'Cloudflare backup scheduler' : file.refresh.lastAutomaticSource === 'github' || file.refresh.lastScheduledAt ? 'GitHub scheduler' : 'Not verified')}{tr(". Automatic publication and individual quote freshness are checked separately.")}</p>}
@@ -83,11 +85,11 @@ export function QuotePanel({ snapshot, now }: { snapshot: Snapshot | null; now: 
       <summary>{tr("Inspect company quotes")}</summary>
       <div className="table-wrap"><table className="beta-table">
         <thead><tr><th>{tr("Instrument")}</th><th>{tr("Quote")}</th><th>{tr("Observed at")}</th><th>{tr("Status")}</th></tr></thead>
-        <tbody>{localize(Object.values(file.quotes).filter((quote) => !["XLE", "ICLN", "TAN", "GOLD"].includes(quote.id)).map((quote) => <tr key={quote.id}>
+        <tbody>{localize(Object.values(file.quotes).filter((quote) => !isEnergyQuote(quote.id) && !["XLE", "ICLN", "TAN", "GOLD"].includes(quote.id)).map((quote) => <tr key={quote.id}>
           <td>{localize(quote.name)}{tr(" (")}{localize(quote.symbol)}{tr(")")}</td><td><Money value={quote.price} unit={quote.currency}/></td><td>{localize(stamp(quote.observedAt))}</td><td>{localize(quoteStatus(quote, now).label)}</td>
         </tr>))}</tbody>
       </table></div>
     </details>
-  </section>;
+  </section></>;
 }
 

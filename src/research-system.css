@@ -305,3 +305,32 @@ body { font-size: var(--type-body); }
 .rail-principle dd { font-size: .875rem; line-height: 1.5; color: var(--text-secondary); margin: 3px 0 0; }
 .rail-principle .text-action { font-size: .875rem; line-height: 1.45; margin-top: 12px; }
 @media (min-width: 1001px) { .app-rail { overflow-y: auto; }.workspace-nav { flex-shrink: 0; } }
+
+/* Separate current futures context from the dated analytical observations. */
+.energy-quotes { margin: 24px 0; }
+.energy-quotes .card-head { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+.energy-quotes .eyebrow { margin: 0 0 8px; }
+.energy-feed-label { padding: 6px 10px; border: 1px solid var(--gridline); font-size: .875rem; color: var(--text-secondary); }
+.energy-quote-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin-top: 20px; }
+.energy-quote-tile { min-width: 0; padding: 18px; border: 1px solid var(--gridline); background: var(--surface-2); overflow-wrap: anywhere; }
+.energy-quote-tile header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.energy-quote-tile h3 { margin: 0; font-size: 1.125rem; }
+.energy-quote-tile header>span,.energy-basis { font-size: .875rem; color: var(--text-secondary); }
+.energy-basis { display: block; margin: 16px 0 8px; }
+.energy-quote-price { font-family: var(--font-number); font-size: 1.6rem; line-height: 1.4; }
+.energy-quote-price .money-value { white-space: normal; }
+.energy-quote-state { font-size: .875rem; min-height: 2.8em; line-height: 1.4; color: var(--text-secondary); }
+.energy-quote-state.delayed,.energy-quote-state.retained,.energy-quote-state.invalid,.energy-quote-state.missing { color: var(--status-warning); }
+.energy-quote-times { display: grid; gap: 10px; }
+.energy-quotes .timestamp { display: grid; gap: 3px; }
+.energy-official { border-top: 1px solid var(--gridline); margin-top: 18px; padding-bottom: 16px; }
+.energy-official strong { display: block; margin-bottom: 10px; font-family: var(--font-number); font-size: 1.125rem; }
+.energy-quote-tile details { border-top: 1px solid var(--gridline); padding-top: 12px; font-size: .875rem; line-height: 1.6; }
+.energy-quote-tile summary { cursor: pointer; min-height: 28px; }
+.energy-source-details { display: grid; gap: 12px; margin-top: 12px; }
+.energy-source-details p { margin: 0; }
+.energy-schedule { font-size: .875rem; line-height: 1.6; color: var(--text-secondary); margin-top: 18px; }
+.nexsum-official-heading { margin: 24px 0 12px; font-size: 1rem; }
+@media(max-width: 1000px) { .energy-quote-grid { grid-template-columns: minmax(0,1fr); }.energy-quote-state { min-height: 0; } }
+
+.energy-source-details a { color: var(--accent); }

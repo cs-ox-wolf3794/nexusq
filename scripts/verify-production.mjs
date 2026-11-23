@@ -4,6 +4,7 @@ import { quoteHealth } from '../src/lib/quote-health.ts';
 import { validateNexsi,nexsiStatus } from '../src/lib/nexsi-quality.ts';
 import { companyNewsCoverage } from '../src/lib/company-news.ts';
 import { mapLimit } from './lib/http.mjs';
+import { ENERGY_INSTRUMENTS, energyQuoteState } from '../src/lib/energy-quotes.ts';
 
 const origin='https://nexus.gygante.com';
 const digest=text=>createHash('sha256').update(text).digest('hex');
@@ -31,11 +32,13 @@ if(!publication)throw lastError;
 const {manifest,files}=publication,now=Date.now(),nexsi=files['nexsi.json'],quotes=files['quotes.json'];
 const expected=[...files['catalog.json'].series.filter(s=>s.source==='Yahoo Finance').map(s=>s.id),...files['impact.json'].companies.map(c=>c.id),...nexsi.universe.members.map(c=>c.symbol)];
 const health=quoteHealth(quotes,now,expected);
+const energy=ENERGY_INSTRUMENTS.map(item=>({symbol:item.symbol,...energyQuoteState(quotes.quotes[item.id],item,now),observedAt:quotes.quotes[item.id]?.observedAt}));
 const scheduledAge=(now-Date.parse(quotes.refresh?.lastAutomaticAt??quotes.refresh?.lastScheduledAt??''))/60000;
 const scheduledCurrent=Number.isFinite(scheduledAge)&&scheduledAge>=-1&&scheduledAge<=15;
 const coverage={};for(const company of nexsi.companies){const status=companyNewsCoverage(company,company.moves[1]??{start:company.asOf,end:company.asOf},now).status;coverage[status]=(coverage[status]??0)+1;}
 const lines=[`Live publication verified: ${manifest.revision}`,`${Object.keys(files).length} data files matched their published checksums.`,
-  `Quotes: ${Object.keys(quotes.quotes).length}/${health.expected}; checked ${quotes.generated}; ${quotes.failures.length} retrieval failures; ${health.missing.length} missing.`,
+  `Stock/ETF quotes: ${health.expected-health.missing.length}/${health.expected}; checked ${quotes.generated}; ${quotes.failures.length} total retrieval failures; ${health.missing.length} missing.`,
+  `Separate energy futures: ${JSON.stringify(energy)}. Delayed market context only; FRED spot history remains unchanged.`,
   `Quote refresh trigger: ${quotes.refresh?.trigger??'not recorded'}${quotes.refresh?.runUrl?`; ${quotes.refresh.runUrl}`:''}.`,
   `Last GitHub-cron quote publication: ${quotes.refresh?.lastScheduledAt??'not recorded'}${quotes.refresh?.lastScheduledRunUrl?`; ${quotes.refresh.lastScheduledRunUrl}`:''}. Manual recovery does not verify unattended operation.`,
   `Last automatic publication: ${quotes.refresh?.lastAutomaticAt??quotes.refresh?.lastScheduledAt??'not recorded'}; source ${quotes.refresh?.lastAutomaticSource??'not recorded'}; run ${quotes.refresh?.lastAutomaticRunUrl??'not recorded'}.`,
@@ -52,3 +55,5 @@ if(health.delayed.length||health.missing.length||quotes.failures.length||nexsi.s
 // green verification result to a market-hours price-age or quote-coverage breach.
 if(health.missing.length||(health.open&&(health.delayed.length||quotes.failures.length)))throw Error('Production quote coverage or the 15-minute market-hours target failed verification.');
 if(health.open&&!scheduledCurrent)throw Error('Production automatic refresh is not verified: no scheduled publication within 15 minutes. A manual recovery is insufficient.');
+if(energy.some(item=>!item.usable||item.state==='retained'))throw Error('Production energy futures coverage failed verification. FRED history is independent.');
+if(energy.some(item=>item.state==='delayed'))console.warn('::warning::Energy futures observations or retrievals exceed 15 minutes. Quotes remain explicitly dated; this may reflect exchange closure or provider delay.');

@@ -3,11 +3,13 @@ import { validatePoints, validateAdjustedAlignment } from "./quality";
 import type { NexsiFile } from "./nexsi-types";
 import type { FxFile } from './fx';
 import { scheduledUsMarketOpen } from './quote-health';
+import { ENERGY_INSTRUMENTS, energyQuoteState } from './energy-quotes';
 
 export interface Quote {
   id: string; symbol: string; name: string; price: number; currency: string;
   observedAt: string; checkedAt: string; sessionStart: string; sessionEnd: string;
   source: string; delayMinutes: number | null; status: "available" | "retained"; error?: string;
+  instrumentType?: 'future'; exchange?: string; unit?: string;
 }
 export interface QuoteFile {
   generated: string; targetMinutes: number; quotes: Record<string, Quote>; failures: string[];
@@ -82,6 +84,8 @@ export async function loadSnapshot(previous?: Snapshot): Promise<Snapshot> {
 }
 
 export function quoteStatus(quote: Quote, now = Date.now()): { label: string; current: boolean } {
+  const energy = ENERGY_INSTRUMENTS.find(item => item.id === quote.id);
+  if (energy) { const state = energyQuoteState(quote, energy, now); return { label: state.label, current: state.state === 'recent' }; }
   const age = (now - Date.parse(quote.observedAt)) / 60000;
   const checkAge = (now - Date.parse(quote.checkedAt)) / 60000;
   if (quote.status === "retained") return { label: "Update failed · last quote retained", current: false };
