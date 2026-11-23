@@ -1,12 +1,11 @@
 name: Refresh data snapshots
 
 on:
-  schedule:
-    # Best effort, deliberately off the hour. Covers US sessions across DST.
-    - cron: "3-58/5 12-23 * * 1-5"
-    # Official daily/weekly releases and a Saturday close catch-up.
-    - cron: "19 6,16,18,22 * * 1-5"
-    - cron: "19 6 * * 6"
+  workflow_call:
+    inputs:
+      mode:
+        type: string
+        default: full
   workflow_dispatch:
     inputs:
       mode:
@@ -40,11 +39,10 @@ jobs:
       - name: Select refresh scope
         id: scope
         env:
-          EVENT_SCHEDULE: ${{ github.event.schedule }}
           REQUESTED_MODE: ${{ inputs.mode }}
         run: |
           echo "REFRESH_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
-          if [ "$REQUESTED_MODE" = "quotes" ] || [ "$EVENT_SCHEDULE" = "3-58/5 12-23 * * 1-5" ]; then
+          if [ "$REQUESTED_MODE" = "quotes" ]; then
             echo "mode=quotes" >> "$GITHUB_OUTPUT"
           else
             echo "mode=full" >> "$GITHUB_OUTPUT"
