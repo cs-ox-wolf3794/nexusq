@@ -119,6 +119,10 @@ button,input,select { font-family: inherit; }
 .company-price.compact { grid-column: 1 / -1; border-block: 1px solid var(--gridline); padding-block: 8px; margin-block: 4px; }
 .company-price.compact>strong { font: 1rem var(--font-number); }
 .investigation-context>.company-price { flex: 1; }
+@media (max-width: 640px) {
+  .research-nexsi .investigation-context { flex-direction: column; align-items: stretch; }
+  .research-nexsi .investigation-controls>label { flex-direction: row; align-items: center; justify-content: space-between; }
+}
 .research-nexsi .investigation-controls>label { font: 0.875rem var(--font-number); color: var(--text-muted); }.research-nexsi .investigation-controls select { min-height: 34px; font: 0.875rem var(--font-ui); border-radius: var(--radius-control); }
 .research-nexsi .nexsi-detail { background: none; border: 0; padding: 0; }
 .research-nexsi .nexsi-detail>.research-disclosure:first-of-type { border: 1px solid var(--gridline); padding: 9px 12px; margin-bottom: 12px; background: var(--surface-1); }

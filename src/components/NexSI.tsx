@@ -178,7 +178,7 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
         <div className="nexsi-company-list">{localize(companies.map(c => {
           const blocked = suspended ?? companyStatus(c, now), a = !blocked ? c.moves[horizon] : null;
           return <button key={c.symbol} className={`nexsi-company${c.symbol === selected.symbol ? " selected" : ""}`} onClick={() => choose(c.symbol)} aria-pressed={c.symbol === selected.symbol}>
-            <span><strong>{localize(c.symbol)}</strong><small title={tr(c.name)}>{localize(companyName(c.symbol,c.name))}</small></span><span className={(c.observedReturns[horizon] ?? 0) < 0 ? "nexsi-negative" : "nexsi-positive"}>{localize(fmt(c.observedReturns[horizon]))}</span>
+            <span><strong>{localize(c.symbol)}</strong><small title={tr(c.name)}>{localize(companyName(c.symbol,c.name))}</small></span><span className={(c.observedReturns[horizon] ?? 0) < 0 ? "nexsi-negative" : "nexsi-positive"}>{localize(fmt(c.observedReturns[horizon]))}<small>{tr("Completed return")}</small></span>
             <CompanyPrice company={c} quote={snapshot.quotes?.quotes[c.symbol]} now={now} compact/>
             <small className="nexsi-company-energy">{tr("Energy estimate ")}{localize(a ? fmt(a.energy, " pp") : "withheld")}{localize(a && a.energyCI[0] <= 0 && a.energyCI[1] >= 0 ? " · inconclusive" : "")}</small><small className="nexsi-company-date">{tr("Return through ")}{localize(c.asOf ?? "No close")}{localize(blocked ? " · review data" : "")}</small>
           </button>;
