@@ -26,3 +26,9 @@ dist-ssr
 # Internal strategy material — this repo is public (GitHub Pages); keep GTM/revenue
 # plans out of it. Remove this line if you decide to publish them.
 docs/
+
+# Scheduler credentials and local Cloudflare state.
+.wrangler/
+.dev.vars*
+.env*
+!.env.example

@@ -1,0 +1,53 @@
+name: Cloudflare backup refresh
+
+on:
+  workflow_dispatch:
+    inputs:
+      ticket:
+        description: Authenticated scheduler ticket (not a manual recovery switch)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: nexusq-backup-dispatch
+  cancel-in-progress: false
+
+jobs:
+  authenticate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      should_run: ${{ steps.ticket.outputs.should_run }}
+      mode: ${{ steps.ticket.outputs.mode }}
+      source: ${{ steps.ticket.outputs.source }}
+      nonce: ${{ steps.ticket.outputs.nonce }}
+      scheduled_at: ${{ steps.ticket.outputs.scheduled_at }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Authenticate scheduled backup request
+        id: ticket
+        run: node scripts/verify-backup-ticket.mjs
+        env:
+          WATCHDOG_TICKET: ${{ inputs.ticket }}
+          WATCHDOG_SIGNING_KEY: ${{ secrets.WATCHDOG_SIGNING_KEY }}
+  refresh:
+    needs: authenticate
+    if: needs.authenticate.outputs.should_run == 'true'
+    uses: ./.github/workflows/refresh-data.yml
+    with:
+      mode: ${{ needs.authenticate.outputs.mode }}
+      automation_source: ${{ needs.authenticate.outputs.source }}
+      backup_nonce: ${{ needs.authenticate.outputs.nonce }}
+      backup_scheduled_at: ${{ needs.authenticate.outputs.scheduled_at }}
+    secrets: inherit

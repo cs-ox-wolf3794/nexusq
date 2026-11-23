@@ -11,7 +11,8 @@ export interface Quote {
 }
 export interface QuoteFile {
   generated: string; targetMinutes: number; quotes: Record<string, Quote>; failures: string[];
-  refresh?: { trigger:string; startedAt:string|null; runUrl:string|null; lastScheduledAt?:string|null; lastScheduledRunUrl?:string|null };
+  refresh?: { trigger:string; startedAt:string|null; runUrl:string|null; lastScheduledAt?:string|null; lastScheduledRunUrl?:string|null;
+    lastAutomaticAt?:string|null; lastAutomaticSource?:'github'|'cloudflare'|null; lastAutomaticRunUrl?:string|null; backupScheduledAt?:string|null; usedBackupNonces?:string[] };
 }
 export interface HealthFile {
   generated: string; status: string; coreFailures: string[];

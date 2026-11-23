@@ -676,6 +676,10 @@
   "Company watchlists show the latest reported quote with its observation time and freshness; returns and energy estimates still use completed closes.": "Selskaper i overvåkningslisten viser siste rapporterte kurs med observasjonstid og oppdateringsstatus. Avkastning og energiestimater bruker fortsatt avsluttede sluttkurser.",
   "Other market observations retain their published dates.": "Andre markedsobservasjoner beholder sine publiserte datoer.",
   "Completed return": "Avkastning ved sluttkurs",
+  "Last automatic publication": "Siste automatiske publisering",
+  "Cloudflare backup scheduler": "Reserveplanlegger hos Cloudflare",
+  "GitHub scheduler": "Planlegger hos GitHub",
+  ". Automatic publication and individual quote freshness are checked separately.": ". Automatisk publisering og alderen på hver enkelt kurs kontrolleres hver for seg.",
   "Automatic quote refresh is unverified": "Automatisk kursoppdatering er ikke bekreftet",
   "The latest quotes were recovered, but a recent scheduled publication has not been verified. Manual recovery does not establish automatic updates. Quote observation times and delays remain visible.": "Kursene er oppdatert, men en nylig planlagt publisering er ikke bekreftet. En manuelt startet oppdatering bekrefter ikke at automatiske oppdateringer fungerer. Observasjonstider og forsinkelser vises fortsatt."
 }

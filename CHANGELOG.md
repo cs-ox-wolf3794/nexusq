@@ -1,5 +1,12 @@
 # NexusQ releases
 
+### 23 November — independent scheduler rollout (incident open)
+
+- Approved and prepared a free Cloudflare backup for the existing GitHub pipeline, without changing app hosting or market-data sources. It checks live checksums, detects due quote/full refreshes and avoids competing work.
+- Added a signed, expiring backup entry point, replay checks, duplicate suppression and distinct automatic-origin metadata. Manual recovery cannot reset the automatic-publication timestamp; Cloudflare recovery does not reset GitHub's own scheduled timestamp.
+- Added English/Bokmål automatic-publication provenance to the quote panel and preserved individual price-age warnings. All 289 tests, type checks, lint, data-contract validation, app build and Worker deployment validation pass.
+- Deployment is being provisioned with encrypted secrets and repository-scoped Actions access. Repeated live automatic refreshes and controlled backup recovery remain acceptance requirements, not completed claims.
+
 ## 2.1.2 — 2026-11-23
 
 - Re-registered the inactive scheduled-refresh trigger through the authenticated repository maintainer account and re-enabled the workflow. Manual runs had worked while no scheduled run was created; the previous manual-only verification did not establish unattended delivery.

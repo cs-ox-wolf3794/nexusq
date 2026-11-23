@@ -6,6 +6,15 @@ on:
       mode:
         type: string
         default: full
+      automation_source:
+        type: string
+        default: ''
+      backup_nonce:
+        type: string
+        default: ''
+      backup_scheduled_at:
+        type: string
+        default: ''
   workflow_dispatch:
     inputs:
       mode:
@@ -68,6 +77,10 @@ jobs:
         id: quotes
         continue-on-error: true
         run: npm run refresh:quotes
+        env:
+          REFRESH_AUTOMATION_SOURCE: ${{ inputs.automation_source }}
+          REFRESH_BACKUP_NONCE: ${{ inputs.backup_nonce }}
+          REFRESH_BACKUP_SCHEDULED_AT: ${{ inputs.backup_scheduled_at }}
       - name: Refresh indicative display exchange rate
         if: steps.scope.outputs.mode == 'quotes' || steps.data.outcome != 'success'
         run: node --import tsx scripts/refresh-fx.mjs

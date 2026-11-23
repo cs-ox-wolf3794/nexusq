@@ -60,6 +60,9 @@ describe('Operational exceptions and local activity', () => {
     expect(dataExceptions(s,now,null).some(e=>e.id==='quote-schedule')).toBe(false);
     s.quotes!.refresh.lastScheduledAt='2026-11-20T23:58:00Z';
     expect(dataExceptions(s,now,null).some(e=>e.id==='quote-schedule')).toBe(true);
+    s.quotes!.refresh.lastAutomaticAt='2026-11-23T15:58:00Z';
+    s.quotes!.refresh.lastAutomaticSource='cloudflare';
+    expect(dataExceptions(s,now,null).some(e=>e.id==='quote-schedule')).toBe(false);
     expect(dataExceptions(s,Date.parse('2026-11-22T16:00:00Z'),null).some(e=>e.id==='quote-schedule')).toBe(false);
   });
   it('keeps a closed-weekend quote schedule neutral but reports an overdue scheduled check', () => {

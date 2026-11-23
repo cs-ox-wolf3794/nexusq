@@ -3,11 +3,10 @@ import { writeFile } from "node:fs/promises";
 import { yahooChart, parseQuote } from "./lib/yahoo.mjs";
 import { mapLimit } from "./lib/http.mjs";
 import { readJson, buildManifest } from "./lib/snapshot.mjs";
+import { refreshProvenance } from './lib/refresh-provenance.mjs';
 
 const directory = path.resolve(process.env.NEXUSQ_DATA_DIR ?? "public/data");
 const previous = await readJson(directory, "quotes.json");
-const trigger = process.env.GITHUB_EVENT_NAME ?? 'local';
-const runUrl = process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID ? `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` : null;
 const catalog = await readJson(directory, "catalog.json");
 const impact = await readJson(directory, "impact.json");
 const nexsi = await readJson(directory, "nexsi.json");
@@ -34,13 +33,7 @@ await mapLimit(instruments, 3, async ([id, symbol]) => {
 });
 await writeFile(path.join(directory, "quotes.json"), JSON.stringify({
   generated: new Date().toISOString(), targetMinutes: 15, quotes, failures,
-  refresh: {
-    trigger,
-    startedAt: process.env.REFRESH_STARTED_AT ?? null,
-    runUrl,
-    lastScheduledAt: trigger === 'schedule' ? new Date().toISOString() : previous?.refresh?.lastScheduledAt ?? null,
-    lastScheduledRunUrl: trigger === 'schedule' ? runUrl : previous?.refresh?.lastScheduledRunUrl ?? null,
-  },
+  refresh: refreshProvenance(previous?.refresh,process.env,new Date().toISOString()),
   note: "Best-effort quote checks; exchange/provider delay and GitHub scheduling prevent a guaranteed 15-minute service. Quotes are not used in daily analytics.",
 }));
 await buildManifest(directory);
