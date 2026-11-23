@@ -6,10 +6,12 @@ import { TIMING_LABELS } from '../lib/nexsi-explanation';
 
 import { displayInstant } from '../lib/research-ui';
 import { CompanyNewsCoverage } from './CompanyNewsCoverage';
+import { companyNewsCoverage } from '../lib/company-news';
 
 const TITLES = { earnings: 'Earnings', guidance: 'Guidance', 'company-news': 'Company news' };
 export function NexsiCompanyBrief({ company, move, now }: { company: NexsiCompany; move: Attribution; now: number }) {
   const brief = companyBrief(company, move, now);
+  const newsroomAvailable = companyNewsCoverage(company, move, now).announcements.length > 0;
   return <section id="nexsi-company-brief" className="nexsi-company-brief anchor-target" aria-label={tr("Earnings, guidance and company news summary")}>
     <h3>{tr("Earnings, guidance & company news")}</h3><p className="nexsi-brief-meta">{tr("Company statements are shown in their original language and reported currency.")}</p>
     <p className="sub">{tr("What the company disclosed, followed by possible relevance to this move. Issuer filings and official transcripts are distinguished from third-party transcripts. A sourced statement does not verify a forecast, allegation or cause of the drop.")}</p>
@@ -30,7 +32,7 @@ export function NexsiCompanyBrief({ company, move, now }: { company: NexsiCompan
         </li>))}</ul>
         {omitted > 0 && <p className="nexsi-brief-meta">{tr(`${omitted} additional summary items in the linked disclosures.`)}</p>}
         <div className="nexsi-hypothesis"><strong>{tr("Possible relevance · not a confirmed cause")}</strong><p>{localize(possibleRelevance(category, items.map(x => x.fact.topic)))}</p>{localize(items.every(x => x.timing === 'before') && <p>{tr("This was already disclosed before the selected window. A fresh catalyst has not been established.")}</p>)}{localize(items.every(x => x.timing === 'after') && <p>{tr("This was filed after the move. It is follow-up context, not evidence that the information was public before the drop.")}</p>)}</div>
-      </> : <p className="nexsi-brief-empty"><strong>{localize(category === 'guidance' ? 'Guidance coverage missing. ' : category === 'company-news' ? 'No company-news summary extracted. ' : 'Earnings summary unavailable. ')}</strong>{localize(checked ? 'The checked documents did not yield a supported summary for this window. ' : 'No suitable document has been retrieved for this window. ')}{localize(category === 'guidance' ? 'This is a coverage gap, not confirmation that management issued no guidance.' : 'This does not establish that there was no relevant announcement.')}{tr(" Full filings and reported headlines remain in ")}<a href="#nexsi-evidence">{tr("Evidence & coverage")}</a>{tr(".")}</p>)}
+      </> : category === 'company-news' && newsroomAvailable ? <p className="nexsi-brief-empty">{tr('Official newsroom headlines are available below. The full announcement text has not been summarized.')}</p> : <p className="nexsi-brief-empty"><strong>{localize(category === 'guidance' ? 'Guidance coverage missing. ' : category === 'company-news' ? 'No company-news summary extracted. ' : 'Earnings summary unavailable. ')}</strong>{localize(checked ? 'The checked documents did not yield a supported summary for this window. ' : 'No suitable document has been retrieved for this window. ')}{localize(category === 'guidance' ? 'This is a coverage gap, not confirmation that management issued no guidance.' : 'This does not establish that there was no relevant announcement.')}{tr(" Full filings and reported headlines remain in ")}<a href="#nexsi-evidence">{tr("Evidence & coverage")}</a>{tr(".")}</p>)}
       {category==='company-news'&&<CompanyNewsCoverage company={company} move={move} now={now}/>}
     </article>))}</div>
     <p className="nexsi-foot">{tr("No portion of the unexplained return is assigned to these events. Earnings and guidance can include earlier background up to 100 days old; company news uses the nearby source window. Publication timing uses SEC acceptance, which can follow a company announcement. Summaries are selective and retrospective; forecasts retain their original date and assumptions.")}</p>

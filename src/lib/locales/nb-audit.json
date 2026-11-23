@@ -89,5 +89,7 @@
   "This analysis could not load": "Analysen kunne ikke lastes inn",
   "The connection may have failed, or a new app version may have been published. Other workspaces remain available.": "Forbindelsen kan ha blitt brutt, eller appen kan ha blitt oppdatert. Du kan fortsatt bruke de andre arbeidsområdene.",
   "Reload the latest app": "Last inn appen på nytt",
-  "Your investigation link and saved preferences remain. Reloading resets unsaved scenario inputs.": "Analyselenken og de lagrede innstillingene beholdes. Scenarioverdier som ikke er lagret, tilbakestilles når appen lastes inn på nytt."
+  "Your investigation link and saved preferences remain. Reloading resets unsaved scenario inputs.": "Analyselenken og de lagrede innstillingene beholdes. Scenarioverdier som ikke er lagret, tilbakestilles når appen lastes inn på nytt.",
+  "Official newsroom headlines are available below. The full announcement text has not been summarized.": "Overskrifter fra selskapets eget nyhetsrom vises nedenfor. Den fullstendige meldingsteksten er ikke oppsummert.",
+  "No suitable document has been retrieved for this window.": "Det er ikke hentet noe egnet dokument for denne perioden."
 }
