@@ -10,6 +10,8 @@
 - Fixed NexSI's headline price and NexSum's company watchlist still showing only the previous close after quote updates. Latest reported quotes now appear prominently with observation time and freshness, including in the company screen. Daily returns, modeled energy contributions and completed-close context retain their original basis. Delayed quotes cannot produce a claim about the current move; invalid, wrong-currency or older quotes cannot replace a more recent close.
 - Added regression checks for current, stale, retained, invalid, missing-history and same-session quotes. All 270 tests, type checks, lint and the production build passed; the additional scheduler-status regression passed with the timestamp tests.
 - Keep the last actual scheduled publication separately from manual recovery. A manually recovered quote no longer clears an unverified automatic-refresh alert; the UI preserves quote-level freshness independently.
+- Replaced combined minute range/step syntax with explicit minute enumeration, preserving the intended times. Added a schedule-contract test covering five-minute spacing and routing to quote-only processing. Market-hours production verification also fails when a recent actual scheduled publication is missing, even when manually recovered prices are fresh. All 272 tests and data validation pass.
+- Added a fresh publication-manifest URL on each client poll to prevent CDN caching from extending data age after deployment. Unchanged publications still avoid downloading the full dataset; changed files must match their published checksums. A regression test covers this cache boundary.
 
 Scheduled-run verification is recorded below after the repaired trigger has fired; a manual recovery run is not evidence of scheduled operation.
 

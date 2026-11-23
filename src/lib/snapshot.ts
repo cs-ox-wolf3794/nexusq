@@ -38,7 +38,9 @@ async function request(name: string, revision = ""): Promise<string> {
 
 /** All reads must match one published manifest; partial/mixed updates never enter React state. */
 export async function loadSnapshot(previous?: Snapshot): Promise<Snapshot> {
-  const manifest: Manifest = JSON.parse(await request("manifest.json"));
+  // Pages/CDN caches can outlive a deployment. Poll a new manifest URL while
+  // keeping content files addressed by their verified publication hashes.
+  const manifest: Manifest = JSON.parse(await request("manifest.json", String(Date.now())));
   if (manifest.schemaVersion !== 1 || !/^[a-f0-9]{64}$/.test(manifest.revision) || !manifest.files) throw new Error("Unsupported data manifest");
   const revisionDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(manifest.files)));
   const revision = [...new Uint8Array(revisionDigest)].map((n) => n.toString(16).padStart(2, "0")).join("");

@@ -20,6 +20,19 @@ function setup(corrupt = false, corruptManifest = false) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("coherent client snapshots", () => {
+  it("checks a fresh publication URL on the next poll without redownloading unchanged data", async () => {
+    const pollTime=Date.parse('2026-11-23T16:00:00Z');
+    const clock=vi.spyOn(Date,'now').mockReturnValue(pollTime);
+    try {
+      const fetcher=setup(), first=await loadSnapshot();
+      const initialUrl=fetcher.mock.calls[0][0];
+      fetcher.mockClear();clock.mockReturnValue(pollTime+60000);
+      expect(await loadSnapshot(first)).toBe(first);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(fetcher.mock.calls[0][0]).not.toBe(initialUrl);
+      expect(fetcher.mock.calls[0][0]).toContain(`manifest.json?v=${pollTime+60000}`);
+    } finally { clock.mockRestore(); }
+  });
   it("accepts a complete verified set and only checks the manifest when unchanged", async () => {
     const fetcher = setup();
     const first = await loadSnapshot();

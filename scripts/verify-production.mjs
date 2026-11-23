@@ -40,7 +40,7 @@ const lines=[`Live publication verified: ${manifest.revision}`,`${Object.keys(fi
   `Last verified scheduled quote publication: ${quotes.refresh?.lastScheduledAt??'not recorded'}${quotes.refresh?.lastScheduledRunUrl?`; ${quotes.refresh.lastScheduledRunUrl}`:''}. Manual recovery does not verify unattended operation.`,
   `Automatic refresh health: ${scheduledCurrent?'recent scheduled publication verified':'recent scheduled publication not verified'}.`,
   health.open?`US market scheduled open: ${health.withinTarget}/${health.expected} quotes within 15 minutes; ${health.delayed.length} delayed or invalid.`:'US market scheduled closed: intraday 15-minute target not evaluated. This run does not certify sustained market-hours delivery.',
-  `NexSI: ${nexsi.generated}; ${nexsi.status}; ${nexsi.companies.filter(c=>c.moves[1]).length} daily models; ${nexsiStatus(nexsi,now)??'current analytical snapshot'}.`,
+  `NexSI: ${nexsi.generated}; ${nexsi.status}; ${nexsi.companies.length}/${nexsi.universe.members.length} securities; ${nexsi.companies.filter(c=>c.moves[1]).length} daily models; ${nexsiStatus(nexsi,now)??'current analytical snapshot'}.`,
   `Company-news coverage: ${JSON.stringify(coverage)}. Empty source windows do not prove no relevant news.`,
   `Latest core refresh: ${files['refresh-status.json']?.outcome??'not recorded'}; ${files['refresh-status.json']?.attemptedAt??'not recorded'}.`,
   `QC: ${files['health.json']?.coreFailures?.length??0} core source failures; ${files['health.json']?.enrichmentIssues?.length??0} supplementary exceptions.`];
