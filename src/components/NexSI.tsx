@@ -1,4 +1,6 @@
 import { Money } from './Preferences';
+import { CompanyPrice } from './CompanyPrice';
+import { companyPrice } from '../lib/company-price';
 import { useMoney } from '../lib/money';
 import { number, usePreferences } from '../lib/preferences';
 import { LocalizedNumberInput } from './LocalizedNumberInput';
@@ -117,12 +119,13 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
   if (!snapshot || !file || !selected) return <section className="card"><h2>{tr("NexSI · AI, energy & capital markets")}</h2><p>{localize(!snapshot ? "Loading the validated company snapshot…" : "Company analysis is awaiting its first validated publication. No estimated values are substituted.")}</p></section>;
   const currentCompanies = file.companies.filter(c => !suspended && !companyStatus(c, now) && c.moves[horizon]);
   const quote = snapshot.quotes?.quotes[selected.symbol];
+  const price = companyPrice(selected, quote, now);
   const totalOther = move ? move.components.market + move.components.technology + move.components.rates + move.components.baseline : null;
   return <div className="nexsi research-nexsi">
     <header className="workspace-intro investigation-title"><div><p className="eyebrow">{tr("NexSI / Company investigation · ")}{localize(selected.group)}</p><h1>{localize(selected.symbol)} <span title={tr(selected.name)}>{localize(companyName(selected.symbol,selected.name))}</span></h1></div><button className="workspace-button secondary" onClick={onFind} aria-label={tr("Change company")}><span className="change-label">{tr("Change company")}</span><span aria-hidden="true">{tr("⌕")}</span></button></header>
     <WorkspaceTabs page="nexsi" value={view} onChange={onView}/>
     <div className="investigation-context">
-              <div className="nexsi-company-heading"><div><strong>{selected.price == null ? tr("No close") : <Money value={selected.price}/> }</strong><small>{tr("Latest completed close · ")}{localize(displayDate(selected.asOf))}</small></div></div>
+      <CompanyPrice company={selected} quote={quote} now={now}/>
       <div className="investigation-controls"><label>{tr("Return window")}<select aria-label={tr("Analysis return window")} value={horizon} onChange={e=>{onHorizon(Number(e.target.value));setEventDate('');}}>{localize([1,5,20].map(h=><option key={h} value={h}>{tr(`${h} session${h>1?'s':''}`)}</option>))}</select></label></div>
     </div>
     <div className="investigation-clocks" aria-label={tr("Observation and processing times")}><TimeStamp label="Latest price close" value={selected.asOf}/><TimeStamp label="Model calculated" value={file.generated}/><TimeStamp label="History retrieved" value={selected.retrievedAt}/><TimeStamp label="Evidence checked" value={selected.eventCheckedAt}/></div>
@@ -131,7 +134,7 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
     {localize(!suspended&&file.status==='degraded'&&<ResearchAlert title={tr("Source updates incomplete")} action="Inspect coverage" onAction={()=>onView("evidence")}>{tr("Available company models remain visible; retained evidence keeps its original dates.")}</ResearchAlert>)}
     <WorkspacePanel page="nexsi" id="explain" active={view==='explain'}><section className="card nexsi-detail anchor-target" id="nexsi-company-analysis" aria-label={tr("Selected company analysis")}>
 
-        {localize(quote && selected.price && selected.asOf && quote.observedAt.slice(0, 10) > selected.asOf && <p className="nexsi-callout">{tr("Reported price change since the last completed close: ")}{localize(fmt((quote.price / selected.price - 1) * 100))}{tr(" (unadjusted; splits or distributions may affect this comparison). Attribution for that newer move awaits complete daily observations.")}</p>)}
+        {localize(price.change!==null && <p className="nexsi-callout">{tr("Reported price change since the last completed close: ")}{localize(fmt(price.change))}{tr(" (unadjusted; splits or distributions may affect this comparison). Attribution for that newer move awaits complete daily observations.")}</p>)}
         {localize(symbol !== selected.symbol && <p className="nexsi-alert">{tr("⚠ The requested ticker ")}{localize(symbol)}{tr(" is absent from this membership publication. Showing ")}{localize(selected.symbol)}{tr(" instead.")}</p>)}
         {localize(eventDate && !selected.largestDrops.some(d => d.end === eventDate) && <p className="nexsi-alert">{tr("⚠ The requested historical move is outside the available major-drop set. Select the latest window or another available date.")}</p>)}
         <ResearchDisclosure title={tr("Choose another move")} description={eventDate?`Historical daily drop · ${eventDate}`:`Latest ${horizon}-session window selected`}>        <div className="nexsi-event-picker"><label>{tr("Investigate a move")}<select aria-label={tr("Investigate a move")} value={eventDate} onChange={e => { setEventDate(e.target.value); if(e.target.value)onHorizon(1); }}><option value="">{tr(`Latest ${horizon}-session move`)}</option>{localize(selected.largestDrops.map(a => <option key={a.end} value={a.end}>{localize(a.end)}{tr(": ")}{localize(fmt(a.actual))}{tr(" in 1 session")}</option>))}</select></label><small>{tr("Up to five largest daily losses ≥3% over the latest 60 sessions with sufficient model coverage.")}</small></div></ResearchDisclosure>
@@ -166,7 +169,7 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
         <div className="investigation-next"><div><span className="eyebrow">{tr("Continue the investigation")}</span><p>{tr("Check the disclosures and physical exposure behind this company.")}</p></div><button className="workspace-button secondary" onClick={()=>onView('evidence')}>{tr("Inspect evidence →")}</button><button className="workspace-button secondary" onClick={()=>onView('projects')}>{tr("Projects & power →")}</button></div>
       </section></WorkspacePanel>
     <WorkspacePanel page="nexsi" id="screen" active={view==='screen'}><aside className="card nexsi-board anchor-target" id="nexsi-screen" aria-label={tr("Company screen")}>
-        <h2>{tr("Company screen")}</h2><p className="sub">{tr("Sorted by the largest loss. Select a company to investigate.")}</p>
+        <h2>{tr("Company screen")}</h2><p className="sub">{tr("Latest reported prices are separate from completed-close returns. Sorted by the largest completed-session loss. Select a company to investigate.")}</p>
         <label className="nexsi-label control-group">{tr("Find a company")}<input type="search" value={search} placeholder={tr("Name or ticker")} onChange={e => setSearch(e.target.value)} /></label>
         <label className="nexsi-label control-group">{tr("Universe")}<select aria-label={tr("Universe")} value={scope} onChange={e => setScope(e.target.value)}>{localize(["AI & technology", "All Nasdaq-100", ...new Set(file.companies.map(c => c.group))].map(s => <option key={s} value={s}>{localize(s)}</option>))}</select></label>
         <div className="seg" aria-label={tr("Return window")}>{localize([1, 5, 20].map(h => <button key={h} className={horizon === h ? "active" : ""} aria-pressed={horizon === h} onClick={() => { onHorizon(h); setEventDate(""); }}>{tr(`${h} session${h > 1 ? "s" : ""}`)}</button>))}</div>
@@ -176,7 +179,8 @@ export function NexSI({ snapshot, now, mode, symbol, horizon, onSymbol, onHorizo
           const blocked = suspended ?? companyStatus(c, now), a = !blocked ? c.moves[horizon] : null;
           return <button key={c.symbol} className={`nexsi-company${c.symbol === selected.symbol ? " selected" : ""}`} onClick={() => choose(c.symbol)} aria-pressed={c.symbol === selected.symbol}>
             <span><strong>{localize(c.symbol)}</strong><small title={tr(c.name)}>{localize(companyName(c.symbol,c.name))}</small></span><span className={(c.observedReturns[horizon] ?? 0) < 0 ? "nexsi-negative" : "nexsi-positive"}>{localize(fmt(c.observedReturns[horizon]))}</span>
-            <small className="nexsi-company-energy">{tr("Energy estimate ")}{localize(a ? fmt(a.energy, " pp") : "withheld")}{localize(a && a.energyCI[0] <= 0 && a.energyCI[1] >= 0 ? " · inconclusive" : "")}</small><small className="nexsi-company-date">{localize(c.asOf ?? "No close")}{localize(blocked ? " · review data" : "")}</small>
+            <CompanyPrice company={c} quote={snapshot.quotes?.quotes[c.symbol]} now={now} compact/>
+            <small className="nexsi-company-energy">{tr("Energy estimate ")}{localize(a ? fmt(a.energy, " pp") : "withheld")}{localize(a && a.energyCI[0] <= 0 && a.energyCI[1] >= 0 ? " · inconclusive" : "")}</small><small className="nexsi-company-date">{tr("Return through ")}{localize(c.asOf ?? "No close")}{localize(blocked ? " · review data" : "")}</small>
           </button>;
         }))}{localize(!companies.length && <p>{tr("No companies match these filters.")}</p>)}</div>
       </aside></WorkspacePanel>

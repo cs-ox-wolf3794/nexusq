@@ -1,7 +1,7 @@
 # NexusQ 2.1.2
 
 [![CI](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml)
-[![Data refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml)
+[![Scheduled data refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/scheduled-refresh.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/scheduled-refresh.yml)
 
 **Market intelligence for capital markets — by Gygante Quantitative Systems.**
 
@@ -17,6 +17,7 @@ NexusQ opens with **NexSum**, a deterministic daily research brief built entirel
 
 - A dated common-close company screen, selected energy observations, an energy-related signal and source-validated guidance context link into existing investigations. Viewing, observation and calculation dates remain separate.
 - A browser-local watchlist (up to 12 companies or markets), explicit “Mark as reviewed” comparison and suggested research steps help analysts resume work. Refresh timestamps alone do not count as changed insights. Changes to selections, eligibility or underlying content can change the brief.
+- NexSI's company headline, company screen and NexSum company watchlist show the latest reported quote, its actual observation time and freshness. Completed closes and dated returns remain separate; the model does not attribute an unfinished session. Delayed/retained quotes remain labeled, invalid or older quotes cannot replace a newer close, and official spot observations retain their own publication dates.
 - Eighteen curated questions cover stock moves, earnings and guidance, equity benchmarks, rates, volatility, oil, gas, storage, power costs, projects and exposure. Visible stock, capital-market and energy shortcuts lead to the existing analysis; the results scroll independently of the footer, with a continuous-scroll layout on short screens. Search retains companies, individual markets and every existing tool.
 - Shared readable type uses a 16px body, generally 14px essential controls/dates and 12–13px secondary chart/metadata labels, with relative CSS units. Compact mode reduces spacing, not essential text size. Labels use sentence case; tickers/acronyms and canonical company brands retain their capitalization. Original provider company names remain in evidence.
 - Light mode uses a muted blue-gray canvas, softer panels and ink text. Dark mode and the existing series/status semantics are retained.

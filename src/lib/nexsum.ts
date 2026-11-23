@@ -1,4 +1,5 @@
-import type { Snapshot } from './snapshot';
+import type { Snapshot, Quote } from './snapshot';
+import { companyPrice } from './company-price';
 import type { Signal } from './signals';
 import type { Series } from './data';
 import type { WorkspaceRoute } from './workspace';
@@ -13,7 +14,7 @@ import { companyName } from './display-names';
 export const STARTER_WATCHLIST = ['series:BRENT','series:HENRYHUB','company:NVDA','company:MSFT'];
 export type BriefSource = {label:string;url:string};
 export type BriefInsight = {id:string;kind:string;title:string;body:string;bodySegments?:string[];limit:string;date:string;action:string;route:WorkspaceRoute;extra?:Record<string,string|null>;anchor?:string;sources:BriefSource[];signature:string};
-export type WatchRow = {key:string;label:string;symbol:string;value:string;amount?:number;unit?:string;change:string|null;date:string|null;issue:string|null;route:WorkspaceRoute;extra:Record<string,string|null>};
+export type WatchRow = {key:string;label:string;symbol:string;value:string;amount?:number;unit?:string;change:string|null;date:string|null;issue:string|null;route:WorkspaceRoute;extra:Record<string,string|null>;company?:{symbol:string;price:number|null;asOf:string|null};quote?:Quote};
 export type BriefCheckpoint = {version:1;reviewedAt:string;items:Record<string,string>};
 
 export function readWatchlist(raw:string|null):string[]|null {
@@ -38,7 +39,8 @@ export function watchRow(key:string,snapshot:Snapshot,now:number):WatchRow {
   if(type==='company'){
     const c=snapshot.nexsi?.companies.find(c=>c.symbol===id);
     const issue=!c?'Not in the published company universe':nexsiStatus(snapshot.nexsi!,now)??companyStatus(c,now);
-    return {key,symbol:id,amount:c?.price??undefined,unit:'USD',label:c?companyName(id,c.name):id,value:c?.price!=null?`$${c.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`:'Unavailable',change:!issue&&c?.observedReturns[1]!=null?`${signed(c.observedReturns[1]!)}%`:null,date:c?.asOf??null,issue,route:{page:'nexsi',view:issue?'evidence':'explain'},extra:{company:id,horizon:'1',event:null}};
+    const quote=snapshot.quotes?.quotes[id], price=c?companyPrice(c,quote,now):null;
+    return {key,symbol:id,company:c,quote,amount:price?.amount??undefined,unit:price?.unit??'USD',label:c?companyName(id,c.name):id,value:price?.amount!=null?`$${price.amount.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`:'Unavailable',change:!issue&&c?.observedReturns[1]!=null?`${signed(c.observedReturns[1]!)}%`:null,date:c?.asOf??null,issue,route:{page:'nexsi',view:issue?'evidence':'explain'},extra:{company:id,horizon:'1',event:null}};
   }
   const s=snapshot.seriesMap.get(id), assessment=s?analysisEligibility(s,snapshot.quality,now):null;
   const change=s&&assessment?.eligible?observedDailyChange(s):null;

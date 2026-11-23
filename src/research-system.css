@@ -109,6 +109,16 @@ button,input,select { font-family: inherit; }
 .research-nexsi .investigation-title { margin-bottom: 14px; }.research-nexsi .investigation-title h1 { font: 1.875rem/1.15 var(--font-number); letter-spacing: -1.2px; gap: 12px; }.research-nexsi .investigation-title h1>span { font: 1.0625rem var(--font-ui); letter-spacing: -.1px; color: var(--text-secondary); }
 .research-nexsi .investigation-title .eyebrow { font-size: 0.875rem; margin-bottom: 8px; color: var(--text-muted); }
 .research-nexsi .investigation-context { margin-bottom: 12px; gap: 16px; }.research-nexsi .nexsi-company-heading strong { font: 1.25rem var(--font-number); }.research-nexsi .nexsi-company-heading small { font-size: 0.875rem; color: var(--text-muted); }
+.company-price { display: grid; gap: 4px; min-width: 0; text-align: left; }
+.company-price>strong { font: 1.625rem var(--font-number); color: var(--text-primary); }
+.company-price-label,.company-price-time,.company-price-status,.company-price-close { font-size: .875rem; line-height: 1.5; overflow-wrap: anywhere; }
+.company-price-label,.company-price-time,.company-price-close { color: var(--text-secondary); }
+.company-price-status { color: var(--status-warning); }
+.company-price-status.current { color: var(--text-secondary); }
+.company-price-close { margin-top: 4px; }
+.company-price.compact { grid-column: 1 / -1; border-block: 1px solid var(--gridline); padding-block: 8px; margin-block: 4px; }
+.company-price.compact>strong { font: 1rem var(--font-number); }
+.investigation-context>.company-price { flex: 1; }
 .research-nexsi .investigation-controls>label { font: 0.875rem var(--font-number); color: var(--text-muted); }.research-nexsi .investigation-controls select { min-height: 34px; font: 0.875rem var(--font-ui); border-radius: var(--radius-control); }
 .research-nexsi .nexsi-detail { background: none; border: 0; padding: 0; }
 .research-nexsi .nexsi-detail>.research-disclosure:first-of-type { border: 1px solid var(--gridline); padding: 9px 12px; margin-bottom: 12px; background: var(--surface-1); }

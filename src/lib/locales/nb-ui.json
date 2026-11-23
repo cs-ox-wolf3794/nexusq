@@ -117,7 +117,7 @@
   "Compare energy fundamentals, commodities, equities and macro on one comparable axis.": "Sammenlign energifundamentaler, råvarer, aksjer og makro på én sammenlignbar akse.",
   "Compare energy, equities, currencies and macro on a common basis.": "Sammenlign energi, aksjer, valuta og makro på felles grunnlag.",
   "Compare selected markets (": "Sammenlign valgte markeder (",
-  "Completed close": "Avsluttet sluttkurs",
+  "Completed close": "Siste avsluttede sluttkurs",
   "Completed closes for display; adjusted closes for equity return calculations": "Sluttkurser for visning; justerte sluttkurser for aksjeavkastning",
   "Completed closes:": "Avsluttede sluttkurser:",
   "Completed daily observations with source-specific publication lags": "Komplette dagsobservasjoner med kildespesifikke publiseringsforsinkelser",
@@ -666,6 +666,13 @@
   "⚠ Summary coverage is incomplete.": "⚠ Sammendragsdekningen er ufullstendig.",
   "⚠ Supplementary sources:": "⚠ Tilleggskilder:",
   "⚠ The requested historical move is outside the available major-drop set. Select the latest window or another available date.": "⚠ Den historiske bevegelsen finnes ikke i utvalget av store fall. Velg siste periode eller en annen tilgjengelig dato.",
-  "⚠ The requested ticker": "⚠ Forespurt ticker"
+  "⚠ The requested ticker": "⚠ Forespurt ticker",
+  "Latest reported price": "Siste rapporterte kurs",
+  "Latest quote unavailable · showing completed close": "Nyere kurs er utilgjengelig · viser siste sluttkurs",
+  "Latest reported prices are separate from completed-close returns. Sorted by the largest completed-session loss. Select a company to investigate.": "Siste rapporterte kurser vises separat fra avkastningen mellom avsluttede handelsdager. Sortert etter størst fall i den avsluttede perioden. Velg et selskap for å undersøke nærmere.",
+  "Return through": "Avkastning til og med",
+  "Completed-session return through": "Avkastning mellom sluttkurser til og med",
+  "Latest company quotes and dated market observations · saved on this browser": "Siste selskapskurser og daterte markedsobservasjoner · lagret i denne nettleseren",
+  "Company watchlists show the latest reported quote with its observation time and freshness; returns and energy estimates still use completed closes.": "Selskaper i overvåkningslisten viser siste rapporterte kurs med observasjonstid og oppdateringsstatus. Avkastning og energiestimater bruker fortsatt avsluttede sluttkurser.",
+  "Other market observations retain their published dates.": "Andre markedsobservasjoner beholder sine publiserte datoer."
 }
-
