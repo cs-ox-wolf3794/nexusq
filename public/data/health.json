@@ -1,1 +1,1 @@
-{"generated":"2026-11-23T08:51:59.357Z","status":"degraded","coreFailures":[],"enrichmentIssues":[{"source":"NexSI","detail":"0 source issues; see per-company coverage and evidence status"}],"note":"Source freshness is assessed separately from successful retrieval. No guarantee of real-time prices."}
+{"generated":"2026-11-23T09:03:03.940Z","status":"ok","coreFailures":[],"enrichmentIssues":[],"note":"Source freshness is assessed separately from successful retrieval. No guarantee of real-time prices."}
