@@ -1,5 +1,12 @@
 # NexusQ releases
 
+## 2.1.3 — 2026-11-23
+
+- Added separately identified, delayed Yahoo Finance NYMEX futures quotes for Brent, WTI and Henry Hub in NexSum and Nexus Signal. Side-by-side FRED spot values keep their original observation dates; historical analytics and completed-session NexSI methodology are unchanged.
+- Added futures identity/venue/unit checks, timestamp-regression protection, retained/missing/invalid states and separate energy freshness alerts. Futures are excluded from US cash-market quote counts and calendar assumptions. Unknown provider delays and unspecified delivery months remain explicitly unknown.
+- Linked Yahoo quotes, CME contract definitions and FRED/EIA observations, with rollover/basis and refresh-window disclosures. Added Norwegian translations, precise gas units and existing NOK conversion support across desktop, tablet and mobile.
+- Validation: 298 automated tests; an isolated live retrieval returned all 122 quotes, including all three energy futures, with no failures and byte-identical FRED historical files. Responsive preview checked at 1440, 820 and 375 pixels, including Norwegian/NOK, English/USD and both themes. Production deployment [45250473845](https://github.com/cs-ox-wolf3794/nexusq/actions/runs/45250473845) and CI [45250473742](https://github.com/cs-ox-wolf3794/nexusq/actions/runs/45250473742) passed.
+
 ### 23 November — independent backup recovery verified
 
 - Deployed the approved free Cloudflare backup for the existing GitHub pipeline, without changing app hosting or market-data sources. It checks live checksums every five minutes, detects due quote/full refreshes and avoids competing work.
