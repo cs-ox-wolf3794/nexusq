@@ -1,4 +1,5 @@
-// Concise document-reviewed notes. Exact document hashes prevent reuse after a source correction.
+// Concise document-reviewed notes. Exact document or reviewed visible-text hashes
+// prevent reuse after a source correction. Text hashes exclude executable CDN markup.
 // Facts describe issuer disclosures, not independent verification of allegations or price causation.
 export const REVIEWED_DISCLOSURES = {
   '83cb7e94afe2cf19942b6f1acec462f4ef53931416710ff8c4839216439a2583': {
@@ -139,4 +140,22 @@ export const REVIEWED_DISCLOSURES = {
     url: 'https://www.sec.gov/Archives/edgar/data/896878/000089687826000043/fy27q1earningspressrelease.htm',
     facts: [{ category: 'guidance', topic: 'assumptions', text: 'Intuit updated FY2027 revenue guidance for a Credit Karma change and reiterated its annual operating-income and EPS guidance. Both annual and next-quarter outlooks exclude the pending Mailchimp sale; management said it would update guidance when the transaction closes.' }],
   },
+};
+
+// Rechecked against the original SEC exhibits on 2026-11-23. Financial figures,
+// accounting basis, timing qualifications and outlook were read in full context.
+export const REVIEWED_TEXT_DISCLOSURES = {
+  '765908a225af1acc7a3bc5a93ab1a8e34ea70f58ae6d6e8746975f9533388694': {...REVIEWED_DISCLOSURES['3c57c61f24ebe5e0aa86517c6ad6ebc603d15299cb7817ac5d2368bf502c9b20'],reviewedAt:'2026-11-23'},
+  '058b6ade30ea4331b073dfe0e2627e91a51873b592ea169eafdf44901aa00586': {...REVIEWED_DISCLOSURES['52e21903fe069297945729de9271ab3e556de017d2bb24945993a0cd8af1cd69'],reviewedAt:'2026-11-23'},
+  "8f06bcf24ca13c07577afd23769ecbe61cd7aa07acf90bdf813dd64abe6c5c4e": {...REVIEWED_DISCLOSURES["74b7fe64e048de9239ffc9ab02842bd4076102977166a489bfd73d41bb8123c4"],reviewedAt:"2026-11-23"},
+  "be7d4c7a74efaa631e1d3c7411b76218148a7f6e6b0afa19f8119740a230bbf4": {...REVIEWED_DISCLOSURES["8e037642a6a030ca4e29e96dc357ea8898338c09db94c30eb2a48f56a09d1e8b"],reviewedAt:"2026-11-23"},
+  "44a15f09cb052287a744b15121c3b5ffd9049dc6154628c35a43b1e19ffa94ae": {...REVIEWED_DISCLOSURES["18218bfbf2d976351898b9afebd9cd70e221836104374457b27c1c31380962c3"],reviewedAt:"2026-11-23"},
+  "abb1d5b86d6ef2868f70d118209f74287c9212a73d30500a555924516edd38a1": {...REVIEWED_DISCLOSURES["c017178e0082f311a3d36da0bb60a91721567442c51aa551496dec1937f6bd95"],reviewedAt:"2026-11-23"},
+  "5cda4f7702071dbf3b496dda7e0d307abb07a784e462e2425be5ef788af74a13": {...REVIEWED_DISCLOSURES["83cb7e94afe2cf19942b6f1acec462f4ef53931416710ff8c4839216439a2583"],reviewedAt:"2026-11-23"},
+  "251e76a26aac3f5d467cb7e0202d0a1b6b838aa5c6a73081866eebb6191c984e": {...REVIEWED_DISCLOSURES["1f0673535099f68a794bef7d306df9778e5b899a7e02a81aff882f3044284bec"],reviewedAt:"2026-11-23"},
+  "fef79d239482a2a2cedc175cced575e532b2a1d18e3bf6ab3b334f062ef545b3": {...REVIEWED_DISCLOSURES["e77f2a6170d427ac8c94a1ad329fddcb05c8c00f61c9b150309b4c75d0b590bf"],reviewedAt:"2026-11-23"},
+  "fe60ed6157d1efd2333ed40f6916360f9d77f2c861674b878e645ac61c364387": {...REVIEWED_DISCLOSURES["d37753a04e7edd54dcc93d0044476fdd81e3b3ba15ddd0e0b099c5605856af04"],reviewedAt:"2026-11-23"},
+  "473a574d93c40730bc4d4a69dbf5b2f2eaa1335ee95f60145c9b6b2d10c54d53": {...REVIEWED_DISCLOSURES["7b25b0bff65ebad9992df6d3956563c67df59ffae60fd1bc5bee960884087f08"],reviewedAt:"2026-11-23"},
+  "bc17e8352ad2b862a84f38db9aefd5f6818af0ead79cf90e51ed12b598dae429": {...REVIEWED_DISCLOSURES["5b3917e48a522d5686cf36ae035a572b6ac1d8da69a2defe7f54b26fafa7d857"],reviewedAt:"2026-11-23"},
+  "89e4a0d8cb1377ab9606566898e4a028de3b4622dbbffe7cb0bcc90c2f4599ca": {...REVIEWED_DISCLOSURES["2c08b3585cf207f01417391a3ed725db0c791d20fdbafc79dd869155bcee9182"],reviewedAt:"2026-11-23"},
 };

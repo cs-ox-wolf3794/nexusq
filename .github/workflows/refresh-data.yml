@@ -3,7 +3,7 @@ name: Refresh data snapshots
 on:
   schedule:
     # Best effort, deliberately off the hour. Covers US sessions across DST.
-    - cron: "7,22,37,52 12-23 * * 1-5"
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 12-23 * * 1-5"
     # Official daily/weekly releases and a Saturday close catch-up.
     - cron: "17 6,16,18,22 * * 1-5"
     - cron: "17 6 * * 6"
@@ -44,7 +44,7 @@ jobs:
           REQUESTED_MODE: ${{ inputs.mode }}
         run: |
           echo "REFRESH_STARTED_AT=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
-          if [ "$REQUESTED_MODE" = "quotes" ] || [ "$EVENT_SCHEDULE" = "7,22,37,52 12-23 * * 1-5" ]; then
+          if [ "$REQUESTED_MODE" = "quotes" ] || [ "$EVENT_SCHEDULE" = "2,7,12,17,22,27,32,37,42,47,52,57 12-23 * * 1-5" ]; then
             echo "mode=quotes" >> "$GITHUB_OUTPUT"
           else
             echo "mode=full" >> "$GITHUB_OUTPUT"

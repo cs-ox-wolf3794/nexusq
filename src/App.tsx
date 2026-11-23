@@ -329,7 +329,7 @@ export default function App() {
   }, [projectionOn, projectionAllowed, forecasts, selectedSeries, analyticalMap, now, from, effectiveTransform, prefs.currency, snapshot?.fx]);
 
   return (
-    <FxContext.Provider value={{fx:snapshot?.fx??null,now}}><div className="app app-shell" data-density={density}>
+    <FxContext.Provider value={{fx:snapshot?.fx??null,now,loading:!snapshot&&!loadError}}><div className="app app-shell" data-density={density}>
       <a className="skip-link" href="#workspace-heading" onClick={e=>{e.preventDefault();document.getElementById("workspace-heading")?.focus();}}>{tr("Skip to analysis")}</a>
       <WorkspaceNav page={page} onNavigate={navigate}/>
       <div className="app-workarea">
@@ -593,7 +593,7 @@ export default function App() {
           <span>{tr("Data: FRED · Yahoo Finance · Nasdaq · World Bank · IMF · EIA")}</span>
         </div>
         <details className="platform-roadmap"><summary>{tr("Platform roadmap")}</summary><p>{tr("Nexus Model · Nexus Scenario · Nexus Portfolio · Nexus Agent — planned workspaces, not currently available.")}</p></details>
-        <div className="footer-fine">{tr("NexusQ 2.1 · model output, not investment advice · © 2026 Gygante Quantitative Systems")}</div>
+        <div className="footer-fine">{tr("NexusQ 2.1.1 · model output, not investment advice · © 2026 Gygante Quantitative Systems")}</div>
       </footer>
       </div>
     </div></FxContext.Provider>

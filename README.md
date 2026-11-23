@@ -1,11 +1,11 @@
-# NexusQ 2.1
+# NexusQ 2.1.1
 
 [![CI](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/ci.yml)
 [![Data refresh](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml/badge.svg)](https://github.com/cs-ox-wolf3794/nexusq/actions/workflows/refresh-data.yml)
 
 **Market intelligence for capital markets — by Gygante Quantitative Systems.**
 
-[Open NexusQ](https://nexus.gygante.com) · [2.1 release notes](CHANGELOG.md#210--2026-11-23) · [Changelog and earlier milestones](CHANGELOG.md)
+[Open NexusQ](https://nexus.gygante.com) · [2.1.1 release notes](CHANGELOG.md#211--2026-11-23) · [Changelog and earlier milestones](CHANGELOG.md)
 
 NexusQ connects company returns, energy exposure and economic context in one research workspace. It helps analysts inspect the estimated energy contribution to a stock move, other modeled factors, the unexplained remainder and the supporting disclosures. Estimates, confirmed disclosures and possible explanations are explicitly separated.
 
@@ -149,7 +149,13 @@ npm run refresh
 - `npm run backtest`: regenerate event studies after analytical engine changes. Results with a different engine version are withheld by the UI. Regenerate the manifest after updating results.
 - `NEXUSQ_DATA_DIR` selects an isolated data directory for validation runs. The default is `public/data`.
 
-GitHub Actions targets quote checks at minutes 7, 22, 37 and 52 during weekdays 12:00–23:59 UTC. Full analytical refreshes run at 06:17, 16:17, 18:17 and 22:17 UTC weekdays, plus Saturday 06:17. The static browser checks the manifest every minute and on return to the tab. The same infrastructure is retained: GitHub Actions, versioned JSON, GitHub Pages, no new paid service or runtime secret.
+GitHub Actions schedules quote checks every five minutes, from 12:02 to 23:57 UTC on weekdays. The observation-age target remains **within 15 minutes during US market hours**, including retrieval and publication time; five-minute scheduling is not a delivery guarantee. Full analytical refreshes run at 06:17, 16:17, 18:17 and 22:17 UTC weekdays, plus Saturday 06:17. The static browser checks the manifest every minute and on return to the tab. The same infrastructure is retained: GitHub Actions, versioned JSON, GitHub Pages, no new paid service or runtime secret.
+
+Every deployment now runs `node --import tsx scripts/verify-production.mjs` against the custom domain. It verifies every published data-file checksum, quote coverage and market-hours observation age, NexSI model integrity, company-news coverage and QC status. Results appear in the deployment's verification job. The UI flags delayed quotes using the reviewed US exchange calendar even when the provider reports a previous session. A closed-market check explicitly leaves the intraday target unevaluated.
+
+NexSI supplements existing SEC filings and reported headlines with official Apple, Microsoft and Google newsroom feeds. Separate source-check records distinguish failed or stale retrieval, unparsed documents, available company announcements, reporting-only coverage and empty bounded source windows. No empty feed proves that no relevant news exists. Apple's update-only dates are not presented as first-publication times. Reviewed disclosures retain raw document fingerprints; selected re-reviewed visible-text fingerprints tolerate changing CDN scripts while still rejecting substantive source changes. Original statements, financial currencies, source titles and provider credits are preserved.
+
+The Norwegian audit improves Bokmål phrasing, signal terminology, ordinal percentiles, localized dates and decimals. Monetary displays retain fixed precision and can wrap the unit at narrow widths. Power-cost assumptions accept Norwegian decimal commas; language and display-currency changes preserve canonical USD inputs.
 
 **This is not a guaranteed 15-minute service.** Provider timestamps and exchange delays determine quote freshness; Actions scheduling and deployment add latency. Official daily, weekly, monthly and annual inputs do not become intraday data when polled more frequently. The quote panel does not imply intraday signals or betas. [GitHub scheduling limits](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) and [Yahoo exchange delays](https://help.yahoo.com/kb/finance/article-exchanges-data-delays-sln2310.html) apply.
 

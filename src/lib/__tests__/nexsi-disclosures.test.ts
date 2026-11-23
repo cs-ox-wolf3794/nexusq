@@ -10,6 +10,14 @@ const release = event.url.replace('report.htm', 'release.htm');
 const summary = { version: 2, checkedAt: '2026-11-10T12:00:00Z', issue: null, documents: [{ url: release, sha256: 'a'.repeat(64), retrievedAt: '2026-11-10T12:00:00Z' }], facts: [{ category: 'earnings' as const, topic: 'revenue', text: 'Reported revenue: $4 billion.', period: 'third quarter of fiscal 2026', method: 'rule-extracted' as const, sourceUrl: release }] };
 
 describe('Company disclosure summaries', () => {
+  it('accepts reviewed visible text through changing CDN markup but never a changed disclosure or wrong issuer',()=>{
+    const url='https://www.sec.gov/Archives/edgar/data/1513845/000110465926126008/tm2629571d1_ex99-1.htm';
+    const textSha256='765908a225af1acc7a3bc5a93ab1a8e34ea70f58ae6d6e8746975f9533388694';
+    expect(applyReviewedFacts([],{url,sha256:'b'.repeat(64),textSha256})[0].text).toContain('980.8 million');
+    expect(applyReviewedFacts([],{url,sha256:'b'.repeat(64),textSha256:'c'.repeat(64)})).toEqual([]);
+    expect(applyReviewedFacts([],{url:release,sha256:'b'.repeat(64),textSha256})).toEqual([]);
+    expect(parseDisclosureHtml('<html><head><script>nonce=42</script></head><body><p>Revenue $10.</p></body></html>').blocks).toEqual(parseDisclosureHtml('<html><head><script>nonce=99</script></head><body><p>Revenue $10.</p></body></html>').blocks);
+  });
   it('preserves an explicit annual capex lower bound from a periodic filing',()=>{
     const facts=extractDisclosureFacts(['We currently expect our capital expenditures to be in excess of $20 billion in 2026.','We expected our capital expenditures to be $10 billion in 2025.'],event.url);
     expect(facts).toEqual([expect.objectContaining({category:'guidance',period:'2026',text:'Management capital-expenditure outlook: above USD 20 billion.'})]);
@@ -95,7 +103,7 @@ describe('Company disclosure summaries', () => {
   });
   it('does not fetch healthy cached documents and bounds initial requests', async () => {
     const fetchImpl = vi.fn(); const load = createDisclosureLoader({ now, maxRequests: 0, fetchImpl, sleep: async () => {} });
-    const cached = { ...summary, version: 4, checkedAt: new Date(now).toISOString() };
+    const cached = { ...summary, version: 5, checkedAt: new Date(now).toISOString() };
     expect(await load({ ...event, summary: cached })).toEqual(cached);
     expect((await load(event)).issue).toContain('budget'); expect(fetchImpl).not.toHaveBeenCalled();
     const expired = createDisclosureLoader({ now, maxDurationMs: 0, fetchImpl, sleep: async () => {} });

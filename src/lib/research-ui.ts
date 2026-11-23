@@ -4,6 +4,7 @@ import { nexsiStatus } from './nexsi-quality';
 import { externalForecastCurrent } from './forecast';
 import type { Snapshot } from './snapshot';
 import { locale, type Language } from './preferences';
+import { quoteHealth } from './quote-health';
 
 export type NoticeTone = 'critical' | 'warning' | 'info';
 export type DataException = { id: string; tone: NoticeTone; title: string; detail: string; nexsi?: boolean };
@@ -48,9 +49,9 @@ export function quoteScheduleActive(now: number) {
 }
 export function quoteCheckOverdue(checkedAt: string, now: number) {
   if (!quoteScheduleActive(now)) return false;
-  const firstScheduled = new Date(now); firstScheduled.setUTCHours(12,7,0,0);
-  // Weekday runs begin at 12:07 UTC; give the first expected check the same grace.
-  return now - Math.max(Date.parse(checkedAt), firstScheduled.getTime()) > 30*60000;
+  const firstScheduled = new Date(now); firstScheduled.setUTCHours(12,2,0,0);
+  if(!Number.isFinite(Date.parse(checkedAt)))return true;
+  return now - Math.max(Date.parse(checkedAt), firstScheduled.getTime()) > 15*60000;
 }
 export function dataExceptions(snapshot: Snapshot | null, now: number, error: string | null): DataException[] {
   const out:DataException[]=[];
@@ -65,7 +66,11 @@ export function dataExceptions(snapshot: Snapshot | null, now: number, error: st
   else if(snapshot.nexsi?.status==='degraded')out.push({id:'nexsi-sources',tone:'warning',title:'NexSI source coverage incomplete',detail:'Available company models remain visible. Inspect company-specific gaps and retained evidence.',nexsi:true});
   if(snapshot.quotes?.failures.length)out.push({id:'quotes-failed',tone:'warning',title:`${snapshot.quotes.failures.length} quote updates failed`,detail:'Affected quotes retain their last observation time. Quotes are separate from daily attribution.'});
   if(!snapshot.quotes)out.push({id:'quotes-missing',tone:'warning',title:'Intraday quotes unavailable',detail:'Daily analytical observations remain available.'});
-  else if(quoteCheckOverdue(snapshot.quotes.generated,now))out.push({id:'quote-schedule',tone:'warning',title:'Scheduled quote checks are overdue',detail:`Last checked ${displayInstant(snapshot.quotes.generated)}. The existing free schedule targets weekdays, every 15 minutes from 12:07 to 23:52 UTC.`});
+  else if(quoteCheckOverdue(snapshot.quotes.generated,now))out.push({id:'quote-schedule',tone:'warning',title:'Scheduled quote checks are overdue',detail:`Last checked ${displayInstant(snapshot.quotes.generated)}. Free quote checks are scheduled every 5 minutes on weekdays, 12:02–23:57 UTC; scheduling and provider delays can exceed the 15-minute price target.`});
+  const expected=[...snapshot.catalog.series.filter(s=>s.source==='Yahoo Finance').map(s=>s.id),...(snapshot.impact?.companies??[]).map(c=>c.id),...(snapshot.nexsi?.universe.members??[]).map(c=>c.symbol)];
+  const quotes=quoteHealth(snapshot.quotes,now,expected);
+  if(quotes.missing.length&&snapshot.quotes)out.push({id:'quotes-coverage',tone:'warning',title:`${quotes.missing.length} expected quotes missing`,detail:quotes.missing.join(', ')});
+  if(quotes.delayed.length)out.push({id:'quotes-delayed',tone:'warning',title:`${quotes.delayed.length} quotes outside the 15-minute target`,detail:`US cash market is scheduled open. Observation or retrieval is older than 15 minutes, invalid, or retained after failure: ${quotes.delayed.join(', ')}.`});
   const expired=Object.values(snapshot.forecasts?.series??{}).filter(f=>f.kind==='external'&&!externalForecastCurrent(f,now));
   if(expired.length)out.push({id:'forecasts',tone:'warning',title:`${expired.length} external forecasts withheld`,detail:'Their source versions have expired. Current charts exclude these projections; original source details remain available.'});
   return out;

@@ -11,6 +11,8 @@ import type { Attribution } from '../nexsi-model';
 import { buildDailyBrief, checkpointFor } from '../nexsum';
 import type { Snapshot } from '../snapshot';
 import { readFileSync } from 'node:fs';
+import { moneyText } from '../money';
+import { parseLocalNumber } from '../local-number';
 
 const now = Date.parse('2026-11-22T12:00:00Z');
 const fx:FxFile={schemaVersion:1,base:'USD',quote:'NOK',source:'Norges Bank',sourceUrl:'https://www.norges-bank.no/en/topics/statistics/exchange_rates/?id=USD',generated:'2026-11-22T11:00:00Z',retrievedAt:'2026-11-22T11:00:00Z',observedAt:'2026-11-20',nokPerUsd:9.7525,status:'available'};
@@ -21,6 +23,26 @@ function payload(){return {data:{
 afterEach(()=>setPreferences({language:'en-US',currency:'USD'}));
 
 describe('Language preferences and financial wording',()=>{
+  it('accepts Norwegian scenario decimals without interpreting ambiguous mixed separators',()=>{
+    expect(parseLocalNumber('97,525','nb-NO')).toBe(97.525);
+    expect(parseLocalNumber('−1 234,50','nb-NO')).toBe(-1234.5);
+    expect(parseLocalNumber('1.2','nb-NO')).toBe(1.2);
+    for(const invalid of ['','1,234.50','1e5','1,2,3'])expect(parseLocalNumber(invalid,'nb-NO')).toBeNaN();
+    expect(t('−3.13%','nb-NO')).toBe('−3,13\u00a0%');
+  });
+  it('translates signal quantities and positioning in context without changing source disclosures',()=>{
+    expect(t('Below trailing 252-observation norm (latest 33.97 USD/share; adjusted-close basis)','nb-NO')).toBe('Under gjennomsnittet av de siste 252 observasjonene (siste verdi: 33,97\u00a0USD/aksje; justert sluttkurs)');
+    expect(t('managed money net long 0.8% of OI — light','nb-NO')).toBe('Forvalternes netto kjøpsposisjon: 0,8 % av åpne kontrakter — lav posisjonering');
+    expect(t('z = +3.6σ','nb-NO')).toBe('z = +3,6 σ');
+    expect(t('26,187.75','nb-NO')).toBe('26\u00a0187,75');
+  });
+  it('preserves monetary precision with Norwegian decimal and grouping separators',()=>{
+    setPreferences({language:'nb-NO',currency:'NOK'});
+    expect(moneyText(1234.5,'NOK')).toBe('1\u00a0234,50\u00a0NOK');
+    expect(moneyText(90.4,'NOK/bbl')).toBe('90,40\u00a0NOK/fat');
+    expect(moneyText(-0.5,'USD')).toBe('−0,50\u00a0USD');
+    expect(moneyText(1234.5,'NOK',0)).toBe('1\u00a0235\u00a0NOK');
+  });
   it('validates stored settings independently and fails safely on malformed storage',()=>{
     expect(readPreferences('{"language":"nb-NO","currency":"USD"}')).toEqual({language:'nb-NO',currency:'USD'});
     expect(readPreferences('{"language":"xx","currency":"NOK"}')).toEqual({language:'en-US',currency:'NOK'});

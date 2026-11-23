@@ -10,6 +10,7 @@ import { computeSignals } from "../src/lib/signals.ts";
 import { validateNexsi } from "../src/lib/nexsi-quality.ts";
 import { enrichCompanyDisclosures } from "./lib/nexsi-disclosures.mjs";
 import { enrichFinancialStatements } from "./lib/nexsi-financials.mjs";
+import { createIssuerNewsLoader } from './lib/issuer-news.mjs';
 
 const DAY = 86400000;
 const FACTORS = [
@@ -48,6 +49,7 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
   let directoryMap = new Map();
   try { directoryMap = await secDirectory(); } catch (error) { failures.push(`SEC directory: ${error.message}`); }
   const filingsCache = new Map();
+  const loadIssuerNews = createIssuerNewsLoader(now);
   const companies = await mapLimit(universe.members, 2, async member => {
     const { symbol } = member, source = prices.series[symbol];
     const old = previous?.companies.find(c => c.symbol === symbol);
@@ -66,19 +68,26 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
       return prior ? { date, prior: prior[0], value: (price / prior[1] - 1) * 100 } : null;
     }).filter(d => d && d.value <= -3).sort((a, b) => a.value - b.value).slice(0, 5);
     const largestDrops = rows.length ? drops.map(d => attributeMove(rows, d.prior, d.date, 1)).filter(Boolean) : [];
-    const eventIssues = [];
+    const eventIssues = [...(old?.eventIssues ?? [])];
+    const evidenceChecks = { ...(old?.evidenceChecks ?? {}) };
     let events = old?.events ?? [], eventCheckedAt = old?.eventCheckedAt ?? null;
-    if (!eventCheckedAt || now - Date.parse(eventCheckedAt) > 3600000 || old?.eventIssues?.length || !old?.events.every(e => e.firstSeenAt)) {
+    if (!eventCheckedAt || now - Date.parse(eventCheckedAt) > 3600000 || old?.eventIssues?.length || !old?.evidenceChecks || !old?.events.every(e => e.firstSeenAt)) {
+      eventIssues.length = 0;
       const identity = directoryMap.get(symbol);
       const tasks = [companyHeadlines(symbol, now)];
       if (identity) {
         if (!filingsCache.has(identity.cik)) filingsCache.set(identity.cik, companyFilings(identity.cik, now));
         tasks.push(filingsCache.get(identity.cik));
-      } else eventIssues.push("SEC issuer mapping unavailable");
+      } else {
+        eventIssues.push("SEC issuer mapping unavailable");
+        evidenceChecks.filing = { checkedAt:generated, successfulAt:old?.evidenceChecks?.filing?.successfulAt??null, status:'failed', sourceUrl:'https://www.sec.gov/files/company_tickers_exchange.json',returned:0,oldestPublishedAt:null,issue:'SEC issuer mapping unavailable' };
+      }
       const results = await Promise.allSettled(tasks);
       const kinds = ["headline", "filing"];
       events = [];
       results.forEach((r, i) => {
+        const kind=kinds[i], sourceUrl=kind==='filing'?`https://data.sec.gov/submissions/CIK${String(identity.cik).padStart(10,'0')}.json`:`https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(symbol)}&region=US&lang=en-US`;
+        evidenceChecks[kind] = { checkedAt:generated, successfulAt:r.status==='fulfilled'?generated:old?.evidenceChecks?.[kind]?.successfulAt??null,status:r.status==='fulfilled'?'available':'failed',sourceUrl,returned:r.status==='fulfilled'?r.value.length:0,oldestPublishedAt:r.status==='fulfilled'?r.value.map(e=>e.publishedAt).sort()[0]??null:null,issue:r.status==='rejected'?r.reason.message:null };
         if (r.status === "fulfilled") events.push(...r.value);
         else { eventIssues.push(`${kinds[i]} refresh: ${r.reason.message}`); events.push(...(old?.events ?? []).filter(e => e.kind === kinds[i])); }
       });
@@ -92,11 +101,12 @@ export async function refreshNexsi(directory, generated = new Date().toISOString
     console.log(`NexSI ${symbol}: ${p.length} closes; ${moves[1] ? "attribution ready" : "attribution withheld"}; ${events.length} evidence links`);
     return { ...member, asOf, price: source.points.at(-1)?.[1] ?? null, retrievedAt: source.retrievedAt, provenance: source.provenance, issue,
       history: p.slice(-252), observedReturns, moves, drawdown: p.length ? (p.at(-1)[1] / Math.max(...p.slice(-252).map(x => x[1])) - 1) * 100 : null,
-      largestDrops, validation: rows.length ? validateFactors(rows) : null, signals, events, eventCheckedAt, eventIssues };
+      largestDrops, validation: rows.length ? validateFactors(rows) : null, signals, events, eventCheckedAt, eventIssues, evidenceChecks, issuerNews: await loadIssuerNews(symbol,old?.issuerNews) };
   });
   await enrichCompanyDisclosures(companies, now);
   await enrichFinancialStatements(companies, now);
   for (const c of companies) {
+    if(c.issuerNews?.status==='failed')failures.push(`${c.symbol}: official newsroom refresh incomplete (${c.issuerNews.issue})`);
     const issues = c.events.filter(e => e.summary?.issue);
     if (issues.length) failures.push(`${c.symbol}: ${issues.length} disclosure summaries incomplete (${[...new Set(issues.map(e => e.summary.issue))].join('; ')})`);
     const financialIssues = [...new Set(c.events.flatMap(e => e.financialSummary?.issue ? [e.financialSummary.issue] : []))];

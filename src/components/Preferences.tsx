@@ -7,11 +7,12 @@ import { displayDate, displayInstant } from '../lib/research-ui';
 
 export function Money({value,unit='USD',digits=2}:{value:number;unit?:string;digits?:number}) {
   const money = useMoney()(value,unit,digits);
-  return <span className="money-value" title={money.converted ? `${t('Original')}: ${money.original}` : undefined}>{money.text}{money.fallback&&<small> · {t('USD retained')}</small>}</span>;
+  return <span className="money-value" title={money.converted ? `${t('Original')}: ${money.original}` : undefined}><span>{number(money.value,digits,digits)}</span>{' '}<span>{t(money.unit)}</span>{money.fallback&&<small> · {t('USD retained')}</small>}</span>;
 }
 export function CurrencyNotice() {
-  const {currency} = usePreferences(), {fx,now} = useContext(FxContext);
+  const {currency} = usePreferences(), {fx,now,loading} = useContext(FxContext);
   if (currency !== 'NOK') return null;
+  if (loading) return <aside className="currency-notice" role="status">{t('Loading the verified exchange rate…')}</aside>;
   return <aside className="currency-notice" aria-label={t('Currency conversion basis')}>
     {validFx(fx,now) ? <><strong>{t('NOK display')}</strong><span>1 USD = {number(fx.nokPerUsd,4,4)} NOK · <a href={fx.sourceUrl} target="_blank" rel="noreferrer">Norges Bank</a> · {displayDate(fx.observedAt)}{fx.status==='retained'&&` · ${t('Last verified rate retained')}`}</span><details><summary>{t('Display conversion · returns keep their source currency')}</summary><p>{t('Indicative conversion at one fixed reference rate. Returns, model estimates and indexed charts keep their original calculation basis; NOK investor returns are not calculated.')}</p></details></> : <><strong>{t('NOK conversion unavailable')}</strong><span>{t('A recent verified exchange rate is unavailable. Monetary values remain explicitly in USD. Automatic checks will restore conversion when a valid rate is published.')}</span></>}
   </aside>;

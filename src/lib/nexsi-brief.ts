@@ -43,7 +43,7 @@ export function companyBrief(company: NexsiCompany, move: Pick<Attribution, 'sta
   const all: BriefItem[] = company.events.flatMap(event => {
     if (!isPrimaryFiling(event) || Date.parse(event.publishedAt) > now || !Number.isFinite(Date.parse(event.publishedAt))) return [];
     const timing = evidenceTiming(event.publishedAt, move);
-    const prose = [2, 3, 4].includes(event.summary?.version ?? 0) ? event.summary!.facts.filter(f => validDisclosureSource(f.sourceUrl, event) && event.summary!.documents.some(d => d.url === f.sourceUrl && /^[a-f\d]{64}$/.test(d.sha256))) : [];
+    const prose = [2, 3, 4, 5].includes(event.summary?.version ?? 0) ? event.summary!.facts.filter(f => validDisclosureSource(f.sourceUrl, event) && event.summary!.documents.some(d => d.url === f.sourceUrl && /^[a-f\d]{64}$/.test(d.sha256))) : [];
     const financial = event.financialSummary?.version === 1 ? event.financialSummary.facts.filter(f => validFinancialEvidence(f, event) && event.financialSummary!.documents.some(d => d.url === f.evidence?.url && d.sha256 === f.evidence.sha256)) : [];
     return [...prose, ...financial]
       .filter(f => nearby.has(event.url) || (f.category !== 'company-news' && timing === 'before' && Date.parse(move.start) - Date.parse(event.publishedAt) < 100 * 86400000))

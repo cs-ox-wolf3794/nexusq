@@ -5,6 +5,7 @@ import { companyBrief, possibleRelevance, guidanceCoverage, GUIDANCE_LABELS } fr
 import { TIMING_LABELS } from '../lib/nexsi-explanation';
 
 import { displayInstant } from '../lib/research-ui';
+import { CompanyNewsCoverage } from './CompanyNewsCoverage';
 
 const TITLES = { earnings: 'Earnings', guidance: 'Guidance', 'company-news': 'Company news' };
 export function NexsiCompanyBrief({ company, move, now }: { company: NexsiCompany; move: Attribution; now: number }) {
@@ -27,9 +28,10 @@ export function NexsiCompanyBrief({ company, move, now }: { company: NexsiCompan
           {localize(fact.excerpt && <blockquote lang="en" translate="no">“{fact.excerpt}”</blockquote>)}
           {localize((category === 'company-news' || i === items.length - 1 || fact.sourceUrl !== items[i + 1].fact.sourceUrl) && <p className="nexsi-brief-meta"><a href={fact.sourceUrl} target="_blank" rel="noreferrer">{localize(fact.sourceKind === 'third-party-transcript' ? 'Read published transcript' : fact.excerpt ? 'Read company statement' : 'Read original disclosure')}</a>{localize(fact.sourceTiming === 'unverified' ? ` · ${fact.sourceKind === 'third-party-transcript' ? 'Third-party' : 'Official company'} transcript; publication time not verified. Linked earnings filing: ` : ' · SEC accepted ')}{localize(displayInstant(event.publishedAt,'ET'))}{localize(event.form?.endsWith('/A') ? ' · Amended filing' : '')}</p>)}
         </li>))}</ul>
-        {localize(omitted > 0 && <p className="nexsi-brief-meta">{localize(omitted)}{tr(" additional summary item")}{localize(omitted === 1 ? '' : 's')}{tr(" in the linked disclosures.")}</p>)}
+        {omitted > 0 && <p className="nexsi-brief-meta">{tr(`${omitted} additional summary items in the linked disclosures.`)}</p>}
         <div className="nexsi-hypothesis"><strong>{tr("Possible relevance · not a confirmed cause")}</strong><p>{localize(possibleRelevance(category, items.map(x => x.fact.topic)))}</p>{localize(items.every(x => x.timing === 'before') && <p>{tr("This was already disclosed before the selected window. A fresh catalyst has not been established.")}</p>)}{localize(items.every(x => x.timing === 'after') && <p>{tr("This was filed after the move. It is follow-up context, not evidence that the information was public before the drop.")}</p>)}</div>
       </> : <p className="nexsi-brief-empty"><strong>{localize(category === 'guidance' ? 'Guidance coverage missing. ' : category === 'company-news' ? 'No company-news summary extracted. ' : 'Earnings summary unavailable. ')}</strong>{localize(checked ? 'The checked documents did not yield a supported summary for this window. ' : 'No suitable document has been retrieved for this window. ')}{localize(category === 'guidance' ? 'This is a coverage gap, not confirmation that management issued no guidance.' : 'This does not establish that there was no relevant announcement.')}{tr(" Full filings and reported headlines remain in ")}<a href="#nexsi-evidence">{tr("Evidence & coverage")}</a>{tr(".")}</p>)}
+      {category==='company-news'&&<CompanyNewsCoverage company={company} move={move} now={now}/>}
     </article>))}</div>
     <p className="nexsi-foot">{tr("No portion of the unexplained return is assigned to these events. Earnings and guidance can include earlier background up to 100 days old; company news uses the nearby source window. Publication timing uses SEC acceptance, which can follow a company announcement. Summaries are selective and retrospective; forecasts retain their original date and assumptions.")}</p>
   </section>;

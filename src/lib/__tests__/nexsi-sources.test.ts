@@ -35,9 +35,13 @@ describe("NexSI public source contracts", () => {
   });
   it("rejects invalid RSS, unsafe links and future headlines; preserves original publication dates", () => {
     const item = (url: string, date: string) => `<item><title><![CDATA[AI &amp; power]]></title><link>${url}</link><pubDate>${date}</pubDate></item>`;
-    const xml = `<rss>${item("https://example.com/story", "Fri, 20 Nov 2026 22:30:00 GMT")}${item("javascript:alert(1)", "Fri, 20 Nov 2026 12:00:00 GMT")}${item("https://example.com/future", "Sun, 22 Nov 2026 12:00:00 GMT")}</rss>`;
+    const xml = `<rss>${item("https://example.com/story", "Fri, 20 Nov 2026 22:30:00 GMT")}${item("https://example.com/future", "Sun, 22 Nov 2026 12:00:00 GMT")}</rss>`;
     expect(parseHeadlines(xml, now)).toEqual([expect.objectContaining({ title: "AI & power", publishedAt: "2026-11-20T22:30:00.000Z" })]);
     expect(() => parseHeadlines("<html>Rate limited</html>", now)).toThrow("RSS");
+    expect(()=>parseHeadlines(`<rss>${item('javascript:alert(1)','Fri, 20 Nov 2026 12:00:00 GMT')}</rss>`,now)).toThrow('record');
+    expect(()=>parseHeadlines('<rss><item><title>Incomplete</title></rss>',now)).toThrow('incomplete');
+    expect(()=>parseHeadlines('<rss><item><title>Missing date</title><link>https://example.com/</link></item></rss>',now)).toThrow('record');
+    expect(parseHeadlines('<rss><channel></channel></rss>',now)).toEqual([]);
   });
   it("converts EIA cents/kWh to USD/MWh once and selects latest completed state observation", () => {
     const row = { stateid: "TX", sectorid: "COM", period: "2026-08", price: "9.5", "price-units": "cents per kilowatthour" };

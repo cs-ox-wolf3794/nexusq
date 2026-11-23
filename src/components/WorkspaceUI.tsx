@@ -29,5 +29,5 @@ export function WorkspaceIntro({eyebrow,title,description,children}:{eyebrow:str
   return <header className="workspace-intro"><div><p className="eyebrow">{localize(eyebrow)}</p><h1>{localize(title)}</h1><p className="workspace-description">{localize(description)}</p></div>{localize(children)}</header>;
 }
 export function ResearchDisclosure({title,description,children,open=false}:{title:string;description?:string;children:ReactNode;open?:boolean}){
-  return <details className="research-disclosure" open={open}><summary><span>{localize(title)}{localize(description&&<small>{localize(description)}</small>)}</span><span className="disclosure-plus" aria-hidden="true">{tr("+")}</span></summary><div className="research-disclosure-body">{localize(children)}</div></details>;
+  return <details className="research-disclosure" open={open}><summary><span>{localize(title)}{localize(description&&<> <small>{localize(description)}</small></>)}</span><span className="disclosure-plus" aria-hidden="true">{tr("+")}</span></summary><div className="research-disclosure-body">{localize(children)}</div></details>;
 }

@@ -18,7 +18,7 @@ export interface NexsiDisclosureFact {
   guidanceType?: 'quantitative' | 'qualitative' | 'limited' | 'policy' | 'not-issued' | 'withdrawn';
 }
 export interface NexsiDisclosureSummary {
-  version: number; checkedAt: string; documents: { url: string; sha256: string; retrievedAt?: string }[];
+  version: number; checkedAt: string; documents: { url: string; sha256: string; textSha256?:string; retrievedAt?: string }[];
   facts: NexsiDisclosureFact[]; issue: string | null;
 }
 export interface NexsiPriceSource {
@@ -33,6 +33,8 @@ export interface NexsiCompany extends NexsiMember {
   drawdown: number | null; largestDrops: Attribution[];
   validation: { n: number; r2: number; rmseLogPct: number; withoutEnergyRmseLogPct: number; energyImprovesFit: boolean } | null;
   events: NexsiEvent[]; eventCheckedAt: string | null; eventIssues: string[];
+  evidenceChecks?: Partial<Record<'filing' | 'headline', { checkedAt: string; successfulAt: string | null; status: 'available' | 'failed'; sourceUrl: string; returned: number; oldestPublishedAt: string | null; issue: string | null }>>;
+  issuerNews?: { source:string;sourceUrl:string;checkedAt:string;successfulAt:string|null;status:'available'|'failed';sha256?:string;items:{title:string;url:string;at:string;dateKind:'published'|'updated'}[];issue:string|null };
   signals: { label: string; detail: string; severity: string }[];
 }
 export interface NexsiPowerRate { state: string; period: string; usdMwh: number; sourceUrl: string }

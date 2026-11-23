@@ -49,7 +49,7 @@ export function parseYahooDaily(result, now = Date.now(), expectedSymbol) {
 export function parseQuote(result, id, symbol, now = Date.now()) {
   const meta = result.meta;
   if (meta?.symbol !== symbol || meta.currency !== "USD" || !Number.isFinite(meta.regularMarketPrice) || meta.regularMarketPrice <= 0
-    || !Number.isFinite(meta.regularMarketTime) || meta.regularMarketTime * 1000 > now + 60000) throw new Error("invalid quote identity/price/timestamp");
+    || !Number.isFinite(meta.regularMarketTime) || meta.regularMarketTime <= 0 || meta.regularMarketTime * 1000 > now + 60000) throw new Error("invalid quote identity/price/timestamp");
   const regular = meta.currentTradingPeriod?.regular;
   if (!regular || !Number.isFinite(regular.start) || !Number.isFinite(regular.end) || regular.end <= regular.start) throw new Error("quote session unavailable");
   return {

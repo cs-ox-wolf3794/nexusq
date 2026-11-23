@@ -15,13 +15,20 @@ export function translate(text: string | undefined, language = locale(), depth =
   if (text === undefined) return "";
   if (language === 'en-US' || !text.trim()) return text;
   const key = text.trim().replace(/\s+/g, ' ');
+  const sourceNumber=key.match(/^([+−-]?)(\d{1,3}(?:,\d{3})+\.\d+)(.*)$/);
+  if(sourceNumber&&(!sourceNumber[3]||/^(?: (?:USD|NOK)(?:\/\w+)?| pts| %)$/.test(sourceNumber[3]))) {
+    const value=Number(sourceNumber[2].replaceAll(',','')),digits=sourceNumber[2].split('.')[1].length;
+    return sourceNumber[1]+new Intl.NumberFormat(language,{minimumFractionDigits:digits,maximumFractionDigits:digits}).format(value)+(sourceNumber[3]?'\u00a0'+translate(sourceNumber[3].trim(),language,depth+1):'');
+  }
+  const quantity=key.match(/^([+−-]?\d+(?:\.\d+)?) ((?:USD|NOK)(?:\/\w+)?|pts|%)$/);
+  if(quantity)return translate(quantity[1],language,depth+1)+'\u00a0'+translate(quantity[2],language,depth+1).trim();
   if (/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{2}, \d{4}$/.test(key)) {
     return new Intl.DateTimeFormat(language,{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(key+' 12:00:00 UTC'));
   }
-  const numeric = key.match(/^([+−-]?)(\d+(?:\.\d+)?)(%| pp|σ)?$/);
+  const numeric = key.match(/^([+−-]?)(\d+(?:[.,]\d+)?)(%| pp|σ)?$/);
   if (numeric && !/^0\d/.test(numeric[2])) {
-    const decimals = numeric[2].split('.')[1]?.length ?? 0;
-    return numeric[1] + new Intl.NumberFormat(language,{minimumFractionDigits:decimals,maximumFractionDigits:decimals,useGrouping:false}).format(Number(numeric[2])) + (numeric[3]??'');
+    const decimals = numeric[2].split(/[.,]/)[1]?.length ?? 0;
+    return numeric[1] + new Intl.NumberFormat(language,{minimumFractionDigits:decimals,maximumFractionDigits:decimals,useGrouping:false}).format(Number(numeric[2].replace(',','.'))) + (numeric[3]==='%'?'\u00a0%':numeric[3]??'');
   }
   let result = nb[key] ?? lowerCaseMessages.get(key.toLowerCase());
   if (!result && depth < 5) for (const item of templates) {
@@ -32,7 +39,7 @@ export function translate(text: string | undefined, language = locale(), depth =
     const sentences = key.split(/(?<=[.!?]) (?=[A-Z“])/);
     if (sentences.length > 1) result = sentences.map(sentence=>translate(sentence,language,depth+1)).join(' ');
   }
-  return result ? text.slice(0, text.indexOf(text.trimStart())) + result + text.slice(text.trimEnd().length) : text;
+  return result ? text.slice(0, text.indexOf(text.trimStart())) + result.replace(/(\d)%/g,'$1\u00a0%') + text.slice(text.trimEnd().length) : text;
 }
 export const t = translate;
 /** Render boundary for labels returned by shared analytical helpers. */

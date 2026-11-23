@@ -26,6 +26,15 @@ export function validateNexsi(file: NexsiFile) {
     || file.companies.length !== symbols.length || new Set(file.companies.map(c => c.symbol)).size !== symbols.length
     || file.companies.some(c => !symbols.includes(c.symbol))) throw new Error("NexSI universe/coverage mismatch");
   for (const c of file.companies) {
+    for(const check of Object.values(c.evidenceChecks??{})) {
+      if(!check||!['available','failed'].includes(check.status)||!Number.isFinite(Date.parse(check.checkedAt))||!/^https:\/\//.test(check.sourceUrl)||!Number.isInteger(check.returned)||check.returned<0||check.successfulAt!==null&&!Number.isFinite(Date.parse(check.successfulAt))||check.status==='available'&&!check.successfulAt)throw new Error(`Invalid NexSI feed check: ${c.symbol}`);
+    }
+    if(c.issuerNews){
+      const news=c.issuerNews;
+      const permitted:Record<string,[string,string]>={AAPL:['https://www.apple.com/newsroom/rss-feed.rss','https://www.apple.com/newsroom/'],MSFT:['https://news.microsoft.com/source/feed/','https://news.microsoft.com/source/'],GOOG:['https://blog.google/rss/','https://blog.google/'],GOOGL:['https://blog.google/rss/','https://blog.google/']};
+      const allowed=permitted[c.symbol];
+      if(!allowed||news.sourceUrl!==allowed[0]||!Number.isFinite(Date.parse(news.checkedAt))||!['available','failed'].includes(news.status)||news.status==='available'&&(!news.successfulAt||!/^[a-f\d]{64}$/.test(news.sha256??''))||news.items.some(item=>!item.title||!item.url.startsWith(allowed[1])||!Number.isFinite(Date.parse(item.at))||Date.parse(item.at)>Date.parse(file.generated)||!['published','updated'].includes(item.dateKind)))throw new Error(`Invalid NexSI issuer newsroom: ${c.symbol}`);
+    }
     if (c.provenance && (!/^https:\/\//.test(c.provenance.url) || !c.provenance.provider || !c.provenance.returnBasis)) throw new Error(`Invalid NexSI price provenance: ${c.symbol}`);
     for (const a of [...Object.values(c.moves), ...c.largestDrops].filter(a => a != null)) {
       if (a.factorReturns && ["market", "technology", "rates", "oil", "gas"].some(k => !Number.isFinite(a.factorReturns![k as keyof typeof a.factorReturns]))) throw new Error(`Invalid NexSI factor returns: ${c.symbol}`);
@@ -40,8 +49,8 @@ export function validateNexsi(file: NexsiFile) {
     if (c.events.some(e => !/^https:\/\//.test(e.url) || !Number.isFinite(Date.parse(e.publishedAt)))) throw new Error(`Invalid NexSI evidence: ${c.symbol}`);
     for (const e of c.events) if (e.summary) {
       const s = e.summary;
-      if (![1, 2, 3, 4].includes(s.version) || !Number.isFinite(Date.parse(s.checkedAt)) || !Array.isArray(s.documents) || !Array.isArray(s.facts)
-        || s.documents.some(d => !validDisclosureSource(d.url, e) || !/^[a-f\d]{64}$/.test(d.sha256))
+      if (![1, 2, 3, 4, 5].includes(s.version) || !Number.isFinite(Date.parse(s.checkedAt)) || !Array.isArray(s.documents) || !Array.isArray(s.facts)
+        || s.documents.some(d => !validDisclosureSource(d.url, e) || !/^[a-f\d]{64}$/.test(d.sha256)||d.textSha256&&!/^[a-f\d]{64}$/.test(d.textSha256))
         || s.facts.some(f => !BRIEF_CATEGORIES.includes(f.category) || !f.text || f.text.length > 700 || !['rule-extracted', 'reviewed'].includes(f.method)
           || !s.documents.some(d => d.url === f.sourceUrl) || !validDisclosureSource(f.sourceUrl, e)
           || (!f.sourceUrl.startsWith('https://www.sec.gov/') && f.sourceTiming !== 'unverified')

@@ -19,8 +19,11 @@ const instruments = [...new Map([
 const quotes = {}, failures = [];
 await mapLimit(instruments, 3, async ([id, symbol]) => {
   try {
-    const quote = parseQuote(await yahooChart(symbol, "1m", "1d"), id, symbol);
-    if (previous?.quotes[id] && quote.observedAt < previous.quotes[id].observedAt) throw new Error("quote timestamp regressed");
+    const validate=result=>{
+      const candidate=parseQuote(result,id,symbol);
+      if(previous?.quotes[id]&&candidate.observedAt<previous.quotes[id].observedAt)throw new Error('quote timestamp regressed');
+    };
+    const quote = parseQuote(await yahooChart(symbol, "1m", "1d",validate), id, symbol);
     quotes[id] = quote;
   } catch (error) {
     failures.push(`${id}: ${error.message}`);

@@ -2,6 +2,7 @@ import type { BacktestFile, CatalogFile, CotFile, ForecastFile, ImpactFile, Qual
 import { validatePoints, validateAdjustedAlignment } from "./quality";
 import type { NexsiFile } from "./nexsi-types";
 import type { FxFile } from './fx';
+import { scheduledUsMarketOpen } from './quote-health';
 
 export interface Quote {
   id: string; symbol: string; name: string; price: number; currency: string;
@@ -81,7 +82,7 @@ export function quoteStatus(quote: Quote, now = Date.now()): { label: string; cu
   const checkAge = (now - Date.parse(quote.checkedAt)) / 60000;
   if (quote.status === "retained") return { label: "Update failed · last quote retained", current: false };
   if (![age, checkAge].every(Number.isFinite) || age < -1 || checkAge < -1) return { label: "Invalid timestamp", current: false };
-  if (now >= Date.parse(quote.sessionStart) && now <= Date.parse(quote.sessionEnd)) {
+  if (scheduledUsMarketOpen(now) || now >= Date.parse(quote.sessionStart) && now < Date.parse(quote.sessionEnd)) {
     return age <= 15 && checkAge <= 15 ? { label: "Quote within 15 min", current: true } : { label: "Delayed · exceeds 15 min", current: false };
   }
   // A previous session's end cannot establish whether today's exchange is closed.

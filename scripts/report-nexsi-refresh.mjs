@@ -1,6 +1,7 @@
 import { readFile, appendFile } from "node:fs/promises";
 import { nexsiStatus, companyStatus } from "../src/lib/nexsi-quality.ts";
 import { companyBrief, guidanceCoverage } from "../src/lib/nexsi-brief.ts";
+import { companyNewsCoverage } from '../src/lib/company-news.ts';
 
 const file = JSON.parse(await readFile("public/data/nexsi.json", "utf8"));
 const now = Date.now(), blocked = file.companies.filter(c => companyStatus(c, now));
@@ -27,6 +28,10 @@ const lines = [
   `${file.companies.length} securities; ${file.companies.filter(c => c.moves[1] && !companyStatus(c, now)).length} daily models; ${blocked.length} price-source issues; ${file.companies.filter(c => c.eventIssues.length).length} evidence-source issues.`,
   ...coverage,
   ...guidanceGroups,
+  ...['missing','incomplete','confirmed','filings-only','reporting-only','none-found'].map(state=>{
+    const symbols=file.companies.filter(c=>companyNewsCoverage(c,c.moves[1]??{start:c.asOf,end:c.asOf},now).status===state).map(c=>c.symbol);
+    return `Full-universe company-news ${state}: ${symbols.length}${symbols.length?` (${symbols.join(', ')})`:''}.`;
+  }),
   'Missing summaries are coverage gaps, not evidence of no announcement. Company news is limited to the nearby event window; earnings and guidance can include earlier background.',
   ...(sndk ? [`SNDK: ${sndk.asOf}, USD ${sndk.price}, ${sndk.provenance?.provider ?? "unknown source"}; 1-session return ${sndk.observedReturns[1]?.toFixed(4)}%; attribution ${sndk.moves[1] ? "available" : "withheld"}.`] : []),
   ...problems.map(p => `Review: ${p}`),

@@ -5,6 +5,7 @@
 .preferences-dialog label{display:flex;flex-direction:column;gap:8px;margin:16px 0;font-weight:600}.preferences-dialog select{width:100%;min-height:44px;padding:8px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font:inherit}
 .preferences-dialog p{font-size:.9rem;line-height:1.6;color:var(--text-secondary)}.preference-basis{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:16px}.preferences-status{min-height:1.6em}.currency-notice{margin:12px 0 18px;padding:12px 16px;border-left:3px solid var(--accent);background:var(--surface-2);display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.85rem;line-height:1.6}.currency-notice>span:last-child{flex-basis:100%;color:var(--text-secondary)}.money-value small{font-size:.8em;color:var(--text-muted)}
 .workspace-tools{flex-wrap:wrap}
+.money-value{display:inline-flex;flex-wrap:wrap;column-gap:.28em;max-width:100%;white-space:normal}.money-value>span{white-space:nowrap}
 .currency-notice details{flex-basis:100%;color:var(--text-secondary)}.currency-notice summary{cursor:pointer;font-size:.85rem}.currency-notice details p{margin:8px 0 0}
 @media(max-width:700px){.preferences-dialog{padding:18px}.locale-trigger{font-size:.8rem;padding:6px 8px;min-height:36px}.workspace-tools{gap:6px}.currency-notice{padding:10px 12px}}
 @media(max-width:700px){.workspace-tools>.density-control{display:none}}

@@ -1,5 +1,20 @@
 # NexusQ releases
 
+## 2.1.1 — 2026-11-23
+
+Norwegian usability, company-news coverage and production-freshness audit.
+
+- Refined Bokmål across the daily brief, market signals, news coverage and operating alerts. Corrected context-sensitive positioning labels, percentile endings, percentage spacing, grouped numbers and monetary precision. Added decimal-comma entry to power-cost assumptions and fixed long NOK values overflowing narrow tiles.
+- Preserved original source statements, source titles, reported currencies and provider credits. Language and currency settings continue to leave analytical inputs and returns unchanged.
+- Expanded automatic SEC news extraction for completed acquisitions, investment terms, dividends, debt issuance, buybacks and product-sales updates. Added official Apple, Microsoft and Google newsroom feeds with explicit publication/update timing and retained-source dates on failures.
+- Distinguished missing/stale source coverage, incomplete document summaries, company announcements, unverified reporting and empty bounded source windows. No headline or empty feed is treated as proof of a cause or of no relevant news.
+- Rechecked affected reviewed disclosures and added exact visible-text fingerprints alongside raw file fingerprints. Changing SEC security scripts no longer remove those reviewed summaries; changed disclosure text still requires verification. Fixed cross-platform Unicode feed parsing and kept source failures visible.
+- Increased scheduled quote checks to every five minutes within the existing weekday window. The 15-minute target is measured from observation time; calendar-based QC flags old observations even after a successful retrieval or stale provider session metadata.
+- Added post-deployment verification of all live data checksums, quote coverage/freshness, NexSI models and news coverage, and QC status. Closed-market runs explicitly do not certify the intraday target. Free-provider and GitHub scheduling/deployment delays remain limitations.
+- Product version 2.1.1; attribution and signal-model formulas are unchanged.
+
+Verification before publication: 264 tests across 28 files, type checks, lint, data-contract validation and production build passed. Repeated full-source refreshes resolved transient retrieval/budget failures; the final local run reported 101 securities, 99 eligible daily models and no source errors. News coverage was 34 securities with company announcements, 2 with filing-only context and 65 with reported-news context. All had successful feed checks; this is not exhaustive or uniformly primary-source news coverage. Guidance coverage was preserved, including limited outlooks, no-numerical-guidance assessments and company policy. Sustained market-hours delivery cannot be certified from a closed-market run.
+
 ## 2.1.0 — 2026-11-23
 
 NexSum becomes the opening brief, with a more readable design and independent English (US)/Norwegian Bokmål and USD/NOK settings. Existing analysis and free sources are preserved.

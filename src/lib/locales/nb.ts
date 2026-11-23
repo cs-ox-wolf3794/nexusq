@@ -1,9 +1,10 @@
 import ui from './nb-ui.json';
 import dynamic from './nb-dynamic.json';
 import projects from './nb-projects.json';
+import audit from './nb-audit.json';
 /** Norwegian Bokmål. Quoted disclosures, trademarks and source titles retain their original language. */
 export const nb: Record<string, string> = {
-  ...ui, ...dynamic, ...projects,
+  ...ui, ...dynamic, ...projects, ...audit,
   'Oil and gas together contribute an estimated drag of {0} percentage points. {1}': 'Olje og gass gir samlet et estimert negativt bidrag på {0} prosentpoeng. {1}',
   'Oil and gas together contribute an estimated support of {0} percentage points. {1}': 'Olje og gass gir samlet et estimert positivt bidrag på {0} prosentpoeng. {1}',
   'Market, relative technology, the rates proxy and the model baseline contribute a net estimated drag of {0} percentage points. These are modeled exposures, not a tally of verified news effects.': 'Marked, relativ teknologi, renteindikator og konstantledd gir et estimert netto negativt bidrag på {0} prosentpoeng. Dette er modellerte eksponeringer, ikke en opptelling av bekreftede nyhetseffekter.',

@@ -2,6 +2,7 @@ import { l as localize, t as tr } from '../lib/i18n';
 import type { QualityFile, Series } from "../lib/data";
 import { analysisEligibility } from "../lib/quality";
 import { Money } from './Preferences';
+import { displayDate } from '../lib/research-ui';
 
 const KPI_IDS = ["BRENT", "WTI", "HENRYHUB", "SP500", "GOLD", "EURUSD"];
 const SPARK_POINTS = 30;
@@ -46,7 +47,7 @@ export function KpiStrip({ seriesMap, selected, onToggle, quality, now }: {
             title={tr(`${s.name} — ${on ? "remove from" : "add to"} overlay`)}
           >
             <span className="kpi-name">{localize(s.name)}</span>
-            <small>{localize(analysisEligibility(s, quality, now).eligible ? "Daily observation" : "⚠ Review required")}{tr(" · ")}{localize(s.lastUpdated)}</small>
+            <small>{localize(analysisEligibility(s, quality, now).eligible ? "Daily observation" : "⚠ Review required")}{tr(" · ")}{localize(displayDate(s.lastUpdated))}</small>
             <span className="kpi-value">
               <Money value={last} unit={s.unit} />
             </span>

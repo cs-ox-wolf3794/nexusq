@@ -1,5 +1,6 @@
 import { l as localize, t as tr } from '../lib/i18n';
 import { useMemo } from "react";
+import { locale } from '../lib/preferences';
 import type { CotFile, Series } from "../lib/data";
 import type { MarketState as MarketStateData } from "../lib/state";
 import { computeMarketState } from "../lib/state";
@@ -17,6 +18,7 @@ const BAND_META = {
 } as const;
 
 function ordinal(n: number): string {
+  if(locale()==='nb-NO')return `${n}.`;
   const v = n % 100;
   if (v >= 11 && v <= 13) return `${n}th`;
   return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;

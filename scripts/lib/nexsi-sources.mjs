@@ -41,11 +41,14 @@ export async function nasdaqUniverse(now = Date.now()) {
 
 const decode = s => s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
 export function parseHeadlines(xml, now = Date.now()) {
-  if (!xml.includes("<rss")) throw new Error("Company headline response is not RSS");
+  if (!/<rss\b/i.test(xml)||!/<\/rss>/i.test(xml)) throw new Error("Company headline response is not complete RSS");
+  const items=[...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/g)];
+  if(items.length!==[...xml.matchAll(/<item\b/g)].length)throw new Error('Company headline RSS contains incomplete records');
   const tag = (block, name) => decode(block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`))?.[1] ?? "");
-  return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].flatMap(([, block]) => {
+  return items.flatMap(([, block]) => {
     const title = tag(block, "title"), url = tag(block, "link"), date = Date.parse(tag(block, "pubDate"));
-    if (!title || !/^https:\/\//.test(url) || !Number.isFinite(date) || date > now + 300000 || now - date > 45 * 86400000) return [];
+    if (!title || !/^https:\/\//.test(url) || !Number.isFinite(date))throw new Error('Company headline RSS record lacks a verifiable title, URL or date');
+    if (date > now + 300000 || now - date > 45 * 86400000) return [];
     return [{ title: title.slice(0, 220), url, publishedAt: new Date(date).toISOString(), source: new URL(url).hostname.replace(/^www\./, ""), kind: "headline" }];
   }).slice(0, 20);
 }
