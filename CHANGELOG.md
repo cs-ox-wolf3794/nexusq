@@ -1,5 +1,13 @@
 # NexusQ releases
 
+### 24 November — reviewed disclosure summaries restored
+
+- Reverified 11 original SEC filings and earnings releases for AMD, AMZN, AAPL, INTU, NVDA, PYPL, PDD and SNDK. All readable text exactly matches the archived documents used for the original reviews; changed page markup caused the warnings. Registered the reviewed visible-text fingerprints for all eleven sources, bringing coverage to all 24 reviewed documents. Each match still requires the exact source URL and full reviewed text; no corrected financial figure or changed announcement is accepted automatically.
+- Restored 16 reviewed earnings, guidance and company-news facts with the 24 November review date. Preserved GAAP/non-GAAP distinctions, Sandisk's pre-split EPS basis, Intuit's pending-sale conditions, Amazon's outlook assumptions, and PDD's release-specific absence of numerical guidance. Clarified AMD's revenue tolerance as plus or minus 3%.
+- Reviewed sources now recheck during every full analytical refresh instead of waiting for the ordinary 24-hour disclosure cache. Other disclosures retain their bounded cache and request limits. Retrieval failures retain the original source dates and visible warnings. Quote-only updates do not fetch or relabel disclosure summaries.
+- Full-refresh reports now count freshly retrieved reviewed documents whose source fingerprints and published facts match. Source exceptions remain warnings and do not block healthy price publication.
+- Validation: 308 tests, type checks, lint, build and data-contract checks pass. Two independent live retrieval passes each made 25 requests and reverified all 11 affected documents and 16 reviewed facts without summary issues. Regressions cover wrapper changes, corrected figures, repeated source checks, failed retrievals and complete visible-text review registration. Automatic production verification follows below once observed.
+
 ### 24 November — refresh and deployment deadlock repair
 
 - Identified a post-close failure missed by the previous daytime verification. The 23 November 22:21 UTC source snapshot had Monday equity closes but Friday completed futures inputs, so current NexSI attribution was correctly withheld. Three unit-test files incorrectly assumed the mutable production snapshot always contained usable attribution; 14 tests crashed. The same tests blocked deployments, and a failed full-refresh preflight prevented quote updates and the failure record from running.

@@ -10,6 +10,7 @@ import { extractGuidanceContext, extractShortGuidance } from './nexsi-guidance.m
 export const DISCLOSURE_VERSION = 5;
 import { extractCompanyNews } from './nexsi-news.mjs';
 const DAY = 86400000;
+const reviewedUrls = new Set([...Object.values(REVIEWED_DISCLOSURES), ...Object.values(REVIEWED_TEXT_DISCLOSURES)].map(review => review.url));
 const reader = fileURLToPath(new URL('./disclosure-html.py', import.meta.url));
 const sentences = new Intl.Segmenter('en', { granularity: 'sentence' });
 const money = String.raw`(?:US\$|\$|€|RMB|USD|EUR)\s*[\d,]+(?:\.\d+)?\s*(?:billion|million)`;
@@ -173,7 +174,12 @@ export function createDisclosureLoader({ now = Date.now(), maxRequests = 700, ma
   };
   return async event => {
     const old = event.summary;
-    if (old?.version === DISCLOSURE_VERSION && now - Date.parse(old.checkedAt) < (old.issue?.includes('budget reached') ? 0 : old.issue ? 3600000 : DAY)) return old;
+    // Re-bind reviewed notes to fresh source content on every full refresh.
+    // A 24-hour cache must not hide an issuer correction, and an error cache
+    // must not delay a newly verified review. Other disclosures retain their
+    // bounded cache; duplicate requests share this loader's cache below.
+    const recheckReviewed = reviewedUrls.has(event.url) || old?.documents.some(doc => reviewedUrls.has(doc.url));
+    if (!recheckReviewed && old?.version === DISCLOSURE_VERSION && now - Date.parse(old.checkedAt) < (old.issue?.includes('budget reached') ? 0 : old.issue ? 3600000 : DAY)) return old;
     if (cache.has(event.url)) return cache.get(event.url);
     const task = (async () => {
       const checkedAt = new Date(now).toISOString();
@@ -183,7 +189,7 @@ export function createDisclosureLoader({ now = Date.now(), maxRequests = 700, ma
         const docs = [{ url: event.url, sha256: main.sha256,textSha256:main.textSha256, retrievedAt: checkedAt }];
         const issues = [];
         const extract = (doc, url, isRelease = false) => {
-          if(Object.values(REVIEWED_DISCLOSURES).some(r=>r.url===url)&&REVIEWED_DISCLOSURES[doc.sha256]?.url!==url&&REVIEWED_TEXT_DISCLOSURES[doc.textSha256]?.url!==url)issues.push('Reviewed disclosure content changed; its reviewed summary requires source verification');
+          if(reviewedUrls.has(url)&&REVIEWED_DISCLOSURES[doc.sha256]?.url!==url&&REVIEWED_TEXT_DISCLOSURES[doc.textSha256]?.url!==url)issues.push('Reviewed disclosure content changed; its reviewed summary requires source verification');
           return applyReviewedFacts(extractDisclosureFacts(doc.blocks, url, isRelease), { url, sha256: doc.sha256,textSha256:doc.textSha256 });
         };
         const facts = extract(main, event.url,event.form?.startsWith('6-K')), transcriptInputs = [];
@@ -232,7 +238,8 @@ export function createDisclosureLoader({ now = Date.now(), maxRequests = 700, ma
 
 export async function enrichCompanyDisclosures(companies, now = Date.now(), options = {}) {
   const load = createDisclosureLoader({ now, ...options });
-  // Prioritize large current losses on the first run; successful cached documents cost no requests on subsequent runs.
+  // Prioritize large current losses; reviewed documents recheck each full run,
+  // while other healthy cached disclosures avoid repeated source requests.
   const ordered = [...companies].sort((a, b) => (a.observedReturns[1] ?? 0) - (b.observedReturns[1] ?? 0));
   for (const company of ordered) {
     for (const event of selectDisclosureEvents(company, now)) event.summary = await load(event);
