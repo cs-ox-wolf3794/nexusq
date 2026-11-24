@@ -9,8 +9,7 @@ import { explainMove } from '../nexsi-explanation';
 import { matchesResearchQuery, RESEARCH_QUESTIONS } from '../research-questions';
 import type { Attribution } from '../nexsi-model';
 import { buildDailyBrief, checkpointFor } from '../nexsum';
-import type { Snapshot } from '../snapshot';
-import { readFileSync } from 'node:fs';
+import { researchSnapshotFixture } from './fixtures/research-snapshot';
 import { moneyText } from '../money';
 import { parseLocalNumber } from '../local-number';
 
@@ -80,9 +79,7 @@ describe('Language preferences and financial wording',()=>{
     expect(t('Unfamiliar issuer quotation: $10.50 million')).toBe('Unfamiliar issuer quotation: $10.50 million');
   });
   it('does not mark a brief changed solely because language/currency changed',()=>{
-    const read=(name:string)=>JSON.parse(readFileSync(new URL(`../../../public/data/${name}.json`,import.meta.url),'utf8'));
-    const catalog=read('catalog');
-    const snapshot:Snapshot={revision:'test',catalog,quality:read('quality'),nexsi:read('nexsi'),seriesMap:new Map(catalog.series.map((s:{id:string})=>[s.id,read(s.id)])),forecasts:null,impact:null,cot:null,quotes:null,backtest:null,health:null,refreshStatus:null};
+    const snapshot=researchSnapshotFixture();
     const time=Date.parse(snapshot.nexsi!.generated), first=checkpointFor(buildDailyBrief(snapshot,[],[],time).insights,time);
     setPreferences({language:'nb-NO',currency:'NOK'});
     expect(checkpointFor(buildDailyBrief(snapshot,[],[],time).insights,time)).toEqual(first);

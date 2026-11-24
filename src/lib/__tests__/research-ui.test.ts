@@ -1,15 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import type { Snapshot } from '../snapshot';
+import { researchSnapshotFixture as snapshot } from './fixtures/research-snapshot';
 import { dataExceptions, displayDate, displayInstant, elapsedLabel, quoteCheckOverdue, quoteScheduleActive, readActivity, usCashSession } from '../research-ui';
 
-function snapshot(): Snapshot {
-  const read = (name: string) => JSON.parse(readFileSync(new URL(`../../../public/data/${name}.json`, import.meta.url), 'utf8'));
-  const catalog = read('catalog');
-  return { revision: 'fixture', catalog, seriesMap: new Map(catalog.series.map((s: {id: string}) => [s.id, read(s.id)])),
-    quality: read('quality'), forecasts: read('forecasts'), impact: null, cot: null, backtest: null,
-    quotes: read('quotes'), health: read('health'), nexsi: read('nexsi'), refreshStatus: read('refresh-status') };
-}
 
 describe('Research timestamps and scheduled sessions', () => {
   it('keeps date-only observations free of invented midnight times', () => {

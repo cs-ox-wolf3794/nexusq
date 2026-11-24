@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      data_only:
+        description: Publish validated data only when application code matches a successful deployment
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -19,14 +24,24 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Establish verified publication scope
+        id: scope
+        run: node scripts/deployment-scope.mjs
+        env:
+          DATA_ONLY_REQUESTED: ${{ inputs.data_only }}
+          GITHUB_TOKEN: ${{ github.token }}
       - run: npm test
+        if: steps.scope.outputs.data_only != 'true'
       - run: npm run data:validate
       - run: npm run build
         # Served at the custom domain nexus.gygante.com, so the base path stays "/"

@@ -1,5 +1,13 @@
 # NexusQ releases
 
+### 24 November — refresh and deployment deadlock repair
+
+- Identified a post-close failure missed by the previous daytime verification. The 23 November 22:21 UTC source snapshot had Monday equity closes but Friday completed futures inputs, so current NexSI attribution was correctly withheld. Three unit-test files incorrectly assumed the mutable production snapshot always contained usable attribution; 14 tests crashed. The same tests blocked deployments, and a failed full-refresh preflight prevented quote updates and the failure record from running.
+- Replaced production-dependent unit fixtures with fixed synthetic inputs across five test files. Added regressions for an entire universe with unavailable attribution, and a guard against reading mutable production data as unit-test fixtures. Publication contract validation remains separate and mandatory.
+- Failed analytical verification or dependency preparation now preserves a failing workflow result while allowing independently validated quotes and a dated analytical failure record to publish. The existing retry backoff can then alternate quote recovery with full retries rather than repeatedly starving prices.
+- Data-only deployments may inherit application test results only when a comparison with a successful deployment proves that changes are confined to generated JSON. Application/workflow/dependency changes or an unverifiable baseline require all tests. Data validation, type checking/build and live verification remain mandatory.
+- Local validation: all 304 tests pass, including new unavailable-model and recovery-isolation regressions; type checking, lint, build and publication-contract checks pass. Automatic production recovery is verified separately through GitHub run logs.
+
 ## 2.1.3 — 2026-11-23
 
 - Added separately identified, delayed Yahoo Finance NYMEX futures quotes for Brent, WTI and Henry Hub in NexSum and Nexus Signal. Side-by-side FRED spot values keep their original observation dates; historical analytics and completed-session NexSI methodology are unchanged.

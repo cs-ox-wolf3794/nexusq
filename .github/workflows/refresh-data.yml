@@ -57,20 +57,26 @@ jobs:
             echo "mode=full" >> "$GITHUB_OUTPUT"
           fi
       - name: Verify analytical code
+        id: verify
         if: steps.scope.outputs.mode == 'full'
+        # A failed analytical gate must remain red, while independent quote
+        # recovery and a dated failure record can still be published below.
+        continue-on-error: true
         run: npm test && npx tsc -b
       - name: Install public membership PDF reader
-        if: steps.scope.outputs.mode == 'full'
+        id: prepare
+        if: steps.scope.outputs.mode == 'full' && steps.verify.outcome == 'success'
+        continue-on-error: true
         run: python -m pip install pypdf==6.21.4
       - name: Refresh validated analytical snapshot
         id: data
-        if: steps.scope.outputs.mode == 'full'
+        if: steps.scope.outputs.mode == 'full' && steps.verify.outcome == 'success' && steps.prepare.outcome == 'success'
         continue-on-error: true
         run: npm run refresh
         env:
           EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
       - name: Report NexSI source verification
-        if: steps.scope.outputs.mode == 'full'
+        if: steps.data.outcome == 'success'
         continue-on-error: true
         run: node --import tsx scripts/report-nexsi-refresh.mjs
       - name: Refresh timestamped quotes
@@ -88,7 +94,8 @@ jobs:
         if: steps.scope.outputs.mode == 'full'
         run: node scripts/record-refresh-status.mjs
         env:
-          REFRESH_OUTCOME: ${{ steps.data.outcome }}
+          REFRESH_OUTCOME: ${{ steps.verify.outcome == 'success' && steps.prepare.outcome == 'success' && steps.data.outcome == 'success' && 'success' || 'failure' }}
+          REFRESH_FAILURE_STAGE: ${{ steps.verify.outcome == 'failure' && 'analytical-verification' || steps.prepare.outcome == 'failure' && 'analytical-dependencies' || steps.data.outcome == 'failure' && 'analytical-sources' || '' }}
           REFRESH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       - name: Recompute event-study evidence
         if: steps.data.outcome == 'success'
@@ -120,11 +127,11 @@ jobs:
           fi
       - name: Deploy verified snapshots
         if: steps.commit.outputs.changed == 'true'
-        run: gh workflow run deploy.yml --ref main
+        run: gh workflow run deploy.yml --ref main -f data_only=true
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Surface refresh failure
-        if: steps.data.outcome == 'failure' || steps.quotes.outcome == 'failure'
+        if: steps.verify.outcome == 'failure' || steps.prepare.outcome == 'failure' || steps.data.outcome == 'failure' || steps.quotes.outcome == 'failure'
         run: |
           echo "::error::Refresh failed. Previous analytical snapshot retained; see public refresh status and source health."
           exit 1

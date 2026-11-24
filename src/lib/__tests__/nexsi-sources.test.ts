@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseFilings, parseHeadlines, parsePowerRates, classify } from "../../../scripts/lib/nexsi-sources.mjs";
 import { companyStatus, nexsiStatus, validateNexsi } from "../nexsi-quality";
-import type { NexsiCompany, NexsiFile } from "../nexsi-types";
-import { readFileSync } from "node:fs";
+import type { NexsiCompany } from "../nexsi-types";
+import { nexsiFixture } from './fixtures/research-snapshot';
 import { yahooChart } from "../../../scripts/lib/yahoo.mjs";
 
 const now = Date.parse("2026-11-21T12:00:00Z");
@@ -68,7 +68,7 @@ describe("NexSI public source contracts", () => {
 });
 
 describe("NexSI publication and expiry", () => {
-  const file: NexsiFile = JSON.parse(readFileSync(new URL("../../../public/data/nexsi.json", import.meta.url), "utf8"));
+  const file = nexsiFixture();
   it("requires complete constituent accounting and reconciled, pre-event attribution", () => {
     expect(() => validateNexsi(file)).not.toThrow();
     const broken = structuredClone(file); broken.companies.pop();
@@ -83,5 +83,10 @@ describe("NexSI publication and expiry", () => {
     expect(nexsiStatus({ ...file, status: "retained" }, at)).toContain("failed");
     expect(nexsiStatus({ ...file, universe: { ...file.universe, asOf: "2020-01-01" } }, at)).toContain("membership");
     expect(companyStatus({ ...file.companies[0], issue: "source failed" } as NexsiCompany, at)).toBe("source failed");
+  });
+  it('accepts complete source accounting when every current attribution is legitimately withheld',()=>{
+    const withheld=nexsiFixture();withheld.status='degraded';
+    withheld.companies.forEach(c=>{c.moves={1:null,5:null,20:null};c.largestDrops=[];});
+    expect(()=>validateNexsi(withheld)).not.toThrow();
   });
 });

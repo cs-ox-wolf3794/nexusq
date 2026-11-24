@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { researchSnapshotFixture } from './fixtures/research-snapshot';
 import type { Snapshot } from '../snapshot';
 import type { Series } from '../data';
 import { buildDailyBrief, briefChanges, checkpointFor, nextCashOpen, observedDailyChange, readCheckpoint, readWatchlist, watchRow } from '../nexsum';
@@ -7,9 +7,7 @@ import { RESEARCH_QUESTIONS, RESEARCH_TOPICS, matchesResearchQuery, questionAvai
 import { companyName } from '../display-names';
 import { WORKSPACES, readWorkspace, SECTION_ROUTES } from '../workspace';
 
-const read=(name:string)=>JSON.parse(readFileSync(new URL(`../../../public/data/${name}.json`,import.meta.url),'utf8'));
-const catalog=read('catalog');
-const fixture:Snapshot={revision:'fixture',catalog,seriesMap:new Map(catalog.series.map((s:{id:string})=>[s.id,read(s.id)])),quality:read('quality'),forecasts:read('forecasts'),impact:null,cot:null,backtest:null,quotes:read('quotes'),health:read('health'),nexsi:read('nexsi'),refreshStatus:read('refresh-status')};
+const fixture=researchSnapshotFixture();
 const now=Date.parse(fixture.nexsi!.generated)+1000;
 // Keep editorial test cases stable when the checked-in production snapshot refreshes.
 const latestDate=new Date(now-2*86400000).toISOString().slice(0,10);
@@ -61,6 +59,13 @@ describe('NexSum evidence selection',()=>{
     s.nexsi!.status='retained';
     const brief=buildDailyBrief(s,[],[],now);expect(brief.focus).toBeNull();expect(brief.summary).toContain('suspended');
     expect(brief.insights.some(x=>x.kind==='Model estimate')).toBe(false);
+  });
+  it('handles a whole universe with temporarily unavailable attribution',()=>{
+    const s=snapshot();s.nexsi!.companies.forEach(c=>{c.moves={1:null,5:null,20:null};});
+    const brief=buildDailyBrief(s,[],[],now);
+    expect(brief.cohort).toBe(0);expect(brief.focus).toBeNull();
+    expect(brief.summary).toContain('coverage gap');expect(brief.insights.some(x=>x.kind==='Model estimate')).toBe(false);
+    expect(watchRow('company:NVDA',s,now).amount).toBe(95);
   });
   it('does not turn missing guidance into a no-guidance policy',()=>{
     const s=snapshot();s.nexsi!.companies.forEach(c=>c.events=[]);

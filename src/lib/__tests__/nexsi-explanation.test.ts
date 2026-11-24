@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import type { NexsiFile, NexsiEvent } from "../nexsi-types";
+import { attributionFixture } from './fixtures/research-snapshot';
+import type { NexsiEvent } from "../nexsi-types";
 import { explainMove, evidenceTiming, easternTime, evidenceForMove, disclosureContext, isPrimaryFiling, reviewedDisclosure } from "../nexsi-explanation";
 import { mergeEvidence, parseFilings } from "../../../scripts/lib/nexsi-sources.mjs";
 
-const file: NexsiFile = JSON.parse(readFileSync(new URL("../../../public/data/nexsi.json", import.meta.url), "utf8"));
-const base = file.companies.find(c => c.symbol === "SNDK")!.moves[1]!;
+const base = attributionFixture();
 const now = Date.parse("2026-11-22T12:00:00Z");
 const period = { start: "2026-11-19", end: "2026-11-20" };
 const event: NexsiEvent = { title: "8-K", kind: "filing", source: "SEC EDGAR", items: "5.03,9.01", publishedAt: "2026-11-19T22:10:51Z", issuerCik: 2023554,
