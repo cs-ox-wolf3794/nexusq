@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-26T16:21:27.727Z",
+  "generated": "2026-11-26T16:59:25.502Z",
   "series": [
     {
       "id": "BRENT",
@@ -10,8 +10,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/DCOILBRENTEU",
       "cadence": "daily",
       "lastUpdated": "2026-11-24",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3526
     },
     {
@@ -23,8 +23,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/DCOILWTICO",
       "cadence": "daily",
       "lastUpdated": "2026-11-24",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3469
     },
     {
@@ -36,8 +36,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/DHHNGSP",
       "cadence": "daily",
       "lastUpdated": "2026-11-24",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3504
     },
     {
@@ -49,8 +49,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/PNGASEUUSDM",
       "cadence": "monthly",
       "lastUpdated": "2026-09-01",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 321
     },
     {
@@ -62,8 +62,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/PCOALAUUSDM",
       "cadence": "monthly",
       "lastUpdated": "2026-09-01",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 321
     },
     {
@@ -75,8 +75,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/PCOPPUSDM",
       "cadence": "monthly",
       "lastUpdated": "2026-09-01",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 321
     },
     {
@@ -88,8 +88,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/PWHEAMTUSDM",
       "cadence": "monthly",
       "lastUpdated": "2026-09-01",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 321
     },
     {
@@ -101,8 +101,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/SP500",
       "cadence": "daily",
       "lastUpdated": "2026-11-24",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 2512
     },
     {
@@ -114,8 +114,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/NASDAQCOM",
       "cadence": "daily",
       "lastUpdated": "2026-11-25",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3498
     },
     {
@@ -127,8 +127,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/VIXCLS",
       "cadence": "daily",
       "lastUpdated": "2026-11-24",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3529
     },
     {
@@ -140,8 +140,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/DGS10",
       "cadence": "daily",
       "lastUpdated": "2026-11-24",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3475
     },
     {
@@ -153,8 +153,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/T10YIE",
       "cadence": "daily",
       "lastUpdated": "2026-11-25",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3476
     },
     {
@@ -166,8 +166,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/CPIAUCSL",
       "cadence": "monthly",
       "lastUpdated": "2026-10-01",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 321
     },
     {
@@ -179,8 +179,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/INDPRO",
       "cadence": "monthly",
       "lastUpdated": "2026-10-01",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 322
     },
     {
@@ -192,8 +192,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/DTWEXBGS",
       "cadence": "daily",
       "lastUpdated": "2026-11-20",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3459
     },
     {
@@ -205,8 +205,8 @@
       "sourceUrl": "https://fred.stlouisfed.org/series/DEXUSEU",
       "cadence": "daily",
       "lastUpdated": "2026-11-20",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 3472
     },
     {
@@ -218,8 +218,8 @@
       "sourceUrl": "https://finance.yahoo.com/quote/XLE/",
       "cadence": "daily",
       "lastUpdated": "2026-11-25",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "priceBasis": "close",
       "returnBasis": "Yahoo adjusted close (splits and distributions)",
       "count": 2513
@@ -233,8 +233,8 @@
       "sourceUrl": "https://finance.yahoo.com/quote/ICLN/",
       "cadence": "daily",
       "lastUpdated": "2026-11-25",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "priceBasis": "close",
       "returnBasis": "Yahoo adjusted close (splits and distributions)",
       "count": 2513
@@ -248,8 +248,8 @@
       "sourceUrl": "https://finance.yahoo.com/quote/TAN/",
       "cadence": "daily",
       "lastUpdated": "2026-11-25",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "priceBasis": "close",
       "returnBasis": "Yahoo adjusted close (splits and distributions)",
       "count": 2513
@@ -263,8 +263,8 @@
       "sourceUrl": "https://finance.yahoo.com/quote/GLD/",
       "cadence": "daily",
       "lastUpdated": "2026-11-25",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "priceBasis": "close",
       "returnBasis": "Yahoo adjusted close (splits and distributions)",
       "count": 2513
@@ -278,8 +278,8 @@
       "sourceUrl": "https://api.worldbank.org/v2/country/USA/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=5000",
       "cadence": "annual",
       "lastUpdated": "2025-12-31",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 26
     },
     {
@@ -291,8 +291,8 @@
       "sourceUrl": "https://api.worldbank.org/v2/country/CHN/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=5000",
       "cadence": "annual",
       "lastUpdated": "2025-12-31",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 26
     },
     {
@@ -304,8 +304,8 @@
       "sourceUrl": "https://api.worldbank.org/v2/country/IND/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=5000",
       "cadence": "annual",
       "lastUpdated": "2025-12-31",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 26
     },
     {
@@ -317,8 +317,8 @@
       "sourceUrl": "https://api.worldbank.org/v2/country/DEU/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=5000",
       "cadence": "annual",
       "lastUpdated": "2025-12-31",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 26
     },
     {
@@ -330,8 +330,8 @@
       "sourceUrl": "https://www.eia.gov/opendata/browser/petroleum/stoc/wstk",
       "cadence": "weekly",
       "lastUpdated": "2026-11-20",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T16:21:27.727Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 673
     },
     {
@@ -343,8 +343,8 @@
       "sourceUrl": "https://www.eia.gov/opendata/browser/natural-gas/stor/wkly",
       "cadence": "weekly",
       "lastUpdated": "2026-11-20",
-      "checkedAt": "2026-11-26T16:21:27.727Z",
-      "retrievedAt": "2026-11-26T01:48:42.089Z",
+      "checkedAt": "2026-11-26T16:59:25.502Z",
+      "retrievedAt": "2026-11-26T16:59:25.502Z",
       "count": 673
     }
   ]
